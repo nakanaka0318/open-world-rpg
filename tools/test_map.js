@@ -25,7 +25,7 @@ while (q.length) {
     seen[j] = 1; q.push(j);
   }
 }
-const adj = (o) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen[(o.y + dy) * W + o.x + dx]);
+const adj = (o) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen[(o.y + dy) * W + o.x + dx] || (TILE_DEFS[tiles[(o.y + dy) * W + o.x + dx]].counter && seen[(o.y + 2 * dy) * W + o.x + 2 * dx]));
 for (const k of ['chests', 'saves', 'bosses', 'npcs', 'tablets', 'signs', 'altars', 'rdoors']) for (const o of objs[k]) if (!adj(o)) fail('unreachable ' + k + ' ' + (o.id || '') + ' ' + o.x + ',' + o.y);
 for (const o of objs.hidden) if (!seen[o.y * W + o.x]) fail('hidden unreachable ' + o.id);
 console.log('chests', objs.chests.length, 'spawns', objs.spawns.length, 'npcs', objs.npcs.length, 'hidden', objs.hidden.map(h => h.id + '@' + h.x + ',' + h.y).join(' '));

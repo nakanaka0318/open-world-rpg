@@ -1,0 +1,23 @@
+<!doctype html><html><body style="background:#333;margin:0">
+<canvas id="c" width="1200" height="900"></canvas>
+<script src="../js/util.js"></script><script src="../js/sprites.js"></script><script src="../js/data.js"></script>
+<script>
+buildSprites();
+const c=document.getElementById('c').getContext('2d');c.imageSmoothingEnabled=false;
+let x=0,y=0;
+SPR.tiles.forEach((f,i)=>{c.drawImage(f[0],x,y,32,32);x+=34;if(x>1150){x=0;y+=34;}});
+y+=40;x=0;
+for(const k in SPR.roofs){c.drawImage(SPR.roofs[k].mid,x,y,32,32);c.drawImage(SPR.roofs[k].eave,x,y+32,32,32);x+=34;}
+for(const k in SPR.obj){c.drawImage(SPR.obj[k],x,y,32,32);x+=34;}
+y+=72;x=0;
+const ids=Object.keys(CHARS);
+ids.forEach((id,i)=>{const L=CHARS[id].look;
+ ['d','u','r','l'].forEach((d,j)=>c.drawImage(girlSprite(L,d,0),x+j*34,y,32,32));
+ c.drawImage(girlSprite(L,'d',1),x+4*34,y,32,32);
+ x+=180; if(x>1100){x=0;y+=36;}
+});
+y+=44;x=0;
+ids.forEach(id=>{c.drawImage(portrait(CHARS[id].look),x,y,96,96);x+=100;if(x>1150){x=0;y+=100;}});
+y+=104;x=0;
+for(const k in ENEMIES){const e=ENEMIES[k];const s=enemySprite(e.spr,e.pal);c.drawImage(s,x,y,s.width*2,s.height*2);x+=s.width*2+4;if(x>1100){x=0;y+=68;}}
+</script></body></html>

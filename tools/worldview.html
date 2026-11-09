@@ -1,0 +1,14 @@
+<!doctype html><html><body style="margin:0;background:#000">
+<canvas id="c" width="2048" height="2048"></canvas>
+<script src="../js/util.js"></script><script src="../js/sprites.js"></script><script src="../js/data.js"></script><script src="../js/map.js"></script>
+<script>
+buildSprites();buildWorld();
+const c=document.getElementById('c').getContext('2d');
+for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const i=y*MW+x;const t=WORLD.tiles[i];const r=WORLD.region[i];
+ if(r){const R=WORLD.regions[r];c.drawImage(SPR.roofs[R.roof].mid,x*16,y*16);}
+ else{let im=SPR.tiles[t][0];const k=TILE_DEFS[t].k;if(STYLE_TILES[k+':'+STYLE_LIST[WORLD.style[i]]])im=STYLE_TILES[k+':'+STYLE_LIST[WORLD.style[i]]];c.drawImage(im,x*16,y*16);}}
+for(const ch of WORLD.objs.chests)c.drawImage(SPR.obj.chest,ch.x*16,ch.y*16);
+for(const s of WORLD.objs.saves)c.drawImage(SPR.obj.crystal,s.x*16,s.y*16);
+c.fillStyle='rgba(255,0,0,.6)';for(const s of WORLD.objs.spawns)c.fillRect(s.x*16+4,s.y*16+4,8,8);
+c.fillStyle='rgba(255,255,0,.9)';for(const s of WORLD.objs.hidden)c.fillRect(s.x*16+2,s.y*16+2,12,12);
+</script></body></html>

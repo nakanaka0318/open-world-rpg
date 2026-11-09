@@ -89,20 +89,15 @@ const Gacha = {
         ten.onclick = e => { e.stopPropagation(); focus = 1; go(10); };
         btns.append(one, ten);
         body.appendChild(btns);
-        const info = U.el('div', 'g-info', '提供キャラ一覧 ▸');
+        const links = U.el('div', 'g-links');
+        const info = U.el('div', 'g-info', b.kind === 'char' ? '提供キャラ一覧 ▸' : '提供武具一覧 ▸');
         info.onclick = e => { e.stopPropagation(); showPool(b); };
-        body.appendChild(info);
+        const hist = U.el('div', 'g-info', '召喚履歴 ▸');
+        hist.onclick = e => { e.stopPropagation(); this.history(); };
+        links.append(info, hist);
+        body.appendChild(links);
       };
-      const showPool = (b) => {
-        const lines = [];
-        if (b.kind === 'char') {
-          for (const r of [5, 4, 3]) {
-            const pool = charPool(r, { limited: b.limited }).filter(k => b.limited || k !== 'stella');
-            lines.push(`★${r}: ` + pool.map(k => CHARS[k].n + (b.pickup === k ? '(UP)' : '') + (G.roster[k] ? '✓' : '')).join('、'));
-          }
-        } else for (const r of [5, 4, 3]) lines.push(`★${r}: ` + equipPool(r).map(k => EQUIPS[k].n + (G.equips[k] ? '✓' : '')).join('、'));
-        UI.say(lines.join('\n'));
-      };
+      const showPool = (b) => this.pool(b);
       const go = async (n) => {
         const b = banners[bi];
         const cost = n === 10 ? (b.tenCost || GACHA_COST.ten) : GACHA_COST.single;
@@ -112,7 +107,7 @@ const Gacha = {
         const c = await UI.ask(`星晶石 ${cost} 個を使って\n${n === 10 ? '10連' : '単発'}召喚しますか?\n(所持: ${G.stones})`, ['召喚する!', 'やめる']);
         if (c !== 0) return;
         G.stones -= cost;
-        if (b.id === 'beginner') G.gacha.beginnerDone = true;
+        if (b.once) { G.gacha.used = G.gacha.used || {}; G.gacha.used[b.id] = 1; if (b.id === 'beginner') G.gacha.beginnerDone = true; }
         const results = this.roll(b, n);
         G.gacha.total += n;
         await this.summon(results, b);
@@ -135,6 +130,40 @@ const Gacha = {
     });
   },
 
+  // 提供一覧 (所持していないものはシルエット)
+  pool(b) {
+    return new Promise(res => {
+      const L = Menu.screen(b.kind === 'char' ? '提供キャラ一覧' : '提供武具一覧');
+      L.onClosed = res;
+      let html = `<div class="sc-note">${U.esc(b.n)} ／ ★5 ${b.rates[0]}%・★4 ${b.rates[1]}%・★3 ${b.rates[2]}%</div>`;
+      for (const r of [5, 4, 3]) {
+        const ids = b.kind === 'char' ? charPool(r).concat(r === 5 && b.limited ? ['stella'] : []) : equipPool(r);
+        const own = ids.filter(k => b.kind === 'char' ? G.roster[k] : G.equips[k]).length;
+        html += `<div class="pool-sec"><span class="rar r${r}">${'★'.repeat(r)}</span> <small class="dim">所持 ${own}/${ids.length}</small></div><div class="pool-grid">`;
+        for (const k of ids) {
+          const has = b.kind === 'char' ? G.roster[k] : G.equips[k];
+          const up = b.pickup === k || (b.elem && b.kind === 'char' && CHARS[k].elem === b.elem && r >= 4);
+          const d = b.kind === 'char' ? CHARS[k] : EQUIPS[k];
+          const img = b.kind === 'char' ? portraitURL(d.look) : equipIconURL(k);
+          html += `<div class="pool-c ${has ? '' : 'no'} ${up ? 'up' : ''}">${up ? '<span class="pu">UP</span>' : ''}<img src="${img}"><div>${has ? U.esc(d.n) : '???'}</div>${b.kind === 'char' ? `<div style="color:${ELEM[d.elem].c}">${ELEM[d.elem].n}</div>` : ''}</div>`;
+        }
+        html += '</div>';
+      }
+      L.body.innerHTML = html;
+    });
+  },
+  history() {
+    const hs = (G.gacha.history || []).map((h, i) => Object.assign({ i }, h));
+    return Menu.tabList({
+      title: '召喚履歴 (最新50件)',
+      tabs: [{ n: 'すべて' }, { n: '★5', f: h => h.r === 5 }, { n: '★4', f: h => h.r === 4 }, { n: 'キャラ', f: h => h.k === 'char' }, { n: '武具', f: h => h.k === 'equip' }],
+      items: () => hs,
+      label: h => { const d = h.k === 'char' ? CHARS[h.id] : EQUIPS[h.id]; return `<img class="ico" src="${h.k === 'char' ? portraitURL(d.look) : equipIconURL(h.id)}"><span class="rar r${h.r}">${'★'.repeat(h.r)}</span> ${U.esc(d.n)}`; },
+      empty: 'まだ召喚していない',
+      onSelect: async () => { },
+    });
+  },
+
   roll(b, n) {
     const out = [];
     for (let i = 0; i < n; i++) {
@@ -143,8 +172,10 @@ const Gacha = {
       if (n === 10 && i === 9 && out.every(o => o.rar < 4) && rar < 4) rar = 4;
       let id;
       if (b.kind === 'char') {
+        let pool = charPool(rar);
+        if (b.elem && rar >= 4 && Math.random() < 0.6) { const ep = pool.filter(k => CHARS[k].elem === b.elem); if (ep.length) pool = ep; }
         if (rar === 5 && b.pickup && Math.random() < 0.5) id = b.pickup;
-        else { const pool = charPool(rar); id = pool[Math.floor(Math.random() * pool.length)]; }
+        else id = pool[Math.floor(Math.random() * pool.length)];
         out.push({ kind: 'char', id, rar });
       } else {
         const pool = equipPool(rar);

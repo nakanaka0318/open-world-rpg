@@ -269,6 +269,17 @@ const EXTRA_HOUSES = [
   { id: 'seahut', name: '灯台守の家', bp: 'house2', x: 214, y: 182, roof: 'blue', npcs: ['lighthouse'], ground: 'grass', from: 'L.e' },
 ];
 
+// 野外の転移クリスタル。ここに1行足すだけで増やせます。
+//  at: 置きたい場所のおおよその座標 (近くの道ばたに自動で置かれます)
+const WAYPOINTS = [
+  { id: 'wp_bridge', name: '湖畔の橋たもと', at: [134, 128] },
+  { id: 'wp_westriver', name: '西の川の渡し', at: [70, 112] },
+  { id: 'wp_snowpass', name: '雪原の峠', at: [128, 52] },
+  { id: 'wp_volcroad', name: '火山への街道', at: [190, 140] },
+  { id: 'wp_dunes', name: '砂丘の休憩所', at: [96, 196] },
+  { id: 'wp_forest', name: '森の分かれ道', at: [52, 168] },
+];
+
 // ---------- ビルダー ----------
 const WORLD = {};
 
@@ -467,7 +478,7 @@ function buildWorld() {
     for (const d of tw.decor) {
       const x = tw.x + d[1], y = tw.y + d[2];
       if (d[0] === 'well') { tiles[idx(x, y)] = T.WELL; info.well = { x, y }; }
-      if (d[0] === 'save') { objs.saves.push({ id: tw.id, x, y, name: d[3] }); }
+      if (d[0] === 'save') { objs.saves.push({ id: tw.id, x, y, name: d[3], group: 'town' }); }
     }
     for (const n of tw.npcs) objs.npcs.push({ id: n[0], x: tw.x + n[1], y: tw.y + n[2], wander: true, home: { x: tw.x, y: tw.y, w: tw.w, h: tw.h } });
     for (const s of tw.signs) { tiles[idx(tw.x + s[0], tw.y + s[1])] = T.SIGN; objs.signs.push({ x: tw.x + s[0], y: tw.y + s[1], text: s[2] }); }
@@ -521,7 +532,7 @@ function buildWorld() {
         case 'H': t = T.HOLE; objs.holes.push({ x: wx, y: wy, struct: dg.id }); break;
         case 'X': t = T.RUNE; objs.runes.push({ x: wx, y: wy, struct: dg.id }); break;
         case '$': objs.chests.push(Object.assign({ id: 'c' + (chestId++), x: wx, y: wy }, dg.chests[ci++] || { stones: 50 })); break;
-        case 'S': objs.saves.push({ id: dg.id, x: wx, y: wy, name: dg.name }); break;
+        case 'S': objs.saves.push({ id: dg.id + (objs.saves.some(q => q.id === dg.id) ? '_2' : ''), x: wx, y: wy, name: dg.name + (objs.saves.some(q => q.id === dg.id) ? ' 奥' : ''), group: 'dungeon' }); break;
         case '!': t = T.TABLET; objs.tablets.push({ x: wx, y: wy, text: dg.tablets[ti++] || '…' }); break;
         case 'Z': objs.bosses.push({ id: dg.id, x: wx, y: wy, enemy: dg.boss.enemy, crystal: dg.boss.crystal, struct: dg.id }); break;
         case 'R': case 'Q': t = T.RDOOR; objs.rdoors.push({ id: dg.id + '_' + ch, x: wx, y: wy, riddle: dg.riddles[ch], struct: dg.id }); break;
@@ -552,9 +563,9 @@ function buildWorld() {
       tiles[i] = r < 0.6 ? set[0] : r < 0.85 ? set[1] : set[2];
     }
     // 入口前の転移クリスタル
-    for (const [ox, oy] of [[3, 1], [-3, 1], [3, 2], [-3, 2]]) {
+    for (const [ox, oy] of [[2, 2], [-2, 2], [2, 3], [-2, 3], [2, 1], [-2, 1]]) {
       const x = e.x + ox, y = e.y + oy, i = idx(x, y);
-      if (!TILE_DEFS[tiles[i]].solid && !region[i]) { objs.saves.push({ id: dg.id + '_out', x, y, name: dg.name + ' 入口' }); reserved[i] = 1; break; }
+      if (!TILE_DEFS[tiles[i]].solid && !region[i]) { objs.saves.push({ id: dg.id + '_out', x, y, name: dg.name + ' 入口', group: 'gate' }); reserved[i] = 1; break; }
     }
   }
   // 魔王城の入口から橋まで道を通す
@@ -611,6 +622,22 @@ function buildWorld() {
   for (const eh of EXTRA_HOUSES) { const [t, g] = eh.from.split('.'); ROADS.push([GATES[t][g], extraDoors[eh.id]]); }
   for (const [a, b] of ROADS) road(a, b);
   for (const k in dunInfo) { const d = dunInfo[k].door; }
+
+  // 小屋の前と野外にも転移クリスタル
+  const placeSave = (cx, cy, base) => {
+    let best = null, bd = 1e9;
+    for (let y = cy - 10; y <= cy + 10; y++) for (let x = cx - 10; x <= cx + 10; x++) {
+      if (!inb(x, y)) continue;
+      const i = idx(x, y);
+      if (TILE_DEFS[tiles[i]].solid || reserved[i] || region[i] || tiles[i] === T.PATH || tiles[i] === T.BRIDGE) continue;
+      const nearPath = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => tiles[idx(x + dx, y + dy)] === T.PATH);
+      const d = Math.abs(x - cx) + Math.abs(y - cy) + (nearPath ? 0 : 12);
+      if (d < bd) { bd = d; best = { x, y }; }
+    }
+    if (best) { objs.saves.push(Object.assign({ x: best.x, y: best.y }, base)); reserved[idx(best.x, best.y)] = 1; }
+  };
+  for (const w of WAYPOINTS) placeSave(w.at[0], w.at[1], { id: w.id, name: w.name, group: 'field' });
+  for (const eh of EXTRA_HOUSES) { const d = extraDoors[eh.id]; placeSave(d.x + 3, d.y + 1, { id: eh.id, name: eh.name, group: 'hut' }); }
 
   // 7. 野外の宝箱・隠し宝・石碑
   const walk = i => !TILE_DEFS[tiles[i]].solid;

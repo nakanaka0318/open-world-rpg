@@ -331,3 +331,25 @@ body.touch #pad { display: flex; }
   .mn-grid .li { padding-top: .3em; padding-bottom: .3em; }
   .mp-c img { width: 2.4em; height: 2.4em; }
 }
+
+/* ---------- タブ付きリスト ---------- */
+.tl-bar { display: flex; gap: .4em; align-items: center; margin-bottom: .3em; }
+.tl-tabs { flex: 1; display: flex; gap: .3em; overflow-x: auto; padding-bottom: .2em; touch-action: pan-x; scrollbar-width: thin; min-width: 0; }
+.tl-tab { white-space: nowrap; padding: .15em .65em; border-radius: 999px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .25); font-size: .8em; cursor: pointer; }
+.tl-tab small { margin-left: .35em; color: #9fd4ff; font-size: .85em; }
+.tl-tab.cur { background: linear-gradient(#6a8af0, #3a4ab8); border-color: var(--gold); font-weight: bold; }
+.tl-tab.empty { opacity: .5; }
+.tl-sort { white-space: nowrap; font-size: .75em; padding: .15em .6em; border-radius: 6px; background: rgba(0, 0, 0, .3); border: 1px solid rgba(255, 255, 255, .25); cursor: pointer; flex: 0 0 auto; }
+.tl-sort b { color: var(--gold); }
+.lm .lsep { font-size: .75em; color: var(--gold); padding: .4em .3em .1em; border-bottom: 1px solid rgba(255, 217, 74, .35); letter-spacing: .05em; }
+.tp { color: #7fe8ff; margin-right: .3em; }
+.eqmini { display: flex; gap: 2px; flex: 0 0 auto; }
+.eqmini img, .eqmini i { width: 1.3em; height: 1.3em; display: inline-block; background: rgba(0, 0, 0, .25); border-radius: 3px; }
+.pool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(4.6em, 1fr)); gap: .4em; }
+.pool-c { position: relative; text-align: center; font-size: .7em; background: rgba(255, 255, 255, .06); border-radius: 6px; padding: .3em .2em; border: 1px solid rgba(255, 255, 255, .15); }
+.pool-c img { width: 4em; height: 4em; display: block; margin: 0 auto; }
+.pool-c.no img { filter: brightness(0) opacity(.45); }
+.pool-c.up { border-color: var(--gold); box-shadow: 0 0 6px rgba(255, 217, 74, .6); }
+.pool-c .pu { position: absolute; top: 2px; left: 2px; background: #e43b44; border-radius: 3px; padding: 0 .3em; font-weight: bold; }
+.pool-sec { margin: .5em 0 .3em; font-weight: bold; }
+.g-links { display: flex; gap: 1.2em; justify-content: center; }

@@ -12,7 +12,8 @@ class ListMenu {
     this.items = items;
     this.el.innerHTML = '';
     this.nodes = items.map((it, i) => {
-      const n = U.el('div', 'li' + (it.disabled ? ' dis' : '') + (it.cls ? ' ' + it.cls : ''), it.label);
+      const n = U.el('div', (it.sep ? 'lsep' : 'li') + (it.disabled ? ' dis' : '') + (it.cls ? ' ' + it.cls : ''), it.label);
+      if (it.sep) { this.el.appendChild(n); return n; }
       n.addEventListener('click', e => {
         e.stopPropagation();
         if (this.locked) return;
@@ -24,6 +25,7 @@ class ListMenu {
     });
     if (!keepIndex) this.i = Math.min(this.i, Math.max(0, items.length - 1));
     else this.i = U.clamp(this.i, 0, Math.max(0, items.length - 1));
+    if (items[this.i] && items[this.i].sep) { const j = items.findIndex(x => !x.sep); this.i = j < 0 ? 0 : j; }
     this.mark();
   }
   mark() {
@@ -39,11 +41,13 @@ class ListMenu {
     if (d === 'up') i -= c; else if (d === 'down') i += c; else if (d === 'left') i -= (c > 1 ? 1 : 0); else if (d === 'right') i += (c > 1 ? 1 : 0);
     if (c === 1 && (d === 'left' || d === 'right')) { if (this.o.onLR) this.o.onLR(d); return; }
     i = (i + n) % n;
+    const step = (d === 'up' || d === 'left') ? -1 : 1;
+    for (let k = 0; k < n && this.items[i] && this.items[i].sep; k++) i = (i + step + n) % n;
     if (i !== this.i) { this.i = i; Sound.play('cursor'); this.mark(); }
   }
   select() {
     const it = this.items[this.i];
-    if (!it) return;
+    if (!it || it.sep) return;
     if (it.disabled) { Sound.play('buzz'); return; }
     Sound.play('ok');
     if (this.o.onSelect) this.o.onSelect(this.i, it);

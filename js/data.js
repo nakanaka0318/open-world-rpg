@@ -65,6 +65,12 @@ const SKILLS = {
   haste: { n: '疾風の加護', mp: 8, type: 'buff', target: 'allies', stat: 'spd', mul: 1.5, turns: 3, desc: '味方全員の素早さUP' },
   curse: { n: 'カース', mp: 6, type: 'debuff', target: 'enemy', stat: 'atk', mul: 0.7, turns: 3, desc: '敵1体の攻撃DOWN' },
   break: { n: 'アーマーブレイク', mp: 6, type: 'debuff', target: 'enemy', stat: 'def', mul: 0.6, turns: 3, desc: '敵1体の防御DOWN' },
+  tidal: { n: 'タイダルウェイブ', mp: 20, type: 'mag', target: 'enemies', pow: 1.9, elem: 'water', desc: '大波で敵全体を押し流す' },
+  umisong: { n: '潮騒の歌', mp: 16, type: 'heal', target: 'allies', pow: 1.4, buff: ['def', 1.3, 3], desc: '全員を回復し防御UP' },
+  dragonlance: { n: 'ドラゴンランス', mp: 14, type: 'phys', target: 'enemy', pow: 2.5, elem: 'earth', desc: '竜の力を宿す必殺の槍' },
+  firedance: { n: '炎の舞', mp: 7, type: 'phys', target: 'enemy', pow: 1.0, hits: 2, elem: 'fire', desc: '炎をまとう二連撃' },
+  iai: { n: '居合・桜花', mp: 9, type: 'phys', target: 'enemy', pow: 2.2, desc: '一瞬の抜刀術' },
+  sakura: { n: '千本桜', mp: 16, type: 'phys', target: 'enemies', pow: 1.3, elem: 'wind', desc: '花吹雪の斬撃で全体攻撃' },
   // 敵専用
   e_bite: { n: 'かみつき', type: 'phys', target: 'enemy', pow: 1.3 },
   e_poison: { n: 'どくばり', type: 'phys', target: 'enemy', pow: 0.9, poison: 0.6 },
@@ -199,6 +205,63 @@ const CHARS = {
     look: { hair: '#5ad0c8', eye: '#2a6a8a', cloth: '#2a3a6a', acc: '#ffffff', accType: 'ribbon', style: 'twin' },
     profile: '教会のちびっこシスター。背伸びしたいお年頃。',
   },
+  // ---- 追加キャラ ----
+  marina: {
+    n: 'マリナ', title: '蒼海の歌姫', rar: 5, elem: 'water', role: '歌姫', gacha: true,
+    base: { hp: 54, mp: 30, atk: 9, def: 11, mag: 20, spd: 12 }, grow: { hp: 10, mp: 3.6, atk: 1.4, def: 1.9, mag: 3.4, spd: 1.5 },
+    skills: [[1, 'aqua'], [1, 'heal'], [6, 'umisong'], [12, 'tidal'], [18, 'revive']],
+    look: { hair: '#3a8ae8', eye: '#5ae8f0', cloth: '#e8f8ff', acc: '#f6a2c0', accType: 'flower', style: 'long' },
+    profile: '海辺の国の歌姫。歌声で波をあやつる。泳ぎは苦手。',
+  },
+  terra: {
+    n: 'テラ', title: '大地の竜騎姫', rar: 5, elem: 'earth', role: '竜騎士', gacha: true,
+    base: { hp: 70, mp: 16, atk: 20, def: 16, mag: 8, spd: 9 }, grow: { hp: 13, mp: 2.0, atk: 3.5, def: 2.8, mag: 1.2, spd: 1.2 },
+    skills: [[1, 'rockhammer'], [4, 'ironwall'], [9, 'dragonlance'], [15, 'quake']],
+    look: { hair: '#c8a060', eye: '#3f8f3e', cloth: '#8a6a3a', acc: '#e8b83a', accType: 'horns', style: 'pony' },
+    profile: '竜の血を引く騎士。大食いで、おやつの時間は譲らない。',
+  },
+  akane: {
+    n: 'アカネ', title: '炎の踊り子', rar: 4, elem: 'fire', role: '踊り子', gacha: true,
+    base: { hp: 50, mp: 18, atk: 15, def: 9, mag: 12, spd: 15 }, grow: { hp: 9, mp: 2.4, atk: 2.8, def: 1.5, mag: 2.0, spd: 1.9 },
+    skills: [[1, 'firedance'], [5, 'cheer'], [10, 'fire'], [16, 'firestorm']],
+    look: { hair: '#f08a24', eye: '#e43b44', cloth: '#e43b44', acc: '#f5c542', accType: 'hairpin', style: 'pony' },
+    profile: '旅一座の看板娘。踊りだすと止まらない。',
+  },
+  lilith: {
+    n: 'リリス', title: '小悪魔シスター', rar: 4, elem: 'dark', role: 'シスター', gacha: true,
+    base: { hp: 46, mp: 24, atk: 9, def: 9, mag: 17, spd: 13 }, grow: { hp: 8, mp: 3.0, atk: 1.3, def: 1.6, mag: 3.0, spd: 1.6 },
+    skills: [[1, 'shadow'], [3, 'drain'], [8, 'curse'], [14, 'darkball']],
+    look: { hair: '#4a3060', eye: '#e43b44', cloth: '#2a2238', acc: '#a8303a', accType: 'horns', style: 'twin' },
+    profile: '教会に住みついた小悪魔。いたずら好きだけど根は優しい。',
+  },
+  tsubaki: {
+    n: 'ツバキ', title: '桜の侍', rar: 4, elem: 'wind', role: '侍', gacha: true,
+    base: { hp: 54, mp: 14, atk: 18, def: 11, mag: 7, spd: 14 }, grow: { hp: 10, mp: 1.8, atk: 3.3, def: 1.9, mag: 1.0, spd: 1.8 },
+    skills: [[1, 'iai'], [6, 'double'], [12, 'sakura'], [18, 'rage']],
+    look: { hair: '#f6a2c0', eye: '#8a3a5a', cloth: '#3a2a5a', acc: '#ffffff', accType: 'band', style: 'pony' },
+    profile: '東の国から来た剣士。桜餅に目がない。',
+  },
+  sora: {
+    n: 'ソラ', title: '見習い騎士', rar: 3, elem: 'light', role: '騎士', gacha: true,
+    base: { hp: 52, mp: 10, atk: 13, def: 12, mag: 6, spd: 9 }, grow: { hp: 10, mp: 1.4, atk: 2.5, def: 2.1, mag: 1.0, spd: 1.2 },
+    skills: [[1, 'slash'], [8, 'guard']],
+    look: { hair: '#f2d06e', eye: '#3a7ad8', cloth: '#8a92a6', acc: '#ffe66d', accType: 'halo', style: 'bob' },
+    profile: '騎士団の新入り。いつか聖騎士になるのが夢。',
+  },
+  mint: {
+    n: 'ミント', title: '薬草摘みの少女', rar: 3, elem: 'wind', role: '薬師', gacha: true,
+    base: { hp: 44, mp: 20, atk: 7, def: 9, mag: 12, spd: 11 }, grow: { hp: 8, mp: 2.6, atk: 1.1, def: 1.6, mag: 2.1, spd: 1.4 },
+    skills: [[1, 'heal'], [4, 'cure'], [8, 'gust']],
+    look: { hair: '#8ae8a0', eye: '#3a8a5a', cloth: '#f4f0e8', acc: '#ffffff', accType: 'bunny', style: 'twin' },
+    profile: '森で薬草を集める少女。うさぎの耳飾りがお気に入り。',
+  },
+  chloe: {
+    n: 'クロエ', title: '黒猫の使い魔', rar: 3, elem: 'dark', role: '使い魔', gacha: true,
+    base: { hp: 42, mp: 18, atk: 12, def: 8, mag: 11, spd: 15 }, grow: { hp: 7, mp: 2.3, atk: 2.2, def: 1.3, mag: 1.9, spd: 1.9 },
+    skills: [[1, 'shadow'], [6, 'double'], [12, 'curse']],
+    look: { hair: '#42425e', eye: '#ffe66d', cloth: '#4a3a6a', acc: '#e43b44', accType: 'cat', style: 'bob' },
+    profile: '魔女に仕える黒猫が少女の姿になった。気まぐれ。',
+  },
 };
 
 // ---------- 装備 ----------
@@ -238,13 +301,15 @@ const SLOT_N = { w: '武器', a: '防具', x: 'アクセ' };
 const STAT_N = { hp: 'HP', mp: 'MP', atk: '攻撃', def: '防御', mag: '魔力', spd: '素早' };
 
 // ---------- アイテム ----------
+// cat: heal(回復) / status(状態回復) / rare(貴重品)。カテゴリはメニューのタブに使われます。
+const ITEM_CATS = [['all', 'すべて'], ['heal', '回復'], ['status', '状態'], ['rare', '貴重品']];
 const ITEMS = {
-  potion: { n: 'ポーション', price: 30, type: 'heal', amt: 60, desc: 'HPを60回復' },
-  hipotion: { n: 'ハイポーション', price: 120, type: 'heal', amt: 220, desc: 'HPを220回復' },
-  ether: { n: 'エーテル', price: 100, type: 'mp', amt: 30, desc: 'MPを30回復' },
-  antidote: { n: 'どくけし草', price: 20, type: 'cure', desc: '毒を治す' },
-  feather: { n: '天使の羽', price: 240, type: 'revive', amt: 0.5, desc: '戦闘不能から復活' },
-  elixir: { n: 'エリクサー', price: 0, type: 'full', desc: 'HPとMPを全回復' },
+  potion: { n: 'ポーション', cat: 'heal', price: 30, type: 'heal', amt: 60, desc: 'HPを60回復' },
+  hipotion: { n: 'ハイポーション', cat: 'heal', price: 120, type: 'heal', amt: 220, desc: 'HPを220回復' },
+  ether: { n: 'エーテル', cat: 'heal', price: 100, type: 'mp', amt: 30, desc: 'MPを30回復' },
+  antidote: { n: 'どくけし草', cat: 'status', price: 20, type: 'cure', desc: '毒を治す' },
+  feather: { n: '天使の羽', cat: 'status', price: 240, type: 'revive', amt: 0.5, desc: '戦闘不能から復活' },
+  elixir: { n: 'エリクサー', cat: 'rare', price: 0, type: 'full', desc: 'HPとMPを全回復' },
 };
 
 // ---------- 敵 ----------
@@ -291,23 +356,31 @@ const AREAS = {
 
 // ---------- ガチャ ----------
 const GACHA_COST = { single: 50, ten: 500 };
-const PICKUP_ROT = ['seres', 'noa', 'homura', 'sylphy'];
+const PICKUP_ROT = ['seres', 'noa', 'homura', 'sylphy', 'marina', 'terra'];
 function charPool(rar, opts = {}) {
   return Object.keys(CHARS).filter(k => CHARS[k].rar === rar && (CHARS[k].gacha || (opts.limited && k === 'stella')));
 }
 function equipPool(rar) { return Object.keys(EQUIPS).filter(k => EQUIPS[k].rar === rar); }
+// バナーはこの配列に1行足すだけで増やせます。
+//  show(G): 表示条件 / pickup: 確率UPの★5 / pickup4: 確率UPの★4 / elem: その属性のキャラが出やすい
+//  rates: [★5%, ★4%, ★3%] / tenCost: 10連の価格 / onlyTen: 10連のみ / once: 1回限り
+const BANNER_DEFS = [
+  { id: 'beginner', n: 'はじめての召喚', sub: '1回限り!10連が半額 ★4以上1枠確定', kind: 'char', rates: [3, 15, 82], tenCost: 250, onlyTen: true, once: true, color: '#ff9fd0', show: g => !g.gacha.beginnerDone, feature: () => weeklyPickup() },
+  { id: 'pickup', n: g => CHARS[weeklyPickup()].n + ' ピックアップ', sub: () => '期間限定!今週の★5 ' + CHARS[weeklyPickup()].n + ' 出現率UP', kind: 'char', rates: [3, 12, 85], pickup: () => weeklyPickup(), color: () => ELEM[CHARS[weeklyPickup()].elem].c },
+  { id: 'limited', n: '【限定】星詠みの姫君', sub: '水晶の加護により解放!限定★5 ステラ登場', kind: 'char', rates: [3, 12, 85], pickup: 'stella', limited: true, color: '#ffe66d', show: g => g.crystals.length >= 2 },
+  { id: 'elem', n: () => ELEM[weeklyElem()].n + '属性フェス', sub: () => '今週は' + ELEM[weeklyElem()].n + '属性のキャラが出やすい!(該当★4・★5の出現率UP)', kind: 'char', rates: [3, 12, 85], elem: () => weeklyElem(), color: () => ELEM[weeklyElem()].c, show: g => g.crystals.length >= 1, feature: () => charPool(5).find(k => CHARS[k].elem === weeklyElem()) || 'seres' },
+  { id: 'equip', n: '武具召喚', sub: '強力な武器・防具・アクセサリーが手に入る', kind: 'equip', rates: [4, 16, 80], color: '#c8d0e0' },
+];
+function weeklyPickup() { return PICKUP_ROT[U.weekIndex() % PICKUP_ROT.length]; }
+function weeklyElem() { const es = ['fire', 'water', 'wind', 'earth', 'light', 'dark']; return es[(U.weekIndex() + 3) % es.length]; }
 function getBanners(state) {
-  const pick = PICKUP_ROT[U.weekIndex() % PICKUP_ROT.length];
-  const list = [];
-  if (!state.gacha.beginnerDone) {
-    list.push({ id: 'beginner', n: 'はじめての召喚', sub: '1回限り!10連が半額 ★4以上1枠確定', kind: 'char', rates: [3, 15, 82], tenCost: 250, onlyTen: true, feature: 'aria' === pick ? 'seres' : pick, color: '#ff9fd0' });
-  }
-  list.push({ id: 'pickup', n: CHARS[pick].n + ' ピックアップ', sub: '期間限定!今週の★5 ' + CHARS[pick].n + ' 出現率UP', kind: 'char', rates: [3, 12, 85], pickup: pick, feature: pick, color: ELEM[CHARS[pick].elem].c });
-  if (state.crystals.length >= 2) {
-    list.push({ id: 'limited', n: '【限定】星詠みの姫君', sub: '水晶の加護により解放! 限定★5 ステラ登場', kind: 'char', rates: [3, 12, 85], pickup: 'stella', limited: true, feature: 'stella', color: '#ffe66d' });
-  }
-  list.push({ id: 'equip', n: '武具召喚', sub: '強力な武器・防具・アクセサリーが手に入る', kind: 'equip', rates: [4, 16, 80], feature: null, color: '#c8d0e0' });
-  return list;
+  const v = (x) => typeof x === 'function' ? x(state) : x;
+  return BANNER_DEFS.filter(d => (!d.show || d.show(state)) && !(d.once && state.gacha.used && state.gacha.used[d.id])).map(d => {
+    const b = Object.assign({}, d);
+    for (const k of ['n', 'sub', 'color', 'pickup', 'elem', 'feature']) b[k] = v(d[k]);
+    if (b.kind === 'char' && !b.feature) b.feature = b.pickup || null;
+    return b;
+  });
 }
 
 // ---------- 経験値 ----------

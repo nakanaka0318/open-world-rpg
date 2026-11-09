@@ -1,0 +1,22 @@
+const { chromium, devices } = require('playwright');
+const SP = process.env.SP;
+(async () => {
+  const b = await chromium.launch();
+  const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage();
+  p.on('pageerror', e => console.log('PAGEERR', e.message, (e.stack || '').split('\n').slice(0, 3).join(' | ')));
+  await p.goto('file://' + process.cwd() + '/index.html');
+  await p.waitForTimeout(600);
+  await p.evaluate(() => { UI.pop(UI.stack[0]); buildWorld(); newGame(); Field.init(); Game.scene = 'field'; Game.hud();
+    for (const k in CHARS) if (k !== 'aria' && Math.random() < 0.8) obtainChar(k);
+    for (const s of WORLD.objs.saves) G.saves[s.id] = 1; G.crystals = ['wind'];
+    for (let i = 0; i < 30; i++) Gacha.roll(getBanners(G)[1], 1); });
+  const sh = n => p.screenshot({ path: `${SP}/X_${n}.png` });
+  await p.evaluate(() => { Field.busy = true; Menu.party(); }); await p.waitForTimeout(400); await sh('party');
+  await p.keyboard.press('ArrowRight'); await p.keyboard.press('ArrowRight'); await p.keyboard.press('ArrowRight'); await p.waitForTimeout(200); await p.keyboard.press('KeyC'); await p.waitForTimeout(200); await sh('party_water');
+  await p.evaluate(() => { for (const l of UI.stack.slice()) UI.pop(l); Menu.teleport('lumina'); }); await p.waitForTimeout(400); await sh('teleport');
+  await p.evaluate(() => { for (const l of UI.stack.slice()) UI.pop(l); Gacha.open('elem'); }); await p.waitForTimeout(400); await sh('gacha_elem');
+  await p.locator('.g-info').first().click(); await p.waitForTimeout(400); await sh('pool');
+  await p.evaluate(() => { for (const l of UI.stack.slice()) UI.pop(l); Gacha.history(); }); await p.waitForTimeout(400); await sh('history');
+  await p.evaluate(() => { for (const l of UI.stack.slice()) UI.pop(l); Menu.items(); }); await p.waitForTimeout(400); await sh('items');
+  await b.close();
+})();

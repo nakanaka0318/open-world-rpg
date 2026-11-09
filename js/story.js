@@ -193,11 +193,8 @@ const Story = {
       if (saveGame()) { Sound.play('ok'); await UI.say('冒険の記録をセーブしました。'); }
       else await UI.say('セーブに失敗しました…(ブラウザの保存領域を確認してください)');
     } else if (c === 1) {
-      const list = WORLD.objs.saves.filter(s => G.saves[s.id] && s.id !== o.id);
-      if (!list.length) { await UI.say('転移できるクリスタルがまだない。\n各地のクリスタルに触れると登録されます。'); return; }
-      const r = await UI.ask('どこへ転移しますか?', list.map(s => s.name));
-      if (r < 0) return;
-      const s = list[r];
+      const s = await Menu.teleport(o.id);
+      if (!s) return;
       Sound.play('magic');
       await UI.fade('#fff', 300, 100, 300, () => {
         for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) if (Field.walkable(s.x + dx, s.y + dy)) { Field.teleport(s.x + dx, s.y + dy, 'u'); break; }

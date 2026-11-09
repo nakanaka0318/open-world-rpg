@@ -71,46 +71,103 @@ const Menu = {
     });
   },
 
+  // ---------- 汎用: タブ付きリスト画面 ----------
+  // キャラ・アイテム・転移先などが増えても使いやすいように、タブ(絞り込み)・並び替え・スクロールをまとめた部品。
+  //  tabs: [{ n, f(item) }]  sorts: [{ n, cmp(a,b) }]  items(): 全項目  label(item): HTML
+  //  onSelect(item, ctx): 選択時 (ctx.refresh() で再描画、ctx.close() で閉じる)
+  tabList(o) {
+    return new Promise(res => {
+      const L = this.screen(o.title, { cls: o.cls || '' });
+      L.onClosed = res;
+      let ti = o.tab || 0, si = 0;
+      const bar = U.el('div', 'tl-bar');
+      const tabsEl = U.el('div', 'tl-tabs');
+      const sortEl = U.el('div', 'tl-sort');
+      bar.append(tabsEl);
+      if (o.sorts && o.sorts.length > 1) bar.append(sortEl);
+      const note = U.el('div', 'sc-note');
+      const listEl = U.el('div', 'sc-list');
+      L.body.append(bar);
+      if (o.note) L.body.append(note);
+      L.body.append(listEl);
+      let cur = [];
+      const ctx = { refresh: (keep = true) => render(keep), close: () => L.close(), L };
+      const render = (keep) => {
+        const all = o.items();
+        const tabs = o.tabs || [{ n: 'すべて' }];
+        tabsEl.innerHTML = '';
+        tabs.forEach((t, i) => {
+          const cnt = all.filter(x => !t.f || t.f(x)).length;
+          const c = U.el('div', 'tl-tab' + (i === ti ? ' cur' : '') + (cnt ? '' : ' empty'), U.esc(t.n) + (o.counts !== false ? `<small>${cnt}</small>` : ''));
+          c.onclick = e => { e.stopPropagation(); ti = i; Sound.play('cursor'); render(false); };
+          tabsEl.appendChild(c);
+        });
+        const curTab = tabsEl.children[ti];
+        if (curTab && curTab.scrollIntoView) try { curTab.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { }
+        if (o.sorts) { sortEl.innerHTML = `並び: <b>${U.esc(o.sorts[si].n)}</b> ⇅`; sortEl.onclick = e => { e.stopPropagation(); si = (si + 1) % o.sorts.length; Sound.play('cursor'); render(false); }; }
+        const t = tabs[ti];
+        cur = all.filter(x => !t.f || t.f(x));
+        if (o.sorts) cur = cur.slice().sort(o.sorts[si].cmp);
+        let items = cur.map(x => ({ label: o.label(x), disabled: o.disabled ? o.disabled(x) : false }));
+        if (o.group) {
+          const out = [], map = [];
+          let last = null;
+          cur.forEach((x, i) => { const g = o.group(x); if (g !== last) { out.push({ sep: true, label: U.esc(g) }); map.push(null); last = g; } out.push(items[i]); map.push(x); });
+          items = out; cur = map;
+        }
+        if (!items.length) { items = [{ label: `<span class="dim">${U.esc(o.empty || 'なにもない')}</span>`, disabled: true }]; cur = [null]; }
+        if (!L.menu) {
+          L.menu = new ListMenu({
+            items,
+            onSelect: async i => { const x = cur[i]; if (!x) return; L.menu.locked = true; try { await o.onSelect(x, ctx); } finally { if (L.menu) L.menu.locked = false; } },
+            onCancel: () => L.close(),
+            onChange: i => { if (o.note) note.innerHTML = cur[i] ? o.note(cur[i]) : ''; },
+            onLR: d => { const n = (o.tabs || [1]).length; if (n < 2) return; ti = (ti + (d === 'left' ? n - 1 : 1)) % n; Sound.play('cursor'); render(false); },
+          });
+          listEl.appendChild(L.menu.el);
+        } else { if (!keep) L.menu.i = 0; L.menu.set(items, keep); }
+        if (o.note) note.innerHTML = cur[L.menu.i] ? o.note(cur[L.menu.i]) : '';
+      };
+      const baseHandle = L.handle;
+      L.handle = k => { if (k === 'menu' && o.sorts) { si = (si + 1) % o.sorts.length; Sound.play('cursor'); render(false); return; } baseHandle(k); };
+      render(false);
+    });
+  },
+  charTabs() {
+    return [{ n: 'すべて' }, { n: 'パーティ', f: id => G.party.includes(id) }].concat(['fire', 'water', 'wind', 'earth', 'light', 'dark'].map(e => ({ n: ELEM[e].n, f: id => CHARS[id].elem === e })));
+  },
+  charSorts() {
+    const po = id => { const i = G.party.indexOf(id); return i < 0 ? 99 : i; };
+    return [
+      { n: '編成順', cmp: (a, b) => po(a) - po(b) || CHARS[b].rar - CHARS[a].rar || G.roster[b].lv - G.roster[a].lv },
+      { n: 'レア度', cmp: (a, b) => CHARS[b].rar - CHARS[a].rar || G.roster[b].lv - G.roster[a].lv },
+      { n: 'レベル', cmp: (a, b) => G.roster[b].lv - G.roster[a].lv || CHARS[b].rar - CHARS[a].rar },
+      { n: '凸数', cmp: (a, b) => G.roster[b].lb - G.roster[a].lb || CHARS[b].rar - CHARS[a].rar },
+    ];
+  },
+
   // ---------- パーティ ----------
   party() {
-    return new Promise(res => {
-      const L = this.screen('パーティ編成');
-      L.onClosed = res;
-      const info = U.el('div', 'sc-note', 'キャラを選んで 編成・リーダー変更・装備ができます (最大4人)');
-      const listEl = U.el('div', 'sc-list');
-      L.body.append(info, listEl);
-      const render = (keep) => {
-        const ids = Object.keys(G.roster).sort((a, b) => {
-          const pa = G.party.indexOf(a), pb = G.party.indexOf(b);
-          if (pa >= 0 || pb >= 0) return (pa < 0 ? 99 : pa) - (pb < 0 ? 99 : pb);
-          return CHARS[b].rar - CHARS[a].rar || G.roster[b].lv - G.roster[a].lv;
-        });
-        L.ids = ids;
-        const items = ids.map(id => {
-          const pi = G.party.indexOf(id);
-          return { label: charLine(G.roster[id], pi >= 0 ? `<div class="tag ${pi === 0 ? 'lead' : ''}">${pi === 0 ? 'リーダー' : 'メンバー'}</div>` : '<div class="tag off">控え</div>') };
-        });
-        if (!L.menu) {
-          L.menu = new ListMenu({ items, onSelect: (i) => act(L.ids[i]), onCancel: () => L.close() });
-          listEl.appendChild(L.menu.el);
-        } else L.menu.set(items, keep);
-      };
-      const act = async (id) => {
+    const tagOf = id => { const pi = G.party.indexOf(id); return pi >= 0 ? `<div class="tag ${pi === 0 ? 'lead' : ''}">${pi === 0 ? 'リーダー' : 'メンバー'}</div>` : '<div class="tag off">控え</div>'; };
+    return this.tabList({
+      title: `パーティ編成 (仲間 ${Object.keys(G.roster).length}/${Object.keys(CHARS).length})`,
+      tabs: this.charTabs(), sorts: this.charSorts(),
+      items: () => Object.keys(G.roster),
+      label: id => charLine(G.roster[id], tagOf(id)),
+      note: () => '◀▶でタブ切替 ／ MENUで並び替え ／ パーティは最大4人',
+      onSelect: async (id, ctx) => {
         const inP = G.party.includes(id);
         const opts = ['ステータス', inP ? 'パーティから外す' : 'パーティに入れる', 'リーダーにする', 'そうび', 'もどる'];
-        L.menu.locked = true;
         const c = await UI.ask(`${CHARS[id].n} をどうする?`, opts);
-        L.menu.locked = false;
         if (c === 0) await this.status(id);
         if (c === 1) {
           if (inP) { if (G.party.length <= 1) { Sound.play('buzz'); UI.toast('最低1人は必要です'); } else G.party = G.party.filter(x => x !== id); }
           else { if (G.party.length >= 4) { const r = await UI.ask('パーティが満員です。\n誰と入れ替えますか?', G.party.map(x => CHARS[x].n)); if (r >= 0) G.party[r] = id; } else G.party.push(id); }
         }
-        if (c === 2) { if (!inP) { if (G.party.length >= 4) G.party[3] = G.party[0]; else G.party.push(G.party[0]); G.party[0] = id; G.party = [...new Set(G.party)]; } else { G.party = [id, ...G.party.filter(x => x !== id)]; } UI.toast(`${CHARS[id].n} がリーダーになった!`); }
+        if (c === 2) { G.party = [id, ...G.party.filter(x => x !== id)].slice(0, 4); UI.toast(`${CHARS[id].n} がリーダーになった!`); }
         if (c === 3) await this.equip(id);
-        render(true);
-      };
-      render();
+        ctx.refresh(true);
+      },
     });
   },
   status(id) {
@@ -130,13 +187,11 @@ const Menu = {
 
   // ---------- 装備 ----------
   equipPick() {
-    return new Promise(async res => {
-      const ids = G.party.concat(Object.keys(G.roster).filter(k => !G.party.includes(k)));
-      const L = this.screen('そうび: キャラを選ぶ');
-      L.onClosed = res;
-      const lm = new ListMenu({ items: ids.map(id => ({ label: charLine(G.roster[id]) })), onSelect: async i => { lm.locked = true; await this.equip(ids[i]); lm.locked = false; lm.set(ids.map(id => ({ label: charLine(G.roster[id]) })), true); }, onCancel: () => L.close() });
-      L.menu = lm;
-      L.body.appendChild(lm.el);
+    return this.tabList({
+      title: 'そうび: キャラを選ぶ', tabs: this.charTabs(), sorts: this.charSorts(),
+      items: () => Object.keys(G.roster),
+      label: id => charLine(G.roster[id], `<div class="eqmini">${['w', 'a', 'x'].map(s => G.roster[id].eq[s] ? `<img src="${equipIconURL(G.roster[id].eq[s])}">` : '<i></i>').join('')}</div>`),
+      onSelect: async (id, ctx) => { await this.equip(id); ctx.refresh(true); },
     });
   },
   equip(id) {
@@ -192,26 +247,18 @@ const Menu = {
 
   // ---------- どうぐ ----------
   items() {
-    return new Promise(res => {
-      const L = this.screen('どうぐ');
-      L.onClosed = res;
-      const desc = U.el('div', 'sc-note', '');
-      const listEl = U.el('div', 'sc-list');
-      L.body.append(desc, listEl);
-      let ids = [];
-      const render = () => {
-        ids = Object.keys(G.items).filter(k => G.items[k] > 0);
-        const items = ids.length ? ids.map(k => ({ label: `${U.esc(ITEMS[k].n)}<span class="mpc">×${G.items[k]}</span>` })) : [{ label: '<span class="dim">なにも持っていない</span>', disabled: true }];
-        if (!L.menu) { L.menu = new ListMenu({ items, onSelect: i => use(ids[i]), onCancel: () => L.close(), onChange: i => { desc.textContent = ids[i] ? ITEMS[ids[i]].desc : ''; } }); listEl.appendChild(L.menu.el); }
-        else L.menu.set(items, true);
-        desc.textContent = ids[L.menu.i] ? ITEMS[ids[L.menu.i]].desc : '';
-      };
-      const use = async (id) => {
+    return this.tabList({
+      title: 'どうぐ',
+      tabs: ITEM_CATS.map(([k, n]) => ({ n, f: k === 'all' ? null : id => (ITEMS[id].cat || 'heal') === k })),
+      sorts: [{ n: '種類順', cmp: (a, b) => Object.keys(ITEMS).indexOf(a) - Object.keys(ITEMS).indexOf(b) }, { n: '所持数', cmp: (a, b) => G.items[b] - G.items[a] }],
+      items: () => Object.keys(G.items).filter(k => G.items[k] > 0 && ITEMS[k]),
+      label: id => `${U.esc(ITEMS[id].n)}<span class="mpc">×${G.items[id]}</span>`,
+      note: id => U.esc(ITEMS[id].desc),
+      empty: 'なにも持っていない',
+      onSelect: async (id, ctx) => {
         const it = ITEMS[id];
         const pc = partyChars();
-        L.menu.locked = true;
         const r = await UI.ask(`${it.n} をだれに使う?`, pc.map(c => { const s = charStats(c); return `${CHARS[c.id].n}  HP${Math.max(0, c.hp)}/${s.hp} MP${c.mp}/${s.mp}`; }));
-        L.menu.locked = false;
         if (r < 0) return;
         const c = pc[r], s = charStats(c);
         let ok = true;
@@ -220,14 +267,33 @@ const Menu = {
         else if (it.type === 'cure') { if (!c.st || !c.st.poison) ok = false; else delete c.st.poison; }
         else if (it.type === 'revive') { if (c.hp > 0) ok = false; else c.hp = Math.round(s.hp * it.amt); }
         else if (it.type === 'full') { c.hp = s.hp; c.mp = s.mp; }
+        else ok = false;
         if (!ok) { Sound.play('buzz'); UI.toast('効果がない'); return; }
         useItemCount(id);
         Sound.play('heal');
         UI.toast(`${CHARS[c.id].n} に ${it.n} を使った!`);
-        render();
-      };
-      render();
+        ctx.refresh(true);
+      },
     });
+  },
+
+  // ---------- 転移 ----------
+  teleport(fromId) {
+    const GN = { town: '町', gate: 'ダンジョン入口', dungeon: 'ダンジョン内', field: '野外', hut: '小屋' };
+    const order = Object.keys(GN);
+    let chosen = null;
+    return this.tabList({
+      title: '転移先をえらぶ',
+      tabs: [{ n: 'すべて' }].concat(order.map(g => ({ n: GN[g], f: s => s.group === g }))),
+      items: () => WORLD.objs.saves.filter(s => G.saves[s.id]),
+      sorts: [{ n: '種類順', cmp: (a, b) => order.indexOf(a.group) - order.indexOf(b.group) || a.name.localeCompare(b.name, 'ja') }, { n: '近い順', cmp: (a, b) => (Math.abs(a.x - Field.p.x) + Math.abs(a.y - Field.p.y)) - (Math.abs(b.x - Field.p.x) + Math.abs(b.y - Field.p.y)) }],
+      group: s => GN[s.group] || 'その他',
+      label: s => `<span class="tp">◆</span>${U.esc(s.name)}${s.id === fromId ? ' <span class="tag off">現在地</span>' : ''}`,
+      disabled: s => s.id === fromId,
+      note: s => `距離 ${Math.abs(s.x - Field.p.x) + Math.abs(s.y - Field.p.y)} 歩 ／ 登録数 ${Object.keys(G.saves).length}/${WORLD.objs.saves.length}`,
+      empty: 'まだ転移先がない',
+      onSelect: async (s, ctx) => { chosen = s; ctx.close(); },
+    }).then(() => chosen);
   },
 
   // ---------- 地図 ----------

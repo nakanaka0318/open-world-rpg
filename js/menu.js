@@ -176,6 +176,7 @@ const Menu = {
       L.onClosed = res;
       L.body.innerHTML = `<div class="st-top"><img class="st-port" src="${portraitURL(d.look)}"><div class="st-info"><div class="rar r${d.rar}">${'★'.repeat(d.rar)}${c.lb ? ` <span class="lb">${c.lb}凸</span>` : ''}</div><div class="st-n">${U.esc(d.n)}</div><div class="st-t">${U.esc(d.title)}</div><div class="st-e"><span style="background:${ELEM[d.elem].c}">${ELEM[d.elem].n}</span> ${U.esc(d.role)}</div><div>Lv ${c.lv}　EXP ${c.exp}/${expNext(c.lv)}</div></div></div>
       <div class="st-grid">${['hp', 'atk', 'def', 'mag', 'spd'].map(k => `<div><span>${STAT_N[k]}</span><b>${k === 'hp' ? Math.max(0, c.hp) + '/' : ''}${s[k]}</b></div>`).join('')}</div>
+      ${RELICS[id] ? `<div class="st-sec">レリック <small class="dim">(パーティにいると戦闘中に発動。凸で強化)</small></div>${relicHTML(id)}` : ''}
       <div class="st-sec">固有カード <small class="dim">(凸で強化。5凸でコスト2以上が-1)</small></div>
       <div class="deck-grid">${charCards(id).map(cid => cardFaceHTML(cid)).join('')}</div>
       <div class="st-prof">${U.esc(d.profile)}</div>`;
@@ -285,36 +286,57 @@ const Menu = {
     return new Promise(res => {
       const L = this.screen('ワールドマップ', { cls: 'mapscr' });
       L.onClosed = () => { clearInterval(timer); res(); };
-      const c = mkCanvas(MW * 2, MH * 2);
-      c.className = 'wmap';
-      const x = c.getContext('2d');
-      const draw = (blink) => {
-        x.fillStyle = '#0a0a18'; x.fillRect(0, 0, c.width, c.height);
-        for (let ty = 0; ty < MH; ty++) for (let tx = 0; tx < MW; tx++) {
-          const i = ty * MW + tx;
-          if (!G.explored[i]) continue;
+      // 地形は1マス1ピクセルで一度だけ描き、印だけを上に重ねる
+      const base = mkCanvas(MW, MH), bx = base.getContext('2d');
+      const img = bx.createImageData(MW, MH), px = img.data;
+      const rgb = {};
+      const col = h => rgb[h] || (rgb[h] = U.hex2rgb(h));
+      for (let i = 0; i < MW * MH; i++) {
+        let c = [10, 10, 24];
+        if (G.explored[i]) {
           const r = WORLD.region[i];
-          let col = TILE_DEFS[WORLD.tiles[i]].map || '#000';
-          if (r) col = { house: '#c0473a', dungeon: '#7a5aaa' }[WORLD.regions[r].type] || col;
-          x.fillStyle = col; x.fillRect(tx * 2, ty * 2, 2, 2);
+          c = col(r ? ({ house: '#c0473a', dungeon: '#7a5aaa' }[WORLD.regions[r].type] || '#000') : (TILE_DEFS[WORLD.tiles[i]].map || '#000'));
         }
+        px[i * 4] = c[0]; px[i * 4 + 1] = c[1]; px[i * 4 + 2] = c[2]; px[i * 4 + 3] = 255;
+      }
+      bx.putImageData(img, 0, 0);
+      const SC = 2;
+      const cv = mkCanvas(MW * SC, MH * SC);
+      cv.className = 'wmap';
+      const x = cv.getContext('2d');
+      const draw = (blink) => {
+        x.imageSmoothingEnabled = false;
+        x.drawImage(base, 0, 0, MW * SC, MH * SC);
         for (const s of WORLD.structs) {
-          if (!G.explored[(s.y + (s.h >> 1)) * MW + s.x + (s.w >> 1)] && !G.explored[(s.y + s.h - 1) * MW + s.x + (s.w >> 1)]) continue;
-          const cx = (s.x + s.w / 2) * 2, cy = (s.y + s.h / 2) * 2;
-          const done = G.bosses[s.id];
-          x.fillStyle = s.kind === 'dungeon' ? (done ? '#ffe66d' : '#ff5a8a') : '#ffffff';
-          x.beginPath(); x.arc(cx, cy, 4, 0, Math.PI * 2); x.fill();
-          x.strokeStyle = '#181425'; x.lineWidth = 1.5; x.stroke();
+          const cx = (s.x + s.w / 2) * SC, cy = (s.y + s.h / 2) * SC;
+          if (!G.explored[Math.floor(s.y + s.h / 2) * MW + Math.floor(s.x + s.w / 2)] && !G.explored[(s.y + s.h) * MW + Math.floor(s.x + s.w / 2)]) continue;
+          x.fillStyle = s.kind === 'dungeon' ? (G.bosses[s.id] ? '#ffe66d' : '#ff5a8a') : '#ffffff';
+          x.beginPath(); x.arc(cx, cy, 5, 0, Math.PI * 2); x.fill();
+          x.strokeStyle = '#181425'; x.lineWidth = 2; x.stroke();
         }
-        for (const sv of WORLD.objs.saves) if (G.saves[sv.id]) { x.fillStyle = '#5ac8f0'; x.fillRect(sv.x * 2 - 1, sv.y * 2 - 1, 3, 3); }
-        if (blink) { x.fillStyle = '#ff3b3b'; x.fillRect(Field.p.x * 2 - 2, Field.p.y * 2 - 2, 5, 5); x.fillStyle = '#fff'; x.fillRect(Field.p.x * 2 - 1, Field.p.y * 2 - 1, 3, 3); }
+        for (const sv of WORLD.objs.saves) if (G.saves[sv.id]) { x.fillStyle = '#5ac8f0'; x.fillRect(sv.x * SC - 2, sv.y * SC - 2, 5, 5); }
+        if (blink) { x.fillStyle = '#ff3b3b'; x.fillRect(Field.p.x * SC - 4, Field.p.y * SC - 4, 9, 9); x.fillStyle = '#fff'; x.fillRect(Field.p.x * SC - 2, Field.p.y * SC - 2, 5, 5); }
       };
-      let b = true; draw(b);
-      const timer = setInterval(() => { b = !b; draw(b); }, 400);
-      const legend = U.el('div', 'map-legend', `<span><i style="background:#fff"></i>町</span><span><i style="background:#ff5a8a"></i>ダンジョン</span><span><i style="background:#ffe66d"></i>攻略済み</span><span><i style="background:#5ac8f0"></i>セーブ</span><span><i style="background:#ff3b3b"></i>現在地</span>`);
-      const explored = G.explored.reduce((a, v) => a + v, 0);
-      const land = WORLD.biome.reduce((a, v) => a + (v ? 1 : 0), 0);
-      L.body.append(c, legend, U.el('div', 'sc-note', `探索率 ${Math.min(100, Math.round(explored / land * 100))}%　現在地: ${U.esc(Field.locName)}`));
+      let bl = true; draw(bl);
+      const timer = setInterval(() => { bl = !bl; draw(bl); }, 450);
+      const legend = U.el('div', 'map-legend', `<span><i style="background:#fff"></i>町・小屋</span><span><i style="background:#ff5a8a"></i>ダンジョン</span><span><i style="background:#ffe66d"></i>攻略済み</span><span><i style="background:#5ac8f0"></i>転移クリスタル</span><span><i style="background:#ff3b3b"></i>現在地</span>`);
+      let explored = 0, land = 0;
+      for (let i = 0; i < MW * MH; i++) { if (WORLD.biome[i]) { land++; if (G.explored[i]) explored++; } }
+      const tp = U.el('div', 'btn', '転移する');
+      tp.onclick = async e => {
+        e.stopPropagation();
+        const s = await this.teleport(null);
+        if (!s) return;
+        L.close();
+        Sound.play('magic');
+        await UI.fade('#fff', 300, 100, 300, () => {
+          for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) if (Field.walkable(s.x + dx, s.y + dy)) { Field.teleport(s.x + dx, s.y + dy, 'u'); break; }
+        });
+        Game.autoSave();
+      };
+      const row = U.el('div', 'map-row');
+      row.append(U.el('div', 'sc-note', `探索率 ${Math.min(100, Math.round(explored / Math.max(1, land) * 100))}%　現在地: ${U.esc(Field.locName)}`), tp);
+      L.body.append(cv, legend, row);
     });
   },
 

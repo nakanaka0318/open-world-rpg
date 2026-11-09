@@ -1,6 +1,6 @@
 'use strict';
 // ===== ワールドマップ (1枚のシームレスな大陸) =====
-const MW = 256, MH = 256;
+const MW = 512, MH = 512;
 
 // ---------- 建物の設計図 ----------
 const HOUSE_BP = {
@@ -50,7 +50,7 @@ const HOUSE_BP = {
 // ---------- ダンジョン ----------
 const DUNGEONS = [
   {
-    id: 'shrine', name: '風の神殿', x: 22, y: 138, style: 'stone', roof: 'canopy', dark: false, area: 'shrine', lv: 5,
+    id: 'shrine', name: '風の神殿', x: 66, y: 240, style: 'stone', roof: 'canopy', dark: false, area: 'shrine', lv: 5,
     bp: [
       '#####################',
       '#...#...........#...#',
@@ -85,7 +85,7 @@ const DUNGEONS = [
     boss: { enemy: 'treant', crystal: 'wind' },
   },
   {
-    id: 'ruins', name: '砂の遺跡', x: 150, y: 204, style: 'sand', roof: 'pyramid', dark: true, area: 'ruins', lv: 9,
+    id: 'ruins', name: '砂の遺跡', x: 259, y: 339, style: 'sand', roof: 'pyramid', dark: true, area: 'ruins', lv: 9,
     bp: [
       '#########################',
       '#######...........#######',
@@ -124,7 +124,7 @@ const DUNGEONS = [
     boss: { enemy: 'golemk', crystal: 'earth' },
   },
   {
-    id: 'icecave', name: '氷の洞窟', x: 170, y: 22, style: 'ice', roof: 'snowmtn', dark: true, area: 'icecave', lv: 12,
+    id: 'icecave', name: '氷の洞窟', x: 289, y: 66, style: 'ice', roof: 'snowmtn', dark: true, area: 'icecave', lv: 12,
     bp: [
       '#######################',
       '######...........######',
@@ -154,7 +154,7 @@ const DUNGEONS = [
     boss: { enemy: 'frostd', crystal: 'water' },
   },
   {
-    id: 'volccave', name: '炎の火山', x: 204, y: 108, style: 'volc', roof: 'volc', dark: false, area: 'volccave', lv: 15,
+    id: 'volccave', name: '炎の火山', x: 340, y: 195, style: 'volc', roof: 'volc', dark: false, area: 'volccave', lv: 15,
     bp: [
       '#######################',
       '#####.............#####',
@@ -189,7 +189,7 @@ const DUNGEONS = [
     boss: { enemy: 'flamed', crystal: 'fire' },
   },
   {
-    id: 'castle', name: '魔王城', x: 120, y: 93, style: 'castle', roof: 'castle', dark: false, area: 'castle', lv: 20,
+    id: 'castle', name: '魔王城', x: 212, y: 172, style: 'castle', roof: 'castle', dark: false, area: 'castle', lv: 20,
     bp: [
       '#################',
       '#$.....^.^.....$#',
@@ -218,12 +218,72 @@ const DUNGEONS = [
     },
     boss: { enemy: 'demon', crystal: null },
   },
+  // ---------- サブダンジョン (中ボスとレア報酬) ----------
+  {
+    id: 'oldruin', name: '忘れられた遺構', x: 80, y: 150, style: 'stone', roof: 'canopy', dark: false, area: 'subruin', lv: 8, sub: true, reward: { stones: 200 },
+    bp: [
+      '#################',
+      '#$.....Z.....$..#',
+      '#...............#',
+      '#######R#########',
+      '#...............#',
+      '#..!.........!..#',
+      '#...............#',
+      '#....e.....e....#',
+      '########E########',
+    ],
+    chests: [{ card: 'c_rage' }, { stones: 200 }],
+    tablets: ['光あるところに、必ずついてくるもの。\n触れることはできず、足音もない。', '朝と夕に長く伸び、真昼に縮む。'],
+    riddles: { R: { type: 'choice', prompt: '扉に刻まれた問い。\n「光が強いほど濃くなり、\n　光がなければ存在しないもの」', options: ['霧', '影', '露', '虹'], answer: 1 } },
+    boss: { enemy: 'ancient', crystal: null },
+  },
+  {
+    id: 'seacave', name: '潮騒の洞窟', x: 362, y: 436, style: 'cave', roof: 'mountain', dark: true, area: 'subsea', lv: 14, sub: true, reward: { stones: 300 },
+    bp: [
+      '###################',
+      '#WW$....Z....$..WW#',
+      '#WW.............WW#',
+      '#######HHHHH#######',
+      '#######HHHHH#######',
+      '#WW......O......WW#',
+      '#W...O.......O...W#',
+      '#W...............W#',
+      '#WW.....X.....!.WW#',
+      '#WWW....e..e...WWW#',
+      '#########E#########',
+    ],
+    chests: [{ card: 'c_thousand' }, { stones: 300 }],
+    tablets: ['深い裂け目だ。岩を二つ重ねれば渡れるだろう。\n誤れば光る紋様を踏め。'],
+    riddles: {},
+    boss: { enemy: 'serpent', crystal: null },
+  },
+  {
+    id: 'crylab', name: '結晶の迷宮', x: 436, y: 150, style: 'ice', roof: 'cryroof', dark: false, area: 'subcrys', lv: 24, sub: true, reward: { stones: 500 },
+    bp: [
+      '###################',
+      '#$.......Z.......$#',
+      '#.................#',
+      '#########a#########',
+      '#.................#',
+      '#..O..#.....#..O..#',
+      '#.....#.1.1.#.....#',
+      '#.................#',
+      '#..X..............#',
+      '#.....e.....e.....#',
+      '#............!....#',
+      '#########E#########',
+    ],
+    chests: [{ card: 'c_star' }, { card: 'c_hourglass' }],
+    tablets: ['二つの紋様に二つの結晶岩を。\n道を誤れば、光る紋様が時を戻す。'],
+    riddles: {},
+    boss: { enemy: 'crygolem', crystal: null },
+  },
 ];
 
 // ---------- 町 ----------
 const TOWNS = [
   {
-    id: 'lumina', name: 'ルミナ村', x: 114, y: 150, w: 28, h: 22, ground: 'grass', gates: ['n', 's', 'w', 'e'], road: { row: 10, col: 13 },
+    id: 'lumina', name: 'ルミナ村', x: 206, y: 258, w: 28, h: 22, ground: 'grass', gates: ['n', 's', 'w', 'e'], road: { row: 10, col: 13 },
     houses: [
       { bp: 'elder', dx: 2, dy: 2, roof: 'red', npcs: ['lumina_elder'] },
       { bp: 'shop', dx: 18, dy: 2, roof: 'green', npcs: ['lumina_shop'] },
@@ -235,7 +295,7 @@ const TOWNS = [
     signs: [[12, 1, '【ルミナ村】\n北:王都跡と魔王城の湖\n西:風の森 ／ 東:火山地帯\n南:砂漠 ／ 北の果て:雪原']],
   },
   {
-    id: 'frostia', name: '雪の町フロスティア', x: 58, y: 28, w: 22, h: 20, ground: 'snow', gates: ['s', 'e'], road: { row: 9, col: 10 },
+    id: 'frostia', name: '雪の町フロスティア', x: 120, y: 75, w: 22, h: 20, ground: 'snow', gates: ['s', 'e'], road: { row: 9, col: 10 },
     houses: [
       { bp: 'shop', dx: 2, dy: 2, roof: 'blue', npcs: ['frost_shop'] },
       { bp: 'house', dx: 13, dy: 2, roof: 'blue', npcs: ['frost_girl'] },
@@ -247,7 +307,7 @@ const TOWNS = [
     signs: [[9, 17, '【雪の町フロスティア】\n東の雪山に、氷の洞窟あり。']],
   },
   {
-    id: 'sandora', name: 'オアシスの町サンドラ', x: 36, y: 204, w: 24, h: 20, ground: 'sandg', gates: ['n', 'e'], road: { row: 9, col: 11 },
+    id: 'sandora', name: 'オアシスの町サンドラ', x: 88, y: 339, w: 24, h: 20, ground: 'sandg', gates: ['n', 'e'], road: { row: 9, col: 11 },
     houses: [
       { bp: 'shop', dx: 2, dy: 2, roof: 'sand', npcs: ['sand_shop'] },
       { bp: 'house2', dx: 15, dy: 2, roof: 'sand', npcs: ['sand_dancer'] },
@@ -262,22 +322,32 @@ const TOWNS = [
 
 // 森の隠者の小屋
 const EXTRA_HOUSES = [
-  { id: 'hermit', name: '森の隠者の小屋', bp: 'house2', x: 56, y: 124, roof: 'green', npcs: ['hermit'], ground: 'grass', from: 'L.w' },
-  { id: 'snowhut', name: '狩人の小屋', bp: 'house', x: 108, y: 42, roof: 'blue', npcs: ['snow_hunter'], ground: 'snow', from: 'F.e' },
-  { id: 'deserthut', name: '旅商人のテント', bp: 'house2', x: 96, y: 214, roof: 'sand', npcs: ['desert_nomad'], ground: 'sandg', from: 'S.e' },
-  { id: 'smithy', name: '鍛冶屋の工房', bp: 'house', x: 176, y: 156, roof: 'red', npcs: ['volc_smith'], ground: 'grass', from: 'L.e' },
-  { id: 'seahut', name: '灯台守の家', bp: 'house2', x: 214, y: 182, roof: 'blue', npcs: ['lighthouse'], ground: 'grass', from: 'L.e' },
+  { id: 'hermit', name: '森の隠者の小屋', bp: 'house2', x: 114, y: 216, roof: 'green', npcs: ['hermit'], ground: 'grass', from: 'L.w' },
+  { id: 'snowhut', name: '狩人の小屋', bp: 'house', x: 192, y: 92, roof: 'blue', npcs: ['snow_hunter'], ground: 'snow', from: 'F.e' },
+  { id: 'deserthut', name: '旅商人のテント', bp: 'house2', x: 174, y: 350, roof: 'sand', npcs: ['desert_nomad'], ground: 'sandg', from: 'S.e' },
+  { id: 'smithy', name: '鍛冶屋の工房', bp: 'house', x: 294, y: 264, roof: 'red', npcs: ['volc_smith'], ground: 'grass', from: 'L.e' },
+  { id: 'seahut', name: '灯台守の家', bp: 'house2', x: 351, y: 302, roof: 'blue', npcs: ['lighthouse'], ground: 'grass', from: 'L.e' },
 ];
+
+// 南国の島々 [中心x, 中心y, 半径]
+const ISLANDS = [[372, 446, 34], [440, 472, 24], [482, 422, 20], [458, 372, 18], [318, 482, 18]];
 
 // 野外の転移クリスタル。ここに1行足すだけで増やせます。
 //  at: 置きたい場所のおおよその座標 (近くの道ばたに自動で置かれます)
 const WAYPOINTS = [
-  { id: 'wp_bridge', name: '湖畔の橋たもと', at: [134, 128] },
-  { id: 'wp_westriver', name: '西の川の渡し', at: [70, 112] },
-  { id: 'wp_snowpass', name: '雪原の峠', at: [128, 52] },
-  { id: 'wp_volcroad', name: '火山への街道', at: [190, 140] },
-  { id: 'wp_dunes', name: '砂丘の休憩所', at: [96, 196] },
-  { id: 'wp_forest', name: '森の分かれ道', at: [52, 168] },
+  { id: 'wp_bridge', name: '湖畔の橋たもと', at: [229, 220] },
+  { id: 'wp_westriver', name: '西の川の渡し', at: [133, 196] },
+  { id: 'wp_snowpass', name: '雪原の峠', at: [220, 106] },
+  { id: 'wp_volcroad', name: '火山への街道', at: [313, 238] },
+  { id: 'wp_dunes', name: '砂丘の休憩所', at: [172, 322] },
+  { id: 'wp_forest', name: '森の分かれ道', at: [106, 280] },
+  { id: 'wp_lumina_e', name: '東の草原', at: [270, 255] },
+  { id: 'wp_snow_w', name: '雪原の西端', at: [60, 120] },
+  { id: 'wp_desert_s', name: '南の砂丘', at: [200, 390] },
+  { id: 'wp_crystal_n', name: '水晶の荒野 北', at: [440, 90] },
+  { id: 'wp_crystal_s', name: '水晶の荒野 南', at: [430, 260] },
+  { id: 'wp_island', name: '南国の渡し', at: [345, 415] },
+  { id: 'wp_island2', name: 'ヤシの浜辺', at: [440, 450] },
 ];
 
 // ---------- ビルダー ----------
@@ -294,22 +364,32 @@ function buildWorld() {
   const inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
   const rnd = U.rng(20261109);
   const SEED = 777;
-  const BIOME_GROUND = [T.OCEAN, T.GRASS, T.GRASS, T.SAND, T.SNOW, T.ASH, T.DARKGRASS];
-  const BIOME_STYLE = ['grass', 'grass', 'grass', 'sandg', 'snowg', 'ashg', 'dgrass'];
+  const BIOME_GROUND = [T.OCEAN, T.GRASS, T.GRASS, T.SAND, T.SNOW, T.ASH, T.DARKGRASS, T.CRYG, T.GRASS];
+  const BIOME_STYLE = ['grass', 'grass', 'grass', 'sandg', 'snowg', 'ashg', 'dgrass', 'cryg', 'grass'];
   const SI = s => STYLE_LIST.indexOf(s);
 
   // 1. 大陸の形
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const nx = (x - 128) / 120, ny = (y - 128) / 120;
+    if (x <= 2 || y <= 2 || x >= W - 3 || y >= H - 3) continue;
+    const nx = (x - 220) / 180, ny = (y - 220) / 180;
     const d = Math.max(Math.abs(nx), Math.abs(ny)) * 0.85 + Math.sqrt(nx * nx + ny * ny) * 0.2;
-    const n = U.fbm(x, y, 0.035, SEED);
-    if ((d + (n - 0.5) * 0.42 < 1.0 || d < 0.84) && x > 2 && y > 2 && x < W - 3 && y < H - 3) {
-      const j = (U.fbm(x, y, 0.06, SEED + 5) - 0.5) * 22;
+    const n = U.fbm(x, y, 0.025, SEED);
+    const main = d + (n - 0.5) * 0.42 < 1.0 || d < 0.84;
+    // 東の水晶の荒野
+    const cx = (x - 445) / 62, cy = (y - 175) / 140;
+    const cry = Math.sqrt(cx * cx + cy * cy) + (U.fbm(x, y, 0.03, SEED + 9) - 0.5) * 0.5 < 1;
+    // 南東の南国の島々
+    let isl = false;
+    for (const [ix, iy, ir] of ISLANDS) { const dx = (x - ix) / ir, dy = (y - iy) / ir; if (Math.sqrt(dx * dx + dy * dy) + (U.fbm(x, y, 0.08, SEED + 11) - 0.5) * 0.6 < 1) { isl = true; break; } }
+    if (main || cry || isl) {
+      const j = (U.fbm(x, y, 0.04, SEED + 5) - 0.5) * 33;
       let b = 1;
-      if (y + j < 68) b = 4;
-      else if (y + j > 190) b = 3;
-      else if (x + j < 76) b = 2;
-      else if (x + j > 186) b = 5;
+      if (cry && x + j > 390) b = 7;
+      else if (!main && isl) b = 8;
+      else if (y + j < 130) b = 4;
+      else if (y + j > 313) b = 3;
+      else if (x + j < 142) b = 2;
+      else if (x + j > 307) b = 5;
       biome[idx(x, y)] = b;
     }
   }
@@ -318,7 +398,7 @@ function buildWorld() {
     const i = idx(x, y), b = biome[i];
     if (!b) continue;
     style[i] = SI(BIOME_STYLE[b]);
-    const n1 = U.fbm(x, y, 0.08, SEED + 21), n2 = U.fbm(x, y, 0.05, SEED + 33), r = U.hash2(x, y, 99);
+    const n1 = U.fbm(x, y, 0.065, SEED + 21), n2 = U.fbm(x, y, 0.04, SEED + 33), r = U.hash2(x, y, 99);
     let t = BIOME_GROUND[b];
     if (b === 1) {
       if (n2 > 0.72) t = T.MOUNTAIN; else if (n1 > 0.66) t = T.TREE; else if (r < 0.05) t = T.FLOWERS; else if (r < 0.065) t = T.TREE;
@@ -330,21 +410,25 @@ function buildWorld() {
       if (n2 > 0.7) t = T.SNOWMTN; else if (n1 > 0.6) t = T.PINE; else if (r < 0.05) t = T.PINE;
     } else if (b === 5) {
       if (n2 > 0.72) t = T.VMOUNTAIN; else if (n1 > 0.7) t = T.LAVA; else if (r < 0.03) t = T.DEADTREE;
+    } else if (b === 7) {
+      if (n2 > 0.73) t = T.CRYMTN; else if (n1 > 0.63) t = T.CRYSPIRE; else if (r < 0.04) t = T.CRYSPIRE;
+    } else if (b === 8) {
+      if (n1 > 0.62) t = T.PALM; else if (r < 0.05) t = T.FLOWERS; else if (r < 0.09) t = T.PALM;
     }
     tiles[i] = t;
   }
   // 海岸線を砂浜に
   for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
     const i = idx(x, y);
-    if (!biome[i] || biome[i] === 4 || biome[i] === 5) continue;
+    if (!biome[i] || biome[i] === 4 || biome[i] === 5 || biome[i] === 7) continue;
     let coast = false;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!biome[idx(x + dx, y + dy)]) coast = true;
     if (coast) { tiles[i] = T.SAND; style[i] = SI('sandg'); }
   }
   // 3. 中央の湖と島
-  const LX = 128, LY = 100;
-  for (let y = 60; y < 140; y++) for (let x = 80; x < 176; x++) {
-    const dx = (x - LX) / 30, dy = (y - LY) / 21;
+  const LX = 220, LY = 178;
+  for (let y = 120; y < 240; y++) for (let x = 150; x < 292; x++) {
+    const dx = (x - LX) / 45, dy = (y - LY) / 31;
     const n = (U.fbm(x, y, 0.09, SEED + 50) - 0.5) * 0.35;
     const d = Math.sqrt(dx * dx + dy * dy) + n;
     const i = idx(x, y);
@@ -357,16 +441,16 @@ function buildWorld() {
     }
   }
   // 北へ流れる川
-  for (let y = 3; y < 84; y++) {
-    const cx = Math.round(128 + Math.sin(y * 0.11) * 5 + Math.sin(y * 0.03) * 4);
+  for (let y = 3; y < 152; y++) {
+    const cx = Math.round(220 + Math.sin(y * 0.08) * 7 + Math.sin(y * 0.02) * 6);
     for (let x = cx - 1; x <= cx; x++) {
       const i = idx(x, y);
       if (biome[i] && biome[i] !== 6) tiles[i] = T.WATER;
     }
   }
   // 西へ流れる川 (湖 → 西の海)
-  for (let x = 3; x < 104; x++) {
-    const cy = Math.round(100 + (104 - x) * 0.18 + Math.sin(x * 0.09) * 5 + Math.sin(x * 0.023) * 3);
+  for (let x = 3; x < 180; x++) {
+    const cy = Math.round(178 + (180 - x) * 0.18 + Math.sin(x * 0.06) * 7 + Math.sin(x * 0.016) * 5);
     for (let y = cy - 1; y <= cy; y++) {
       const i = idx(x, y);
       if (biome[i] && biome[i] !== 6) tiles[i] = T.WATER;
@@ -382,7 +466,7 @@ function buildWorld() {
   const seal = { x: LX, y: bridgeBot };
   const bridgeLand = { x: LX, y: bridgeBot + 1 };
 
-  const objs = { chests: [], npcs: [], tablets: [], signs: [], saves: [], boulders: [], switches: [], gates: [], holes: [], runes: [], rdoors: [], bosses: [], altars: [], hidden: [], spawns: [] };
+  const objs = { shards: [], chests: [], npcs: [], tablets: [], signs: [], saves: [], boulders: [], switches: [], gates: [], holes: [], runes: [], rdoors: [], bosses: [], altars: [], hidden: [], spawns: [] };
   const regions = [{ type: 'out' }];
   const structs = [];
   let chestId = 0;
@@ -502,8 +586,8 @@ function buildWorld() {
   const dunInfo = {};
   for (const dg of DUNGEONS) {
     const bp = dg.bp, w = bp[0].length, h = bp.length;
-    const fl = { stone: T.STONEF, sand: T.SANDF, ice: T.ICEF, volc: T.VOLCF, castle: T.CASTF }[dg.style];
-    const wl = { stone: T.STONEW, sand: T.SANDW, ice: T.ICEW, volc: T.VOLCW, castle: T.CASTW }[dg.style];
+    const fl = { stone: T.STONEF, sand: T.SANDF, ice: T.ICEF, volc: T.VOLCF, castle: T.CASTF, cave: T.CAVEF }[dg.style];
+    const wl = { stone: T.STONEW, sand: T.SANDW, ice: T.ICEW, volc: T.VOLCW, castle: T.CASTW, cave: T.CAVEW }[dg.style];
     const isIsland = dg.id === 'castle';
     if (!isIsland) {
       const b = biome[idx(dg.x + (w >> 1), dg.y + (h >> 1))] || 1;
@@ -534,9 +618,10 @@ function buildWorld() {
         case '$': objs.chests.push(Object.assign({ id: 'c' + (chestId++), x: wx, y: wy }, dg.chests[ci++] || { stones: 50 })); break;
         case 'S': objs.saves.push({ id: dg.id + (objs.saves.some(q => q.id === dg.id) ? '_2' : ''), x: wx, y: wy, name: dg.name + (objs.saves.some(q => q.id === dg.id) ? ' 奥' : ''), group: 'dungeon' }); break;
         case '!': t = T.TABLET; objs.tablets.push({ x: wx, y: wy, text: dg.tablets[ti++] || '…' }); break;
-        case 'Z': objs.bosses.push({ id: dg.id, x: wx, y: wy, enemy: dg.boss.enemy, crystal: dg.boss.crystal, struct: dg.id }); break;
+        case 'Z': objs.bosses.push({ id: dg.id, x: wx, y: wy, enemy: dg.boss.enemy, crystal: dg.boss.crystal, struct: dg.id, sub: !!dg.sub, reward: dg.reward }); break;
         case 'R': case 'Q': t = T.RDOOR; objs.rdoors.push({ id: dg.id + '_' + ch, x: wx, y: wy, riddle: dg.riddles[ch], struct: dg.id }); break;
         case 'V': t = T.LAVA; break;
+        case 'W': t = T.WATER; break;
         case '^': t = T.STATUE; break;
         case 'e': objs.spawns.push({ x: wx, y: wy, area: dg.area, region: rid }); break;
       }
@@ -544,7 +629,7 @@ function buildWorld() {
     }
   }
   // ダンジョンの周りを森や山で囲んで、四角い輪郭をなじませる
-  const RING = { shrine: [T.TREE, T.TREE, T.MOUNTAIN], icecave: [T.SNOWMTN, T.SNOWMTN, T.PINE], volccave: [T.VMOUNTAIN, T.VMOUNTAIN, T.DEADTREE], ruins: [T.CACTUS, T.SAND, T.SAND] };
+  const RING = { oldruin: [T.TREE, T.TREE, T.TREE], crylab: [T.CRYSPIRE, T.CRYSPIRE, T.CRYMTN], seacave: [T.PALM, T.MOUNTAIN, T.MOUNTAIN], shrine: [T.TREE, T.TREE, T.MOUNTAIN], icecave: [T.SNOWMTN, T.SNOWMTN, T.PINE], volccave: [T.VMOUNTAIN, T.VMOUNTAIN, T.DEADTREE], ruins: [T.CACTUS, T.SAND, T.SAND] };
   for (const dg of DUNGEONS) {
     const set = RING[dg.id];
     if (!set) continue;
@@ -577,7 +662,7 @@ function buildWorld() {
 
   // 6. 道 (A*)
   const COST = new Float32Array(TILE_DEFS.length).fill(1);
-  COST[T.OCEAN] = 1e9; COST[T.WATER] = 14; COST[T.LAVA] = 60; COST[T.TREE] = 2.5; COST[T.PINE] = 2.5; COST[T.CACTUS] = 2; COST[T.DEADTREE] = 2;
+  COST[T.OCEAN] = 60; COST[T.WATER] = 14; COST[T.LAVA] = 60; COST[T.TREE] = 2.5; COST[T.PINE] = 2.5; COST[T.CACTUS] = 2; COST[T.DEADTREE] = 2;
   COST[T.MOUNTAIN] = 7; COST[T.SNOWMTN] = 7; COST[T.VMOUNTAIN] = 7; COST[T.PATH] = 0.4; COST[T.BRIDGE] = 0.4; COST[T.FLOWERS] = 1;
   function road(a, b) {
     const N = W * H;
@@ -607,7 +692,7 @@ function buildWorld() {
     let i = t, guard = 0;
     while (i !== -1 && i !== s && guard++ < 20000) {
       const tt = tiles[i];
-      if (tt === T.WATER || tt === T.LAVA) tiles[i] = T.BRIDGE;
+      if (tt === T.WATER || tt === T.LAVA || tt === T.OCEAN) { tiles[i] = T.BRIDGE; if (!biome[i]) biome[i] = 8; }
       else if (tt !== T.BRIDGE) tiles[i] = T.PATH;
       i = came[i];
     }
@@ -620,6 +705,10 @@ function buildWorld() {
     [L.n, F.s], [F.e, dunInfo.icecave.entrance], [L.e, dunInfo.volccave.entrance], [S.n, dunInfo.shrine.entrance],
   ];
   for (const eh of EXTRA_HOUSES) { const [t, g] = eh.from.split('.'); ROADS.push([GATES[t][g], extraDoors[eh.id]]); }
+  ROADS.push([L.w, dunInfo.oldruin.entrance], [dunInfo.ruins.entrance, dunInfo.seacave.entrance], [dunInfo.volccave.entrance, dunInfo.crylab.entrance]);
+  // 島どうしを橋でつなぐ
+  const landNear = (cx, cy) => { for (let r = 0; r < 12; r++) for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) { if (!inb(x, y)) continue; const i = idx(x, y); if (biome[i] && !reserved[i] && !TILE_DEFS[tiles[i]].solid) return { x, y }; } return null; };
+  for (let k = 1; k < ISLANDS.length; k++) { const a = landNear(ISLANDS[k][0], ISLANDS[k][1]), b = landNear(ISLANDS[0][0], ISLANDS[0][1] - 20); if (a && b) ROADS.push([a, b]); }
   for (const [a, b] of ROADS) road(a, b);
   for (const k in dunInfo) { const d = dunInfo[k].door; }
 
@@ -676,6 +765,9 @@ function buildWorld() {
     [4, { stones: 150 }], [4, { card: 'c_venom' }], [4, { item: 'hipotion', n: 2 }], [4, { stones: 150 }], [4, { gold: 600 }], [4, { item: 'feather', n: 2 }],
     [5, { stones: 200 }], [5, { item: 'elixir', n: 1 }], [5, { gold: 800 }], [5, { stones: 200 }], [5, { card: 'c_medit' }],
     [6, { stones: 100 }],
+    [1, { stones: 100 }], [2, { card: 'c_bless' }], [3, { stones: 150 }], [4, { stones: 150 }], [5, { card: 'c_spike' }], [1, { gold: 400 }], [2, { stones: 100 }], [3, { item: 'hipotion', n: 3 }], [4, { gold: 700 }], [5, { stones: 200 }],
+    [7, { stones: 300 }], [7, { card: 'c_miracle' }], [7, { stones: 250 }], [7, { item: 'elixir', n: 1 }], [7, { card: 'c_aegis' }], [7, { stones: 300 }],
+    [8, { stones: 200 }], [8, { card: 'c_heavy' }], [8, { item: 'feather', n: 2 }], [8, { stones: 200 }], [8, { gold: 1000 }], [8, { card: 'c_medit' }],
   ];
   const placed = [];
   for (const [b, c] of OW_CHESTS) {
@@ -718,11 +810,17 @@ function buildWorld() {
     }
   }
   objs.signs = objs.signs.filter(Boolean);
+  // 水晶の荒野に落ちている星晶石のかけら
+  objs.shards = [];
+  for (let k = 0; k < 36; k++) {
+    const p = findSpot(7, (x, y) => objs.shards.every(q => Math.abs(q.x - x) + Math.abs(q.y - y) > 7));
+    if (p) objs.shards.push({ id: 's' + k, x: p.x, y: p.y, n: 20 + Math.floor(rnd() * 4) * 10 });
+  }
 
   // 8. 敵シンボルの出現地点
-  const AREA_OF = [null, 'meadow', 'forest', 'desert', 'snow', 'volcano', null];
-  for (let k = 0; k < 280; k++) {
-    const b = 1 + Math.floor(rnd() * 5);
+  const AREA_OF = [null, 'meadow', 'forest', 'desert', 'snow', 'volcano', null, 'crystal', 'island'];
+  for (let k = 0; k < 850; k++) {
+    const b = [1, 2, 3, 4, 5, 7, 8][Math.floor(rnd() * 7)];
     const p = findSpot(b, (x, y) => {
       for (const t of TOWNS) if (Math.abs(x - (t.x + t.w / 2)) < t.w / 2 + 7 && Math.abs(y - (t.y + t.h / 2)) < t.h / 2 + 7) return false;
       return objs.spawns.every(s => Math.abs(s.x - x) + Math.abs(s.y - y) > 8);
@@ -738,5 +836,5 @@ function buildWorld() {
 
 function biomeArea(x, y) {
   const b = WORLD.biome[y * MW + x];
-  return [null, 'meadow', 'forest', 'desert', 'snow', 'volcano', 'meadow'][b] || 'meadow';
+  return [null, 'meadow', 'forest', 'desert', 'snow', 'volcano', 'meadow', 'crystal', 'island'][b] || 'meadow';
 }

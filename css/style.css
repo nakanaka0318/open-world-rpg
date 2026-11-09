@@ -463,3 +463,15 @@ body.touch.in-battle #pad { visibility: hidden; }
 .g-pu { margin-top: .35em; font-size: .8em; text-align: center; background: rgba(255, 217, 74, .12); border: 1px solid rgba(255, 217, 74, .5); border-radius: 8px; padding: .25em .6em; display: flex; flex-wrap: wrap; gap: .3em .8em; align-items: center; justify-content: center; }
 .g-pu b { color: #ffe66d; }
 .g-pubtn { background: linear-gradient(#ff8ac8, #a8308a); border: 2px solid #ffd0ec; border-radius: 8px; padding: .1em .7em; cursor: pointer; font-weight: bold; }
+.savemark { position: absolute; right: 8px; bottom: 8px; z-index: 40; font-size: .7em; color: #9fe8ff; background: rgba(10, 12, 40, .75); border: 1px solid rgba(127, 232, 255, .5); border-radius: 10px; padding: .1em .6em; animation: savemk 1.3s ease-out forwards; pointer-events: none; }
+@keyframes savemk { 0% { opacity: 0; } 15% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
+
+/* レリック */
+.relic { display: flex; gap: .5em; align-items: center; background: rgba(255, 217, 74, .1); border: 1px solid rgba(255, 217, 74, .45); border-radius: 8px; padding: .3em .5em; margin: .2em 0 .4em; font-size: .9em; }
+.relic img { width: 2em; height: 2em; flex: 0 0 auto; }
+.rv-relic { margin-top: .4em; font-size: .85em; background: rgba(255, 217, 74, .15); border: 1px solid rgba(255, 217, 74, .6); border-radius: 6px; padding: .2em .5em; }
+.cbp-pc { position: relative; display: block; }
+.cbp-rl { position: absolute; right: -3px; bottom: -3px; width: 1em !important; height: 1em !important; background: rgba(10, 12, 40, .85) !important; border-radius: 3px; border: 1px solid #ffd94a; }
+.cb-party.relicon { animation: relicon .9s; }
+@keyframes relicon { 30% { box-shadow: 0 0 16px #ffd94a; border-color: #ffd94a; } }
+.map-row { display: flex; align-items: center; justify-content: space-between; gap: .5em; flex-wrap: wrap; }

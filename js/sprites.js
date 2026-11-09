@@ -451,6 +451,24 @@ P.boulder = [
   '.....oooooo.....',
   '................',
 ];
+P.spire = [
+  '................',
+  '.......oo.......',
+  '......oWCo......',
+  '......oWCo......',
+  '.....oWLCco.....',
+  '..oo.oWLCco.....',
+  '.oWCooWLCcco.oo.',
+  '.oWLcoWLCcco.oWo',
+  'oWLCcoLCCccooLCo',
+  'oLCCcoLCCccooLco',
+  'oLCcc.oCCcco.oco',
+  '.ooo..oCccco..o.',
+  '......oooooo....',
+  '................',
+  '................',
+  '................',
+];
 P.crystal = [
   '.......oo.......',
   '......oWLo......',
@@ -483,6 +501,7 @@ const GRASS = c => genSpeck(c, '#5aa83c', ['#4a9132', '#78c454', '#4a9132'], 0.2
 const SAND = c => genSpeck(c, '#ecd18f', ['#d8b66c', '#f6e3ae'], 0.18, 21);
 const SNOW = c => genSpeck(c, '#eef3f9', ['#cfdbe9', '#ffffff'], 0.15, 31);
 const ASH = c => genSpeck(c, '#5b4c4a', ['#473a39', '#6e5d59'], 0.25, 41);
+const CRYG = c => genSpeck(c, '#b4a6d6', ['#9c8cc4', '#d4c8f0', '#c8f0ff'], 0.22, 141);
 const DARKGRASS = c => genSpeck(c, '#3f6b45', ['#335a3a', '#4f7d52'], 0.25, 51);
 const PATH = c => { genSpeck(c, '#c9a26b', ['#b08a55', '#dcb985'], 0.25, 61); };
 const CAVEF = c => genSpeck(c, '#6b5d52', ['#574a41', '#7d6e62'], 0.25, 71);
@@ -492,7 +511,7 @@ const ICEF = c => { genSpeck(c, '#bfe6f5', ['#a3d8ee', '#e8f8ff'], 0.2, 81); c.f
 const SANDF = c => genBricks(c, '#d9b26a', '#b8914f', '#e8c785', 8, 8);
 const CASTF = c => genBricks(c, '#4a3c63', '#3a2f50', '#5d4e7a', 8, 8);
 const VOLCF = c => genSpeck(c, '#4a3532', ['#3a2826', '#5e4440', '#6a3a2a'], 0.28, 91);
-const FLOORS = { stone: STONEF, cave: CAVEF, ice: ICEF, sand: SANDF, castle: CASTF, volc: VOLCF, wood: WOODF, grass: GRASS, sandg: SAND, snowg: SNOW, ashg: ASH, dgrass: DARKGRASS };
+const FLOORS = { stone: STONEF, cave: CAVEF, ice: ICEF, sand: SANDF, castle: CASTF, volc: VOLCF, wood: WOODF, grass: GRASS, sandg: SAND, snowg: SNOW, ashg: ASH, dgrass: DARKGRASS, cryg: CRYG };
 const STYLE_LIST = Object.keys(FLOORS);
 
 function over(under, pat, pal) { return c => { under(c); paint(c, pat, pal); }; }
@@ -536,6 +555,9 @@ defTile('VMOUNTAIN', { solid: 1, map: '#3e2e2c' }, over(ASH, P.mountain, { o: OU
 defTile('SNOWMTN', { solid: 1, map: '#b8c0d0' }, over(SNOW, P.snowmtn, { o: OUT, R: '#8a8698', r: '#625e78', L: '#b4b0c4', W: '#f4f8ff' }));
 defTile('PALM', { solid: 1, map: '#5a9a3a' }, over(SAND, P.palm, { o: '#1d3b22', G: '#3f8f3e', L: '#7ccf5a', T: '#9a6a3a', t: '#6e4024' }));
 defTile('DARKGRASS', { map: '#3f6b45' }, DARKGRASS);
+defTile('CRYG', { map: '#b4a6d6' }, CRYG);
+defTile('CRYSPIRE', { solid: 1, map: '#8ad0f0' }, over(CRYG, P.spire, { o: '#2a2050', W: '#ffffff', L: '#c8f4ff', C: '#7ac8f0', c: '#8a6ad8' }));
+defTile('CRYMTN', { solid: 1, map: '#7a6aa8' }, over(CRYG, P.mountain, { o: '#2a2050', R: '#8a7ac0', r: '#6a5a9a', L: '#c8b8f0' }));
 // 室内・ダンジョン床
 defTile('WOODF', { map: '#b8804a', floor: 1 }, WOODF);
 defTile('STONEF', { map: '#8f97a8', floor: 1 }, STONEF);
@@ -1338,6 +1360,7 @@ function buildSprites() {
   SPR.roofs.snowmtn = mtn('SNOWMTN');
   SPR.roofs.mountain = mtn('MOUNTAIN');
   SPR.roofs.volc = mtn('VMOUNTAIN');
+  SPR.roofs.cryroof = mtn('CRYSPIRE');
   SPR.roofs.pyramid = (() => {
     const c = mkCanvas(16, 16); const x = c.getContext('2d');
     genBricks(x, '#e0bc72', '#a8844a', '#f2d898', 16, 4, '#c8a060');
@@ -1356,6 +1379,7 @@ function buildSprites() {
   SPR.obj.chestOpen = patCanvas(P.chestOpen, PAL_WOOD);
   SPR.obj.boulder = patCanvas(P.boulder, { o: OUT, R: '#8a8698', r: '#625e78', L: '#b4b0c4' });
   SPR.obj.crystal = patCanvas(P.crystal, { o: OUT, W: '#ffffff', L: '#b8f0ff', C: '#5ac8f0', c: '#2a78c0' });
+  SPR.obj.shard = patCanvas(['......oo......', '.....oWCo.....', '....oWLCco....', '....oLCCco....', '.....oCco.....', '......oo......'], { o: '#2a2050', W: '#ffffff', L: '#c8f4ff', C: '#ffd94a', c: '#e8a020' });
   SPR.obj.crystalUsed = patCanvas(P.crystal, { o: OUT, W: '#fff6d0', L: '#ffe08a', C: '#f0b040', c: '#b07020' });
   SPR.obj.elder = patCanvas(ELDER, { o: OUT, W: '#e8e8f0', S: '#f2c8a0', C: '#6a4a9a', c: '#4a3270', B: '#5a3a20' });
   SPR.ready = true;

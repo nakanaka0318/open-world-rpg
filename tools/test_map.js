@@ -39,10 +39,12 @@ const SUBS = {
   icecave: [{ start: [11, 17], only: (x, y) => y > 13, goal: (r) => [9, 10, 11, 12, 13].some(x => r.has(x * 100 + 11)) }, { start: [10, 11], only: (x, y) => x === 11 && y === 10, goal: (r, b) => b.includes(611) }, { start: [10, 11], only: (x, y) => x === 4 && y === 8, goal: (r, b) => b.includes(207) }, { start: [10, 11], only: (x, y) => x === 19 && y === 8, goal: (r, b) => b.includes(2007) }],
   volccave: [{ start: [11, 14], goal: 'g1' }],
   castle: [{ start: [8, 13], goal: (r) => [...r].some(p => p % 100 <= 8) }],
+  crylab: [{ start: [9, 10], goal: 'g1' }],
+  seacave: [{ start: [9, 9], goal: (r) => [...r].some(p => p % 100 <= 2) }],
 };
 for (const dg of DUNGEONS) {
   const bp = dg.bp, w = bp[0].length, h = bp.length;
-  const wall = (x, y) => { const c = bp[y] && bp[y][x]; return !c || '#VTKBC^!$SZRQabcE'.includes(c); };
+  const wall = (x, y) => { const c = bp[y] && bp[y][x]; return !c || '#VWTKBC^!$SZRQabcE'.includes(c); };
   for (const sub of SUBS[dg.id] || []) {
     const boulders = [];
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (bp[y][x] === 'O' && (!sub.only || sub.only(x, y))) boulders.push(x * 100 + y);

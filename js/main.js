@@ -15,7 +15,8 @@ const Game = {
     UI.root.appendChild(this.hudEl);
     window.addEventListener('resize', () => this.resize());
     window.addEventListener('orientationchange', () => setTimeout(() => this.resize(), 200));
-    document.addEventListener('visibilitychange', () => { if (document.hidden) Sound.stopBgm(); else if (Sound.cur) { const c = Sound.cur; Sound.cur = null; Sound.bgm(c); } });
+    window.addEventListener('pagehide', () => this.autoSave(true));
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { this.autoSave(true); } if (document.hidden) Sound.stopBgm(); else if (Sound.cur) { const c = Sound.cur; Sound.cur = null; Sound.bgm(c); } });
     this.resize();
     this.title();
     requestAnimationFrame(t => this.loop(t));
@@ -45,6 +46,8 @@ const Game = {
     if (this.scene === 'field') {
       Field.update(dt);
       G.playtime += dt;
+      this._saveTimer = (this._saveTimer || 0) + dt;
+      if (this._saveTimer > 60 && !UI.active() && !Field.busy) { this._saveTimer = 0; this.autoSave(); }
       Field.draw(ctx);
     } else if (this.scene === 'battle') {
       G.playtime += dt;
@@ -68,6 +71,19 @@ const Game = {
     Field.busy = true;
     await Menu.open();
     Field.busy = false;
+    this.autoSave();
+  },
+  // ---------- 自動セーブ ----------
+  autoSave(force) {
+    if (!G || this.scene !== 'field' || Battle.active || this._noSave) return;
+    const now = Date.now();
+    if (!force && now - (this._lastSave || 0) < 1500) return;
+    if (saveGame()) {
+      this._lastSave = now;
+      const m = U.el('div', 'savemark', 'オートセーブ');
+      UI.root.appendChild(m);
+      setTimeout(() => m.remove(), 1300);
+    }
   },
   hud() {
     if (!G || this.scene !== 'field') { this.hudEl.classList.add('hidden'); return; }
@@ -78,7 +94,7 @@ const Game = {
       e.stopPropagation();
       if (Field.busy || UI.active() || this.scene !== 'field') return;
       if (b.dataset.a === 'menu') this.openMenu();
-      else { Field.busy = true; Sound.play('ok'); await Gacha.open(); Field.busy = false; this.hud(); }
+      else { Field.busy = true; Sound.play('ok'); await Gacha.open(); Field.busy = false; this.hud(); this.autoSave(); }
     });
   },
 
@@ -132,6 +148,7 @@ const Game = {
     await Story.intro();
     G.login = U.today();
     Field.busy = false;
+    this.autoSave(true);
     Field.updateLoc(true);
     this.hud();
   },
@@ -180,6 +197,7 @@ Battle.start = async function (ids, opts) {
   Game.scene = 'field';
   Game.hud();
   Field.updateLoc(true);
+  Game.autoSave(true);
   return r;
 };
 

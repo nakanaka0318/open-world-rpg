@@ -13,6 +13,8 @@ const BG_DEF = {
   ice: { sky: ['#0a1a2a', '#2a5a7a'], ground: ['#a3d8ee', '#6fb5d8'], hill: '#4d93b8', cave: true },
   lava: { sky: ['#1a0808', '#5a1a10'], ground: ['#4a3532', '#2a1a18'], hill: '#3a2624', cave: true, lava: true },
   castle: { sky: ['#0a0614', '#2a1a40'], ground: ['#3a2f50', '#221a33'], hill: '#2c2440', cave: true },
+  beach: { sky: ['#3ab0f0', '#b8f0ff'], ground: ['#f0dca0', '#d8bc78'], hill: '#2a8ad8' },
+  crystal: { sky: ['#4a3a8a', '#c8b8f0'], ground: ['#b4a6d6', '#8a7ab8'], hill: '#8ad0f0' },
 };
 const ST_N = { str: '筋力', dex: '敏捷', vuln: '脆弱', weak: '脱力', poison: '毒', regen: '再生', thorns: 'トゲ', devote: '献身', serve: '奉仕' };
 const ST_GOOD = { str: 1, dex: 1, regen: 1, thorns: 1, devote: 1, serve: 1 };
@@ -72,6 +74,8 @@ const Battle = {
     const maxhp = this.party.reduce((a, c) => a + charStats(c).hp, 0);
     const hp = this.party.reduce((a, c) => a + Math.max(0, c.hp), 0);
     this.P = { hp: Math.max(1, hp), max: maxhp, block: 0, st: {}, gained: 0 };
+    this.relics = this.party.filter(c => RELICS[c.id]).map(c => ({ id: c.id, L: c.lb || 0, r: RELICS[c.id] }));
+    this.atkCount = 0;
     // デッキ
     const deck = [];
     for (let i = 0; i < 4; i++) { const c = this.party[i]; if (c) deck.push(...charCards(c.id)); else for (let k = 0; k < 5; k++) deck.push('blank'); }
@@ -173,7 +177,7 @@ const Battle = {
   refresh() {
     const P = this.P;
     // パーティ
-    this.partyEl.innerHTML = `<div class="cbp-ports">${[0, 1, 2, 3].map(i => { const c = this.party[i]; return c ? `<img src="${portraitURL(CHARS[c.id].look)}">` : '<i></i>'; }).join('')}</div>
+    this.partyEl.innerHTML = `<div class="cbp-ports">${[0, 1, 2, 3].map(i => { const c = this.party[i]; return c ? `<span class="cbp-pc"><img src="${portraitURL(CHARS[c.id].look)}">${RELICS[c.id] ? `<img class="cbp-rl" src="${relicIconURL(c.id)}" title="${U.esc(RELICS[c.id].n)}">` : ''}</span>` : '<i></i>'; }).join('')}</div>
       <div class="cbp-main"><div class="cbp-hp${P.hp < P.max * 0.3 ? ' low' : ''}"><i style="width:${100 * P.hp / P.max}%"></i><span>HP ${P.hp} / ${P.max}</span></div><div class="cbp-st">${P.block ? `<span class="blk">ブロック${P.block}</span>` : ''}${this.stChips(P.st)}</div></div>`;
     // 敵
     const s = Game.scale;
@@ -357,7 +361,14 @@ const Battle = {
     P.block = 0;
     if (P.st.poison) { const d = P.st.poison; P.hp = Math.max(0, P.hp - d); P.st.poison--; this.popParty(d, 'dmg poison'); if (await this.checkEnd()) return; }
     this.energy = ENERGY_MAX;
-    this.drawCards(DRAW_N);
+    let extra = 0;
+    if (this.turn === 1 && this.relics.length) {
+      this.msg('レリック発動: ' + this.relics.map(x => `<span class="skn">${U.esc(x.r.n)}</span>`).join('、'));
+      for (const x of this.relics) { if (x.r.start) x.r.start(this, x.L); if (x.r.draw) extra += x.r.draw(x.L); }
+      this.relicFlash();
+    }
+    for (const x of this.relics) if (x.r.turn) x.r.turn(this, x.L);
+    this.drawCards(DRAW_N + extra);
     this.sel = -1; this.targeting = false; this.busy = false;
     Sound.play('cursor');
     this.refresh();
@@ -394,6 +405,7 @@ const Battle = {
     this.refresh();
     await this.cutin(h.cid);
     if (c.flags.serve) { this.addSt(this.P, 'serve', 1); this.popParty('奉仕+1', 'buff'); }
+    if (c.type === 'a') { this.atkCount++; for (const x of this.relics) if (x.r.attack) x.r.attack(this, x.L, this.atkCount); }
     await this.applyCard(h.cid, tj);
     this.busy = false;
     if (await this.checkEnd()) return;
@@ -437,6 +449,11 @@ const Battle = {
     }
   },
   addSt(u, k, n) { u.st[k] = (u.st[k] || 0) + n; },
+  // レリック用
+  relicBlock(n) { this.P.block += n; this.P.gained += n; this.popParty('ブロック+' + n, 'buff'); },
+  relicHeal(n) { const v = Math.min(this.P.max - this.P.hp, n); this.P.hp += v; this.P.gained += v; if (n > 0) this.popParty('+' + n, 'heal'); },
+  relicSt(k, n) { this.addSt(this.P, k, n); this.popParty((ST_N[k] || k) + '+' + n, 'buff'); },
+  relicFlash() { this.partyEl.classList.remove('relicon'); void this.partyEl.offsetWidth; this.partyEl.classList.add('relicon'); Sound.play('buff'); },
   debuff(e, k, n) { this.addSt(e, k, n); this.pop(ST_N[k] + n, e.x + e.w / 2, e.y + e.h * 0.2, k === 'poison' ? 'poison' : 'debuff'); Sound.play('debuff'); },
   // 防御無視ダメージ (バーン)
   burnEnemy(e, n) {
@@ -655,6 +672,7 @@ const Battle = {
   async finish(res) {
     this.busy = true;
     this.sel = -1;
+    if (res === 'win') for (const x of this.relics) if (x.r.win) x.r.win(this, x.L);
     this.syncHp();
     if (res === 'lose') {
       Sound.stopBgm();

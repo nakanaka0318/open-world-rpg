@@ -1,0 +1,69 @@
+'use strict';
+// ===== レリック (★5キャラ固有。パーティにいるだけで戦闘中に発動) =====
+// L = そのキャラの凸数 (0〜5)。凸するほど数値が上がる。
+// フック: start(B,L) 戦闘開始時 / turn(B,L) 毎ターン開始時 / draw(L) 最初のターンの追加ドロー
+//         attack(B,L,count) アタックを使うたび / win(B,L) 勝利時
+const RELICS = {
+  seres: {
+    n: '白銀の盾章', icon: 'armor',
+    desc: L => `戦闘開始時、ブロック${8 + 4 * L}を得る`,
+    start: (B, L) => B.relicBlock(8 + 4 * L),
+  },
+  noa: {
+    n: '宵闇のグリモワール', icon: 'staff',
+    desc: L => `戦闘開始時、敵全体に脱力${1 + Math.floor(L / 2)}`,
+    start: (B, L) => { for (const e of B.enemies) if (e.alive) B.debuff(e, 'weak', 1 + Math.floor(L / 2)); },
+  },
+  homura: {
+    n: '紅蓮の鈴', icon: 'amulet',
+    desc: L => `戦闘開始時、筋力+${1 + Math.floor(L / 2)}`,
+    start: (B, L) => B.relicSt('str', 1 + Math.floor(L / 2)),
+  },
+  sylphy: {
+    n: '風精の羽飾り', icon: 'tiara',
+    desc: L => `最初のターン、カードを${2 + Math.floor(L / 2)}枚多く引く`,
+    draw: L => 2 + Math.floor(L / 2),
+  },
+  stella: {
+    n: '星詠みの指輪', icon: 'ring',
+    desc: L => `毎ターン開始時、HPを${3 + L}回復`,
+    turn: (B, L) => B.relicHeal(3 + L),
+  },
+  marina: {
+    n: '人魚の涙', icon: 'amulet',
+    desc: L => `戦闘に勝利すると、最大HPの${6 + 2 * L}%回復`,
+    win: (B, L) => B.relicHeal(Math.round(B.P.max * (6 + 2 * L) / 100)),
+  },
+  terra: {
+    n: '竜鱗の首飾り', icon: 'amulet',
+    desc: L => `毎ターン開始時、ブロック${3 + L}を得る`,
+    turn: (B, L) => B.relicBlock(3 + L),
+  },
+  kanae: {
+    n: '銀のティーセット', icon: 'ring',
+    desc: L => `戦闘開始時、奉仕+${1 + Math.floor(L / 2)}`,
+    start: (B, L) => B.relicSt('serve', 1 + Math.floor(L / 2)),
+  },
+  lumia: {
+    n: '全力のお守り', icon: 'amulet',
+    desc: L => `アタックを${L >= 5 ? 2 : 3}枚使うたびに筋力+1`,
+    attack: (B, L, n) => { if (n % (L >= 5 ? 2 : 3) === 0) B.relicSt('str', 1); },
+  },
+  misuzu: {
+    n: '陽だまりの髪飾り', icon: 'tiara',
+    desc: L => `戦闘開始時、再生${3 + L}`,
+    start: (B, L) => B.relicSt('regen', 3 + L),
+  },
+};
+const RELIC_ICON = {};
+function relicIconURL(id) {
+  if (RELIC_ICON[id]) return RELIC_ICON[id];
+  const r = RELICS[id];
+  return (RELIC_ICON[id] = iconCanvas(r.icon, ELEM[CHARS[id].elem].c).toDataURL());
+}
+function relicLevel(id) { return G && G.roster[id] ? G.roster[id].lb : 0; }
+function relicHTML(id, L = relicLevel(id)) {
+  const r = RELICS[id];
+  if (!r) return '';
+  return `<div class="relic"><img src="${relicIconURL(id)}"><div><b>${U.esc(r.n)}</b>${L ? ` <span class="lb">${L}凸</span>` : ''}<br><small>${U.esc(r.desc(L))}</small></div></div>`;
+}

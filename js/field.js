@@ -30,6 +30,8 @@ const Field = {
     });
     for (const b of this.boulders) if (!b.gone) this.place(b);
     for (const c of W.objs.chests) this.place(Object.assign({ type: 'chest' }, c));
+    this.shards = new Map();
+    for (const s of W.objs.shards || []) if (!(G.shards && G.shards[s.id])) this.shards.set(this.key(s.x, s.y), s);
     for (const s of W.objs.saves) this.place(Object.assign({ type: 'save' }, s));
     this.bosses = [];
     for (const b of W.objs.bosses) if (!G.bosses[b.id]) { const o = Object.assign({ type: 'boss' }, b); this.bosses.push(o); this.place(o); }
@@ -88,6 +90,7 @@ const Field = {
       this.locName = li.name;
       Game.hud();
       if (changed && li.kind !== 'field') UI.toast(`<b>${U.esc(li.name)}</b>`, 1500);
+      if (changed) Game.autoSave();
     }
     if (Game.scene === 'field') Sound.bgm(li.bgm);
   },
@@ -166,7 +169,7 @@ const Field = {
         G.solved[k] = 1;
         for (const gt of WORLD.objs.gates) if (gt.struct === structId && gt.group === g) this.setFloor(gt.x, gt.y, structId);
         G.stones += 100;
-        setTimeout(() => { Sound.play('puzzle'); setTimeout(() => Sound.play('gate'), 400); UI.toast('ゴゴゴ…!どこかで扉が開いた!<br><span class="st">星晶石 +100</span>', 2600); Game.hud(); }, 200);
+        setTimeout(() => { Sound.play('puzzle'); setTimeout(() => Sound.play('gate'), 400); UI.toast('ゴゴゴ…!どこかで扉が開いた!<br><span class="st">星晶石 +100</span>', 2600); Game.hud(); Game.autoSave(); }, 200);
       }
     }
   },
@@ -188,6 +191,15 @@ const Field = {
     const p = this.p;
     if (p.steps % 2 === 0) Sound.play('step');
     this.reveal();
+    const sh = this.shards && this.shards.get(this.key(p.x, p.y));
+    if (sh) {
+      this.shards.delete(this.key(p.x, p.y));
+      G.shards = G.shards || {}; G.shards[sh.id] = 1;
+      G.stones += sh.n;
+      Sound.play('chest');
+      UI.toast(`星晶石のかけらを拾った!<br><span class="st">星晶石 +${sh.n}</span>`, 1600);
+      Game.hud(); Game.autoSave();
+    }
     const t = this.tile(p.x, p.y);
     if (t === T.RUNE) {
       const st = WORLD.objs.runes.find(r => r.x === p.x && r.y === p.y);
@@ -327,6 +339,7 @@ const Field = {
       const txt = grant(o);
       Game.hud();
       await UI.say(`宝箱を開けた!\n${txt} を手に入れた!`);
+      Game.autoSave();
     } else if (o.type === 'save') {
       await Story.saveCrystal(o);
     } else if (o.type === 'boss') {
@@ -362,6 +375,7 @@ const Field = {
         const txt = grant(h.reward);
         Game.hud();
         await UI.say(`足元を調べた…\nなにか埋まっている!\n${txt} を手に入れた!`);
+        Game.autoSave();
         return;
       }
     }
@@ -414,6 +428,12 @@ const Field = {
       if (r && r !== cr) continue;
       if (cr && r !== cr && curR.dark) continue;
       list.push(o);
+    }
+    if (this.shards && !cr) for (const s of this.shards.values()) {
+      if (s.x < x0 - 1 || s.x > x1 + 1 || s.y < y0 - 1 || s.y > y1 + 1) continue;
+      const tw = Math.floor(this.time * 3 + s.x) % 6;
+      ctx.drawImage(SPR.obj.shard, s.x * TS - cam.x + 1, s.y * TS - cam.y + 5 - (tw === 0 ? 1 : 0));
+      if (tw < 2) { ctx.fillStyle = '#fff'; ctx.fillRect(s.x * TS - cam.x + 3 + tw * 6, s.y * TS - cam.y + 3, 1, 1); }
     }
     if (!this.hideP) list.push(this.p);
     list.sort((a, b) => (a.y - (a.t < 1 ? 1 - a.t : 0) * 0) - b.y);

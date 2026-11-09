@@ -353,11 +353,23 @@ const ENEMIES = {
   imp: { n: 'デビルインプ', spr: 'imp', pal: { B: '#5a3a8a', A: '#e8e0d0' }, elem: 'dark', hp: 170, atk: 56, def: 34, mag: 50, spd: 22, exp: 110, gold: 60, act: [['attack', 2], ['e_dark', 2]] },
   dknight: { n: 'スケルトンナイト', spr: 'skel', pal: { B: '#c8c8d8', W: '#d8d8e8', A: '#8a92a6' }, elem: 'dark', hp: 220, atk: 64, def: 44, mag: 20, spd: 16, exp: 120, gold: 64, act: [['attack', 3], ['e_charge', 1]] },
   darkghost: { n: 'ダークレイス', spr: 'ghost', pal: { B: '#4a3a6a', E: '#ffe66d' }, elem: 'dark', hp: 180, atk: 48, def: 36, mag: 62, spd: 20, exp: 115, gold: 58, act: [['e_dark', 2], ['e_drain', 1]], drop: [['ether', 0.2]] },
+  // 南国の島々
+  crab: { n: 'シザークラブ', spr: 'scorp', pal: { B: '#e04a3a' }, elem: 'water', hp: 95, atk: 36, def: 26, mag: 10, spd: 12, exp: 50, gold: 34, act: [['attack', 2], ['e_bite', 1]] },
+  seaslime: { n: 'マリンスライム', spr: 'slime', pal: { B: '#3ad0c0' }, elem: 'water', hp: 85, atk: 32, def: 20, mag: 26, spd: 12, exp: 46, gold: 30, act: [['attack', 2], ['e_ice', 1]], drop: [['ether', 0.12]] },
+  parrot: { n: 'トロピカルバード', spr: 'bat', pal: { B: '#3fbf5a' }, elem: 'wind', hp: 75, atk: 38, def: 16, mag: 20, spd: 22, exp: 48, gold: 32, act: [['attack', 2], ['e_wind', 1]] },
+  // 水晶の荒野
+  cryslime: { n: 'プリズムスライム', spr: 'slime', pal: { B: '#b48ae8' }, elem: 'light', hp: 220, atk: 70, def: 46, mag: 60, spd: 16, exp: 150, gold: 80, act: [['attack', 2], ['e_charge', 1]] },
+  crybat: { n: 'クリスタルバット', spr: 'bat', pal: { B: '#8ad0f0' }, elem: 'light', hp: 180, atk: 74, def: 36, mag: 40, spd: 26, exp: 140, gold: 76, act: [['attack', 2], ['e_drain', 1]] },
+  cryghost: { n: '結晶の亡霊', spr: 'ghost', pal: { B: '#d8c8f8', E: '#5ac8f0' }, elem: 'dark', hp: 200, atk: 60, def: 40, mag: 78, spd: 22, exp: 150, gold: 80, act: [['e_dark', 2], ['e_poison', 1]] },
+  crywolf: { n: '結晶狼', spr: 'wolf', pal: { B: '#9a8ad8' }, elem: 'earth', hp: 260, atk: 82, def: 44, mag: 30, spd: 24, exp: 170, gold: 90, act: [['attack', 2], ['e_bite', 1]] },
   // ボス
   treant: { n: '森の大精霊ドリアード', spr: 'treant', pal: { G: '#3f8f3e', T: '#7a5a3a', R: '#3a1a10' }, elem: 'wind', boss: true, hp: 520, chp: 220, atk: 30, def: 16, mag: 24, spd: 9, exp: 320, gold: 300, act: [['attack', 2], ['e_root', 2], ['e_leaf', 2], ['e_heal', 1]] },
   golemk: { n: '砂の守護者ゴーレム', spr: 'golem', pal: { B: '#c8a060', A: '#5ae8f0' }, elem: 'earth', boss: true, hp: 980, chp: 360, atk: 46, def: 34, mag: 20, spd: 7, exp: 650, gold: 500, act: [['attack', 2], ['e_smash', 2], ['e_rock', 2], ['e_charge', 1]] },
   frostd: { n: '氷竜フロストドラゴン', spr: 'dragon', pal: { B: '#7ac8f0', A: '#3a7ad8', S: '#e8f8ff' }, elem: 'water', boss: true, hp: 1500, chp: 460, atk: 60, def: 40, mag: 56, spd: 16, exp: 1000, gold: 700, act: [['attack', 2], ['e_ice', 2], ['e_icebreath', 2], ['e_bite', 1]] },
   flamed: { n: '炎竜イグニス', spr: 'dragon', pal: { B: '#d8352a', A: '#f08a24', S: '#ffd34d' }, elem: 'fire', boss: true, hp: 2100, chp: 600, atk: 76, def: 48, mag: 70, spd: 18, exp: 1500, gold: 900, act: [['attack', 2], ['e_fire', 2], ['e_firebreath', 2], ['e_charge', 1]] },
+  ancient: { n: '古代の守護騎士', spr: 'skel', pal: { B: '#c8a060', W: '#e8c890', A: '#f5c542' }, elem: 'earth', boss: true, hp: 600, chp: 300, atk: 38, def: 24, mag: 16, spd: 10, exp: 500, gold: 300, act: [['attack', 2], ['e_smash', 1], ['e_charge', 1]] },
+  serpent: { n: '海竜リヴァイア', spr: 'dragon', pal: { B: '#2ab0a0', A: '#1a7a8a', S: '#c8f8e8' }, elem: 'water', boss: true, hp: 1500, chp: 520, atk: 64, def: 40, mag: 60, spd: 18, exp: 1300, gold: 800, act: [['attack', 2], ['e_icebreath', 2], ['e_bite', 1], ['e_heal', 1]] },
+  crygolem: { n: '結晶の巨像', spr: 'golem', pal: { B: '#9a8ad8', A: '#ffffff' }, elem: 'light', boss: true, hp: 3000, chp: 1000, atk: 96, def: 60, mag: 70, spd: 12, exp: 4000, gold: 2000, act: [['attack', 2], ['e_smash', 2], ['e_rock', 1], ['e_charge', 1]] },
   demon: { n: '魔王ノクス', spr: 'demon', pal: { S: '#a8b8d8', K: '#3a1a5a', A: '#e8e0d0', G: '#f5c542', E: '#ff3b3b' }, elem: 'dark', boss: true, hp: 3800, chp: 800, atk: 88, def: 54, mag: 90, spd: 22, exp: 5000, gold: 3000, act: [['attack', 2], ['e_dark', 2], ['e_darkwave', 2], ['e_drain', 1], ['e_charge', 1]] },
 };
 
@@ -372,6 +384,11 @@ const AREAS = {
   ruins: { n: '砂の遺跡', bg: 'ruins', groups: [['mummy', 'mummy'], ['sandslime', 'mummy'], ['scorp', 'scorp']] },
   icecave: { n: '氷の洞窟', bg: 'ice', groups: [['iceghost', 'iceghost'], ['iceslime', 'snowwolf'], ['snowwolf', 'snowwolf']] },
   volccave: { n: '炎の火山', bg: 'lava', groups: [['wisp', 'wisp'], ['hellhound', 'bombslime'], ['bombslime', 'wisp', 'wisp']] },
+  island: { n: '南国の島々', bg: 'beach', groups: [['crab'], ['seaslime', 'parrot'], ['crab', 'seaslime'], ['parrot', 'parrot']] },
+  crystal: { n: '水晶の荒野', bg: 'crystal', groups: [['crywolf'], ['cryslime', 'crybat'], ['cryghost', 'crybat'], ['crywolf', 'cryghost']] },
+  subruin: { n: '忘れられた遺構', bg: 'shrine', groups: [['wolf', 'mush2'], ['bee', 'wolf']] },
+  subsea: { n: '潮騒の洞窟', bg: 'ice', groups: [['crab', 'seaslime'], ['seaslime', 'seaslime', 'parrot']] },
+  subcrys: { n: '結晶の迷宮', bg: 'crystal', groups: [['crywolf', 'cryslime'], ['cryghost', 'cryghost']] },
   castle: { n: '魔王城', bg: 'castle', groups: [['imp', 'imp'], ['dknight'], ['darkghost', 'imp'], ['dknight', 'darkghost']] },
 };
 

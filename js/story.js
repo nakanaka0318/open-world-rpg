@@ -187,7 +187,8 @@ const Story = {
     Sound.play('save');
     Game.hud();
     if (first) await UI.say(`クリスタルに触れた。\n「${o.name}」が転移先に登録された!`);
-    const c = await UI.ask('クリスタルの光が仲間の傷を癒した。\nどうしますか?', ['セーブする', '転移する', 'やめる']);
+    Game.autoSave(true);
+    const c = await UI.ask('クリスタルの光が仲間の傷を癒した。\n(冒険は自動でセーブされています)\nどうしますか?', ['セーブする', '転移する', 'やめる']);
     if (c === 0) {
       G.lastSave = { x: Field.p.x, y: Field.p.y };
       if (saveGame()) { Sound.play('ok'); await UI.say('冒険の記録をセーブしました。'); }
@@ -215,6 +216,7 @@ const Story = {
       setTimeout(() => Sound.play('gate'), 450);
       Game.hud();
       await UI.say('正解だ!\n重い扉が音を立てて開いた!\n(謎解きボーナス: 星晶石×100)');
+      Game.autoSave();
     } else {
       Sound.play('buzz');
       await UI.say('……何も起こらない。\n答えが違うようだ。ヒントを探そう。');
@@ -231,8 +233,18 @@ const Story = {
     Sound.play('star5');
     await UI.fade('#fff', 500, 300, 700, () => { G.seal = true; WORLD.tiles[WORLD.seal.y * MW + WORLD.seal.x] = T.BRIDGE; });
     await UI.say('封印が砕け散った!\n魔王城への道が開かれた!');
+    Game.autoSave();
   },
   async bossDefeated(o) {
+    if (o.sub) {
+      const r = o.reward || { stones: 200 };
+      const t = grant(r);
+      Sound.play('star5');
+      Game.hud();
+      await UI.say([`${ENEMIES[o.enemy].n} を倒した!`, `討伐報酬: ${t}\n奥の宝箱も忘れずに!`]);
+      Game.autoSave();
+      return;
+    }
     if (o.crystal) {
       G.crystals.push(o.crystal);
       G.stones += 300;
@@ -242,6 +254,7 @@ const Story = {
       await UI.say([`${ci.n} を手に入れた!\n(討伐ボーナス: 星晶石×300)`, `封印の水晶 ${G.crystals.length}/4`]);
       if (G.crystals.length === 2) await UI.say('水晶が共鳴している…\n【限定召喚「星詠みの姫君」】が解放された!\n(メニュー → ガチャ)');
       if (G.crystals.length === 4) await UI.say('4つの水晶がそろった!\n湖の魔王城へ続く橋へ向かおう!');
+      Game.autoSave();
       // 入口近くのクリスタルへ戻すか尋ねる
       const st = WORLD.dunInfo[o.struct];
       const c = await UI.ask('ダンジョンの入口へ戻りますか?', ['戻る', 'このまま']);

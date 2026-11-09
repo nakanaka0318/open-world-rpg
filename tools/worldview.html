@@ -5,10 +5,10 @@
 buildSprites();buildWorld();
 const c=document.getElementById('c').getContext('2d');
 for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const i=y*MW+x;const t=WORLD.tiles[i];const r=WORLD.region[i];
- if(r){const R=WORLD.regions[r];c.drawImage(SPR.roofs[R.roof].mid,x*8,y*8,8,8);}
- else{let im=SPR.tiles[t][0];const k=TILE_DEFS[t].k;if(STYLE_TILES[k+':'+STYLE_LIST[WORLD.style[i]]])im=STYLE_TILES[k+':'+STYLE_LIST[WORLD.style[i]]];c.drawImage(im,x*8,y*8,8,8);}}
-for(const ch of WORLD.objs.chests)c.drawImage(SPR.obj.chest,ch.x*8,ch.y*8,8,8);
-for(const s of WORLD.objs.saves)c.drawImage(SPR.obj.crystal,s.x*8,s.y*8,8,8);
-c.fillStyle='rgba(255,0,0,.6)';for(const s of WORLD.objs.spawns)c.fillRect(s.x*8+2,s.y*8+2,4,4);
-c.fillStyle='rgba(255,255,0,.9)';for(const s of WORLD.objs.hidden)c.fillRect(s.x*8,s.y*8,8,8);
+ if(r){const R=WORLD.regions[r];c.drawImage(SPR.roofs[R.roof].mid,x*4,y*4,4,4);}
+ else{let im=SPR.tiles[t][0];const k=TILE_DEFS[t].k;if(STYLE_TILES[k+':'+STYLE_LIST[WORLD.style[i]]])im=STYLE_TILES[k+':'+STYLE_LIST[WORLD.style[i]]];c.drawImage(im,x*4,y*4,4,4);}}
+for(const ch of WORLD.objs.chests)c.drawImage(SPR.obj.chest,ch.x*4,ch.y*4,4,4);
+for(const s of WORLD.objs.saves)c.drawImage(SPR.obj.crystal,s.x*4,s.y*4,4,4);
+c.fillStyle='rgba(255,0,0,.6)';for(const s of WORLD.objs.spawns)c.fillRect(s.x*4+1,s.y*4+1,2,2);
+c.fillStyle='rgba(255,255,0,.9)';for(const s of WORLD.objs.hidden)c.fillRect(s.x*4,s.y*4,4,4);
 </script></body></html>

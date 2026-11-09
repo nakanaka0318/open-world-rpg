@@ -5,7 +5,9 @@
 //  b8 = ブロック8 / h6 = HP6回復 / c2 = 2枚引く / e1 = エナジー+1
 //  s2 = 筋力+2 / f2 = 敏捷+2 / g3 = 再生3 / t3 = トゲ3
 //  v2 = 脆弱2 / w2 = 脱力2 / p4 = 毒4 (小文字は敵1体、大文字 V W P は敵全体)
-//  !E = 廃棄 (この戦闘で1回きり) / !R = 保留 (ターン終了時に捨てない)
+//  !E = 廃棄 (この戦闘で1回きり) / !R = 保留 (ターン終了時に捨てない) / !S = 奉仕 (使うと奉仕回数+1)
+//  z8 = 防御無視で8ダメージ+奉仕した回数×6 / m3 = 献身3ターン(与ダメ1/2、回復とブロック2.5倍)
+//  q1 = 防御無視で「この戦闘で得たブロック+回復したHP」分のダメージ
 // 数値はキャラのレベル(攻撃・防御・魔力)と、凸(固有カード)・精錬(共通カード)で上がります。
 
 const CARD_TYPE = { a: 'アタック', s: 'スキル' };
@@ -35,6 +37,9 @@ const UNIQUE_CARDS = {
   pico: [['ヒール', 's', 1, 'h7'], ['アクア', 'a', 1, 'd6'], ['キュア', 's', 0, 'h3'], ['お祈り', 's', 1, 'g3'], ['水鉄砲', 'a', 0, 'd3']],
   sora: [['スラッシュ', 'a', 1, 'd7'], ['騎士の盾', 's', 1, 'b8'], ['聖なる守り', 's', 2, 'b13'], ['シールドバッシュ', 'a', 1, 'd5 b4'], ['突撃', 'a', 2, 'd13']],
   mint: [['ヒール', 's', 1, 'h7'], ['薬草', 's', 0, 'g2'], ['ウィンド', 'a', 1, 'd6'], ['しびれ薬', 's', 1, 'w2'], ['毒草', 'a', 1, 'p5']],
+  kanae: [['お茶をどうぞ', 's', 1, 'g3 c1 !S'], ['お掃除', 's', 0, 'b5 c1 !S'], ['お支度', 's', 1, 'e2 !E !S'], ['お出迎え', 's', 1, 'b8 s1 !S'], ['ご奉仕の成果', 'a', 2, 'z8']],
+  lumia: [['全力ストライク', 'a', 1, 'd9 s1'], ['揺さぶり', 'a', 1, 'd7 v2'], ['全力全開', 'a', 2, 'd16 s2'], ['崩しの一手', 'a', 2, 'd12 w2 v2'], ['がむしゃらな連撃', 'a', 1, 'd5x2 s1']],
+  misuzu: [['そっと叩く', 'a', 1, 'd6'], ['守りの構え', 's', 1, 'b12'], ['いたわりの手', 's', 1, 'h12'], ['献身の誓い', 's', 1, 'm3 !E'], ['想いの一撃', 'a', 2, 'q1 !E']],
   chloe: [['ひっかき', 'a', 1, 'd3x2'], ['シャドウ', 'a', 1, 'd6'], ['しのび足', 's', 1, 'b6'], ['カース', 's', 1, 'w1 v1'], ['猫の気まぐれ', 's', 0, 'c1 e1 !E']],
 };
 
@@ -74,6 +79,7 @@ function parseFx(str) {
   for (const tk of str.split(/\s+/)) {
     if (tk === '!E') { flags.exhaust = true; continue; }
     if (tk === '!R') { flags.retain = true; continue; }
+    if (tk === '!S') { flags.serve = true; continue; }
     const m = /^([a-zA-Z])(\d+)(?:x(\d+))?$/.exec(tk);
     if (!m) continue;
     ops.push({ k: m[1], n: +m[2], hits: m[3] ? +m[3] : 1 });
@@ -96,7 +102,7 @@ function parseFx(str) {
 })();
 function charCards(charId) { return [0, 1, 2, 3, 4].map(i => charId + '_' + i).filter(id => CARDS[id]); }
 function cardPool(rar) { return Object.keys(COMMON_CARDS).filter(k => COMMON_CARDS[k][4] === rar); }
-function cardNeedsTarget(c) { return c.ops.some(o => 'dvwp'.includes(o.k)); }
+function cardNeedsTarget(c) { return c.ops.some(o => 'dvwpzq'.includes(o.k)); }
 
 // 強化段階 (固有=凸数, 共通=精錬)
 function cardLevel(cid) {
@@ -124,14 +130,17 @@ function cardOps(cid) {
   return c.ops.map(o => {
     let n = o.n;
     if (o.k === 'd' || o.k === 'D') n = Math.max(1, Math.round(o.n * up * powMult(pw.p)));
+    else if (o.k === 'z') return { k: 'z', n: Math.round(o.n * up * powMult(pw.p)), per: Math.round(o.n * 0.75 * up * powMult(pw.p)), hits: 1 };
     else if (o.k === 'b') n = Math.round(o.n * up * powMult(pw.def * 1.3));
     else if (o.k === 'h' || o.k === 'g') n = Math.round(o.n * up * powMult(pw.mag * 1.2));
+    else if (o.k === 'm' || o.k === 'q') n = o.n;
     else if ('pPt'.includes(o.k)) n = Math.round(o.n * up * (0.5 + powMult(pw.p) * 0.5));
     else if ('sfvwVW'.includes(o.k)) n = o.n + st;
     return { k: o.k, n, hits: o.hits };
   });
 }
 const FX_TXT = {
+  z: (n, h, o) => `防御無視で${n}ダメージ+奉仕した回数×${o.per}`, q: () => 'この戦闘で得たブロック+回復したHP分の防御無視ダメージ', m: n => `献身${n}ターン(与ダメージ1/2、回復とブロック2.5倍)`,
   d: (n, h) => `${n}ダメージ${h > 1 ? '×' + h : ''}`, D: (n, h) => `敵全体に${n}ダメージ${h > 1 ? '×' + h : ''}`,
   b: n => `ブロック${n}`, h: n => `HP${n}回復`, c: n => `${n}枚引く`, e: n => `エナジー+${n}`,
   s: n => `筋力+${n}`, f: n => `敏捷+${n}`, g: n => `再生${n}`, t: n => `トゲ${n}`,
@@ -141,7 +150,8 @@ function cardDesc(cid, ops) {
   const c = CARDS[cid];
   if (c.blank) return '何も起こらない';
   ops = ops || cardOps(cid);
-  const t = ops.map(o => FX_TXT[o.k] ? FX_TXT[o.k](o.n, o.hits) : '').filter(Boolean);
+  const t = ops.map(o => FX_TXT[o.k] ? FX_TXT[o.k](o.n, o.hits, o) : '').filter(Boolean);
+  if (c.flags.serve) t.unshift('奉仕');
   if (c.flags.exhaust) t.push('廃棄');
   if (c.flags.retain) t.push('保留');
   return t.join('。');

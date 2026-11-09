@@ -206,6 +206,27 @@ const CHARS = {
     profile: '教会のちびっこシスター。背伸びしたいお年頃。',
   },
   // ---- 追加キャラ ----
+  kanae: {
+    n: 'かなえ', title: '物静かなメイド', rar: 5, elem: 'water', role: 'メイド', gacha: true,
+    base: { hp: 56, mp: 28, atk: 14, def: 12, mag: 18, spd: 14 }, grow: { hp: 10, mp: 3.4, atk: 2.4, def: 2.0, mag: 3.3, spd: 1.7 },
+    skills: [[1, 'heal']],
+    look: { hair: '#a4a2b4', eye: '#7a5aa8', cloth: '#7a2a3a', acc: '#ffffff', accType: 'maid', style: 'bob' },
+    profile: '屋敷に仕える無口なメイド。尽くした分だけ、ここぞの一撃は誰より重い。',
+  },
+  lumia: {
+    n: 'ルミア', title: '全力少女', rar: 5, elem: 'light', role: 'アタッカー', gacha: true,
+    base: { hp: 58, mp: 16, atk: 21, def: 10, mag: 10, spd: 15 }, grow: { hp: 10, mp: 2.0, atk: 3.7, def: 1.7, mag: 1.4, spd: 1.8 },
+    skills: [[1, 'slash']],
+    look: { hair: '#ece8f4', eye: '#5a8ad8', cloth: '#9a8ac8', acc: '#ffd94a', accType: 'star', style: 'long' },
+    profile: '何事にも全力投球。自信はないけれど、決めた夢だけは絶対にあきらめない。',
+  },
+  misuzu: {
+    n: 'みすず', title: 'おっとり守護者', rar: 5, elem: 'earth', role: '守護者', gacha: true,
+    base: { hp: 78, mp: 20, atk: 12, def: 18, mag: 16, spd: 9 }, grow: { hp: 15, mp: 2.6, atk: 1.9, def: 3.0, mag: 2.4, spd: 1.1 },
+    skills: [[1, 'heal']],
+    look: { hair: '#3e3e70', eye: '#8a7ab8', cloth: '#3f6a5a', acc: '#f6a2c0', accType: 'flower', style: 'pony' },
+    profile: 'のんびり屋のお姉さん。みんなを守った分だけ、想いは強くなる。',
+  },
   marina: {
     n: 'マリナ', title: '蒼海の歌姫', rar: 5, elem: 'water', role: '歌姫', gacha: true,
     base: { hp: 54, mp: 30, atk: 9, def: 11, mag: 20, spd: 12 }, grow: { hp: 10, mp: 3.6, atk: 1.4, def: 1.9, mag: 3.4, spd: 1.5 },
@@ -356,7 +377,7 @@ const AREAS = {
 
 // ---------- ガチャ ----------
 const GACHA_COST = { single: 50, ten: 500 };
-const PICKUP_ROT = ['seres', 'noa', 'homura', 'sylphy', 'marina', 'terra'];
+const PICKUP_ROT = ['seres', 'noa', 'homura', 'sylphy', 'marina', 'terra', 'kanae', 'lumia', 'misuzu'];
 function charPool(rar, opts = {}) {
   return Object.keys(CHARS).filter(k => CHARS[k].rar === rar && (CHARS[k].gacha || (opts.limited && k === 'stella')));
 }
@@ -366,11 +387,23 @@ function equipPool(rar) { return Object.keys(EQUIPS).filter(k => EQUIPS[k].rar =
 //  rates: [★5%, ★4%, ★3%] / tenCost: 10連の価格 / onlyTen: 10連のみ / once: 1回限り
 const BANNER_DEFS = [
   { id: 'beginner', n: 'はじめての召喚', sub: '1回限り!10連が半額 ★4以上1枠確定', kind: 'char', rates: [3, 15, 82], tenCost: 250, onlyTen: true, once: true, color: '#ff9fd0', show: g => !g.gacha.beginnerDone, feature: () => weeklyPickup() },
-  { id: 'pickup', n: g => CHARS[weeklyPickup()].n + ' ピックアップ', sub: () => '期間限定!今週の★5 ' + CHARS[weeklyPickup()].n + ' 出現率UP', kind: 'char', rates: [3, 12, 85], pickup: () => weeklyPickup(), color: () => ELEM[CHARS[weeklyPickup()].elem].c },
+  { id: 'pickup', n: () => CHARS[selPickup()].n + ' ピックアップ', sub: '好きな★5を選んでピックアップ!選んだ★5は他の★5の8倍出やすい', kind: 'char', rates: [3, 12, 85], pickup: () => selPickup(), selectable: true, color: () => ELEM[CHARS[selPickup()].elem].c },
   { id: 'limited', n: '【限定】星詠みの姫君', sub: '水晶の加護により解放!限定★5 ステラ登場', kind: 'char', rates: [3, 12, 85], pickup: 'stella', limited: true, color: '#ffe66d', show: g => g.crystals.length >= 2 },
   { id: 'elem', n: () => ELEM[weeklyElem()].n + '属性フェス', sub: () => '今週は' + ELEM[weeklyElem()].n + '属性のキャラが出やすい!(該当★4・★5の出現率UP)', kind: 'char', rates: [3, 12, 85], elem: () => weeklyElem(), color: () => ELEM[weeklyElem()].c, show: g => g.crystals.length >= 1, feature: () => charPool(5).find(k => CHARS[k].elem === weeklyElem()) || 'seres' },
   { id: 'card', n: 'カード召喚', sub: 'デッキに入れる共通カードが手に入る。同じカードが出ると+1強化', kind: 'card', rates: [4, 16, 80], color: '#c8d0e0' },
 ];
+// ピックアップ: 選んだキャラは他の★5の8倍の重みで抽選
+const PICKUP_WEIGHT = 8;
+function selPickup() { const k = G && G.gacha && G.gacha.pickup; return (k && CHARS[k] && CHARS[k].rar === 5 && (CHARS[k].gacha)) ? k : weeklyPickup(); }
+function pickupPool(b) { const pool = charPool(5); if (b.limited && !pool.includes(b.pickup)) pool.push(b.pickup); return pool; }
+function pickupDraw(b) {
+  const pool = pickupPool(b);
+  const tot = pool.reduce((a, k) => a + (k === b.pickup ? PICKUP_WEIGHT : 1), 0);
+  let r = Math.random() * tot;
+  for (const k of pool) { r -= k === b.pickup ? PICKUP_WEIGHT : 1; if (r <= 0) return k; }
+  return pool[pool.length - 1];
+}
+function pickupRate(b) { const n = pickupPool(b).length; return b.rates[0] * PICKUP_WEIGHT / (PICKUP_WEIGHT + n - 1); }
 function weeklyPickup() { return PICKUP_ROT[U.weekIndex() % PICKUP_ROT.length]; }
 function weeklyElem() { const es = ['fire', 'water', 'wind', 'earth', 'light', 'dark']; return es[(U.weekIndex() + 3) % es.length]; }
 function getBanners(state) {

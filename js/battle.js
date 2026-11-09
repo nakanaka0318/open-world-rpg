@@ -14,8 +14,8 @@ const BG_DEF = {
   lava: { sky: ['#1a0808', '#5a1a10'], ground: ['#4a3532', '#2a1a18'], hill: '#3a2624', cave: true, lava: true },
   castle: { sky: ['#0a0614', '#2a1a40'], ground: ['#3a2f50', '#221a33'], hill: '#2c2440', cave: true },
 };
-const ST_N = { str: '筋力', dex: '敏捷', vuln: '脆弱', weak: '脱力', poison: '毒', regen: '再生', thorns: 'トゲ' };
-const ST_GOOD = { str: 1, dex: 1, regen: 1, thorns: 1 };
+const ST_N = { str: '筋力', dex: '敏捷', vuln: '脆弱', weak: '脱力', poison: '毒', regen: '再生', thorns: 'トゲ', devote: '献身', serve: '奉仕' };
+const ST_GOOD = { str: 1, dex: 1, regen: 1, thorns: 1, devote: 1, serve: 1 };
 const HAND_MAX = 10, DRAW_N = 5, ENERGY_MAX = 3;
 
 // 敵の行動 → 予告
@@ -71,7 +71,7 @@ const Battle = {
     this.party = partyChars();
     const maxhp = this.party.reduce((a, c) => a + charStats(c).hp, 0);
     const hp = this.party.reduce((a, c) => a + Math.max(0, c.hp), 0);
-    this.P = { hp: Math.max(1, hp), max: maxhp, block: 0, st: {} };
+    this.P = { hp: Math.max(1, hp), max: maxhp, block: 0, st: {}, gained: 0 };
     // デッキ
     const deck = [];
     for (let i = 0; i < 4; i++) { const c = this.party[i]; if (c) deck.push(...charCards(c.id)); else for (let k = 0; k < 5; k++) deck.push('blank'); }
@@ -393,6 +393,7 @@ const Battle = {
     if (c.flags.exhaust) this.exhaust.push(h); else this.discard.push(h);
     this.refresh();
     await this.cutin(h.cid);
+    if (c.flags.serve) { this.addSt(this.P, 'serve', 1); this.popParty('奉仕+1', 'buff'); }
     await this.applyCard(h.cid, tj);
     this.busy = false;
     if (await this.checkEnd()) return;
@@ -417,8 +418,11 @@ const Battle = {
       switch (o.k) {
         case 'd': for (let h = 0; h < o.hits; h++) { const e = tgt(); if (!e) break; this.hitEnemy(e, o.n); await this.wait(o.hits > 1 ? 170 : 260); } break;
         case 'D': for (let h = 0; h < o.hits; h++) { for (const e of this.enemies.filter(x => x.alive)) this.hitEnemy(e, o.n); this.fx.push({ type: 'screen', color: '#fff', t: 0, dur: 0.25 }); await this.wait(280); } break;
-        case 'b': { const n = o.n + (P.st.dex || 0); P.block += n; Sound.play('buff'); this.popParty('ブロック+' + n, 'buff'); break; }
-        case 'h': { const v = Math.min(P.max - P.hp, o.n); P.hp += v; Sound.play('heal'); this.popParty('+' + o.n, 'heal'); break; }
+        case 'b': { let n = o.n + (P.st.dex || 0); if (P.st.devote) n = Math.round(n * 2.5); P.block += n; P.gained += n; Sound.play('buff'); this.popParty('ブロック+' + n, 'buff'); break; }
+        case 'h': { let n = o.n; if (P.st.devote) n = Math.round(n * 2.5); const v = Math.min(P.max - P.hp, n); P.hp += v; P.gained += v; Sound.play('heal'); this.popParty('+' + n, 'heal'); break; }
+        case 'm': this.addSt(P, 'devote', o.n); this.popParty('献身' + o.n, 'buff'); Sound.play('buff'); break;
+        case 'z': { const e = tgt(); if (e) { this.burnEnemy(e, o.n + (P.st.serve || 0) * o.per); await this.wait(300); } break; }
+        case 'q': { const e = tgt(); if (e) { this.burnEnemy(e, Math.max(1, P.gained)); await this.wait(350); } break; }
         case 'c': this.drawCards(o.n); Sound.play('cursor'); break;
         case 'e': this.energy += o.n; Sound.play('magic'); this.popParty('エナジー+' + o.n, 'mp'); break;
         case 's': this.addSt(P, 'str', o.n); this.popParty(ST_N.str + '+' + o.n, 'buff'); Sound.play('buff'); break;
@@ -434,10 +438,26 @@ const Battle = {
   },
   addSt(u, k, n) { u.st[k] = (u.st[k] || 0) + n; },
   debuff(e, k, n) { this.addSt(e, k, n); this.pop(ST_N[k] + n, e.x + e.w / 2, e.y + e.h * 0.2, k === 'poison' ? 'poison' : 'debuff'); Sound.play('debuff'); },
+  // 防御無視ダメージ (バーン)
+  burnEnemy(e, n) {
+    if (this.P.st.devote) n *= 0.5;
+    if (e.st.vuln) n *= 1.5;
+    n = Math.max(1, Math.floor(n));
+    e.hp -= n; e.flash = 0.4; e.shake = 0.5;
+    G.seen[e.id] = 1;
+    this.fx.push({ type: 'burst', x: e.x + e.w / 2, y: e.y + e.h / 2, color: '#ffb04a', r: 34, t: 0, dur: 0.6 });
+    this.fx.push({ type: 'screen', color: '#ffb04a', t: 0, dur: 0.3 });
+    Sound.play('crit');
+    this.pop(n, e.x + e.w / 2, e.y + e.h * 0.35, 'dmg crit');
+    this.pop('防御無視!', e.x + e.w / 2, e.y, 'weak');
+    if (e.hp <= 0) { e.hp = 0; e.alive = false; Sound.play('die'); }
+    this.refresh();
+  },
   hitEnemy(e, base) {
     const P = this.P;
     let n = base + (P.st.str || 0);
     if (P.st.weak) n *= 0.75;
+    if (P.st.devote) n *= 0.5;
     if (e.st.vuln) n *= 1.5;
     n = Math.max(0, Math.floor(n));
     const blocked = Math.min(e.block, n); e.block -= blocked;
@@ -461,7 +481,7 @@ const Battle = {
     for (const h of this.hand) (CARDS[h.cid].flags.retain ? keep : this.discard).push(h);
     this.hand = keep;
     if (P.st.regen) { const v = Math.min(P.max - P.hp, P.st.regen); P.hp += v; this.popParty('+' + P.st.regen, 'heal'); P.st.regen--; }
-    for (const k of ['weak', 'vuln']) if (P.st[k]) P.st[k]--;
+    for (const k of ['weak', 'vuln', 'devote']) if (P.st[k]) P.st[k]--;
     this.refresh();
     await this.wait(250);
     // 敵のターン

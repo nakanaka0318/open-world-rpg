@@ -78,6 +78,16 @@ const Gacha = {
         }
         body.appendChild(ban);
         body.appendChild(U.el('div', 'g-sub', U.esc(b.sub)));
+        if (b.pickup) {
+          const pu = pickupRate(b);
+          const row = U.el('div', 'g-pu', `ピックアップ <b>${U.esc(CHARS[b.pickup].n)}</b> の出現率 ${pu.toFixed(2)}% <small>(他の★5の8倍)</small>`);
+          if (b.selectable) {
+            const btn = U.el('div', 'g-pubtn', 'ピックアップを選ぶ ▸');
+            btn.onclick = async e => { e.stopPropagation(); await this.choosePickup(); render(); };
+            row.appendChild(btn);
+          }
+          body.appendChild(row);
+        }
         body.appendChild(U.el('div', 'g-rate', `提供割合 ★5 ${b.rates[0]}% ／ ★4 ${b.rates[1]}% ／ ★3 ${b.rates[2]}%<br>10連は ★4以上 1枠確定!`));
         const btns = U.el('div', 'g-btns');
         const one = U.el('div', 'g-btn single' + (focus === 0 ? ' cur' : ''), `単発召喚<br><span class="gem">◆</span>${GACHA_COST.single}`);
@@ -130,6 +140,20 @@ const Gacha = {
     });
   },
 
+  // ピックアップにするキャラを選ぶ
+  async choosePickup() {
+    let chosen = null;
+    await Menu.tabList({
+      title: 'ピックアップするキャラを選ぶ',
+      tabs: [{ n: 'すべて' }].concat(['fire', 'water', 'wind', 'earth', 'light', 'dark'].map(e => ({ n: ELEM[e].n, f: k => CHARS[k].elem === e }))),
+      items: () => charPool(5),
+      label: k => `<img class="ico" src="${portraitURL(CHARS[k].look)}"><span class="rar r5">★★★★★</span> ${U.esc(CHARS[k].n)} <small class="eqst">${U.esc(CHARS[k].title)}</small>${k === selPickup() ? '<span class="tag lead">選択中</span>' : ''}${G.roster[k] ? `<span class="tag off">${G.roster[k].lb}凸</span>` : ''}`,
+      note: k => U.esc(CHARS[k].profile),
+      onSelect: async (k, ctx) => { chosen = k; ctx.close(); },
+    });
+    if (chosen) { G.gacha.pickup = chosen; Sound.play('ok'); UI.toast(`${CHARS[chosen].n} をピックアップに設定した!`); }
+  },
+
   // 提供一覧 (所持していないものはシルエット)
   pool(b) {
     return new Promise(res => {
@@ -175,7 +199,7 @@ const Gacha = {
       if (b.kind === 'char') {
         let pool = charPool(rar);
         if (b.elem && rar >= 4 && Math.random() < 0.6) { const ep = pool.filter(k => CHARS[k].elem === b.elem); if (ep.length) pool = ep; }
-        if (rar === 5 && b.pickup && Math.random() < 0.5) id = b.pickup;
+        if (rar === 5 && b.pickup) id = pickupDraw(b);
         else id = pool[Math.floor(Math.random() * pool.length)];
         out.push({ kind: 'char', id, rar });
       } else {

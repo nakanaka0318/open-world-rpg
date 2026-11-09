@@ -898,6 +898,13 @@ const ACC = {
     'oHAAHo..........oHAAHo',
     'oHHHHHo........oHHHHHo',
   ] },
+  maid: { x: 6, y: 4, rows: [
+    '...oo.oo.oo.oo.oo...',
+    '..oWWoWWoWWoWWoWWo..',
+    '.oWWWWWWWWWWWWWWWWo.',
+    'oWWWWWWWWWWWWWWWWWWo',
+    '.oooooooooooooooooo.',
+  ] },
   horns: { x: 8, y: 1, rows: [
     'oo..............oo',
     'oAo............oAo',

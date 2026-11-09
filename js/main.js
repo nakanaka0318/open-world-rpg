@@ -112,8 +112,8 @@ const Game = {
   },
   drawTitleBg(ctx, dt) {
     const c = this.tcam; c.t += dt;
-    c.x = 30 * TS + Math.sin(c.t * 0.05) * 30 * TS + 30 * TS;
-    c.y = 60 * TS + Math.cos(c.t * 0.04) * 20 * TS;
+    c.x = (110 + Math.sin(c.t * 0.05) * 40) * TS;
+    c.y = (140 + Math.cos(c.t * 0.04) * 24) * TS;
     Field.cam.x = Math.round(U.clamp(c.x, 0, MW * TS - this.vw)); Field.cam.y = Math.round(U.clamp(c.y, 0, MH * TS - this.vh));
     Field.time += dt;
     const objs = Field.objs; Field.objs = new Map();

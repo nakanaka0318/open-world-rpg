@@ -100,7 +100,7 @@ const Field = {
     const canAct = !UI.active() && !this.busy;
     // プレイヤー移動
     if (p.moving) {
-      const speed = Input.held.b ? 10 : 6;
+      const speed = Input.held.b ? 12 : 7;
       p.t += dt * speed;
       if (p.t >= 1) { p.t = 1; p.moving = false; this.arrive(); }
     }

@@ -1,6 +1,6 @@
 'use strict';
 // ===== ゲーム状態・育成・セーブ =====
-const SAVE_KEY = 'seishou_chronicle_save_v1';
+const SAVE_KEY = 'seishou_chronicle_save_v2'; // v2: 256x256 ワールド
 let G = null; // 現在の状態
 
 function mkChar(id, lv = 1) {

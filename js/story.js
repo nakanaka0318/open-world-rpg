@@ -89,6 +89,34 @@ const NPCS = {
     async talk() { await UI.say(['わしの爺さまが言っておった…', WORLD.hint3 || '…忘れてしもうた。'], { name: this.name }); },
   },
   sand_kid: { name: 'こどものナナ', look: NL('#e8893a', '#ffffff', 'bob', 'hairpin', '#3da5ff'), async talk() { await UI.say('オアシスの水はとってもきれいなの!\nサソリには気をつけてね。毒があるよ!', { name: this.name, look: this.look }); } },
+  snow_hunter: {
+    name: '狩人のアイラ', look: NL('#8a5a3a', '#6a4a2a', 'pony', 'band', '#3f8f5e', '#3a5a2a'),
+    async talk() {
+      if (!G.flags.hunter) { G.flags.hunter = 1; G.stones += 100; Sound.play('chest'); Game.hud(); await UI.say(['こんな雪の中までようこそ。\nこれ、山で拾ったの。あげる!', '星晶石×100 を受け取った!'], { name: this.name, look: this.look }); return; }
+      await UI.say(['雪原のオオカミは群れで来るわ。\n火の魔法が苦手なのは…あ、違った。土に弱いのよ。', '東の雪山を越えると氷の洞窟。\n入口の前にクリスタルがあるから、触れておくと便利よ。'], { name: this.name, look: this.look });
+    },
+  },
+  desert_nomad: {
+    name: '旅商人のファティマ', look: NL('#2a1a10', '#d9a441', 'long', 'hairpin', '#3da5ff', '#8a5a2a'),
+    async talk() {
+      if (!G.flags.nomad) { G.flags.nomad = 1; addItem('feather', 1); addItem('ether', 2); Sound.play('chest'); await UI.say(['砂漠で迷子?ふふ、これで元気を出して。', '天使の羽×1 と エーテル×2 をもらった!'], { name: this.name, look: this.look }); return; }
+      await UI.say(['この大陸は広いでしょう?\n各地のクリスタルに触れておけば、一瞬で戻れるわ。', 'メニューの「ちず」で、行ったことのない場所を探してみて。'], { name: this.name, look: this.look });
+    },
+  },
+  volc_smith: {
+    name: '鍛冶屋のガーネット', look: NL('#d8352a', '#5a4a4a', 'twin', 'band', '#f5c542', '#f5c542'),
+    async talk() {
+      if (!G.flags.smith) { G.flags.smith = 1; const t = grant({ equip: 'flamesword' }); Sound.play('chest'); await UI.say(['火山の熱で鍛えた自慢の一本よ!\n持っていきなさい!', `${t} を受け取った!`], { name: this.name, look: this.look }); return; }
+      await UI.say('炎の竜は水に弱いわ。\n水属性の仲間を連れていくといいわよ!', { name: this.name, look: this.look });
+    },
+  },
+  lighthouse: {
+    name: '灯台守のマリン', look: NL('#3da5ff', '#ffffff', 'bob', 'ribbon', '#3a6ed8', '#2a6ad8'),
+    async talk() {
+      if (!G.flags.lighthouse) { G.flags.lighthouse = 1; G.stones += 150; Sound.play('chest'); Game.hud(); await UI.say(['東の端まで来るなんて、すごい冒険家さん!', '海で拾った 星晶石×150 をあげる!'], { name: this.name, look: this.look }); return; }
+      await UI.say('夜の海に星が映ると、とってもきれいなの。', { name: this.name, look: this.look });
+    },
+  },
   hermit: {
     name: '森の隠者', look: 'elder',
     async talk() {

@@ -9,7 +9,7 @@ const CRYSTAL_INFO = {
 
 function charLine(c, extra = '') {
   const d = CHARS[c.id], s = charStats(c);
-  return `<div class="cl"><img class="clp" src="${portraitURL(d.look)}"><div class="clt"><div class="cln"><span class="rar r${d.rar}">${'★'.repeat(d.rar)}</span> ${U.esc(d.n)} <span class="lb">${c.lb ? c.lb + '凸' : ''}</span></div><div class="cls"><span class="tel" style="color:${ELEM[d.elem].c}">${ELEM[d.elem].n}</span> Lv${c.lv} HP${Math.max(0, c.hp)}/${s.hp} MP${c.mp}/${s.mp}</div></div>${extra}</div>`;
+  return `<div class="cl"><img class="clp" src="${portraitURL(d.look)}"><div class="clt"><div class="cln"><span class="rar r${d.rar}">${'★'.repeat(d.rar)}</span> ${U.esc(d.n)} <span class="lb">${c.lb ? c.lb + '凸' : ''}</span></div><div class="cls"><span class="tel" style="color:${ELEM[d.elem].c}">${ELEM[d.elem].n}</span> Lv${c.lv} HP${Math.max(0, c.hp)}/${s.hp} 攻${s.atk} 魔${s.mag}</div></div>${extra}</div>`;
 }
 
 const Menu = {
@@ -38,12 +38,12 @@ const Menu = {
       const foot = U.el('div', 'mn-foot');
       el.append(top, grid, foot);
       const render = () => {
-        top.innerHTML = `<div class="mn-party">${partyChars().map(c => { const d = CHARS[c.id], s = charStats(c); return `<div class="mp-c"><img src="${portraitURL(d.look)}"><div class="mp-n">${U.esc(d.n)}</div><div class="mp-l">Lv${c.lv}</div><div class="bar hp"><i style="width:${100 * Math.max(0, c.hp) / s.hp}%"></i></div><div class="bar mp"><i style="width:${100 * c.mp / Math.max(1, s.mp)}%"></i></div></div>`; }).join('')}</div>`;
+        top.innerHTML = `<div class="mn-party">${partyChars().map(c => { const d = CHARS[c.id], s = charStats(c); return `<div class="mp-c"><img src="${portraitURL(d.look)}"><div class="mp-n">${U.esc(d.n)}</div><div class="mp-l">Lv${c.lv}</div><div class="bar hp"><i style="width:${100 * Math.max(0, c.hp) / s.hp}%"></i></div></div>`; }).join('')}</div>`;
         foot.innerHTML = `<span class="gem">◆</span>星晶石 ${G.stones}　<span class="gold">G</span> ${G.gold}　⏱ ${fmtTime(G.playtime)}　水晶 ${G.crystals.length}/4`;
       };
       const items = [
         { label: '<span class="mi">👥</span>パーティ', f: () => this.party() },
-        { label: '<span class="mi">🗡</span>そうび', f: () => this.equipPick() },
+        { label: '<span class="mi">🃏</span>デッキ', f: () => this.deckEdit() },
         { label: '<span class="mi">🧪</span>どうぐ', f: () => this.items() },
         { label: '<span class="mi gl">✦</span>ガチャ', f: () => Gacha.open(), cls: 'gacha' },
         { label: '<span class="mi">🗺</span>ちず', f: () => this.map() },
@@ -157,7 +157,7 @@ const Menu = {
       note: () => '◀▶でタブ切替 ／ MENUで並び替え ／ パーティは最大4人',
       onSelect: async (id, ctx) => {
         const inP = G.party.includes(id);
-        const opts = ['ステータス', inP ? 'パーティから外す' : 'パーティに入れる', 'リーダーにする', 'そうび', 'もどる'];
+        const opts = ['ステータス・カード', inP ? 'パーティから外す' : 'パーティに入れる', 'リーダーにする', 'もどる'];
         const c = await UI.ask(`${CHARS[id].n} をどうする?`, opts);
         if (c === 0) await this.status(id);
         if (c === 1) {
@@ -165,7 +165,6 @@ const Menu = {
           else { if (G.party.length >= 4) { const r = await UI.ask('パーティが満員です。\n誰と入れ替えますか?', G.party.map(x => CHARS[x].n)); if (r >= 0) G.party[r] = id; } else G.party.push(id); }
         }
         if (c === 2) { G.party = [id, ...G.party.filter(x => x !== id)].slice(0, 4); UI.toast(`${CHARS[id].n} がリーダーになった!`); }
-        if (c === 3) await this.equip(id);
         ctx.refresh(true);
       },
     });
@@ -175,73 +174,59 @@ const Menu = {
       const c = G.roster[id], d = CHARS[id], s = charStats(c);
       const L = this.screen(d.n + ' のステータス', { cls: 'status' });
       L.onClosed = res;
-      const sk = charSkills(c);
-      const next = d.skills.filter(x => x[0] > c.lv).slice(0, 2);
       L.body.innerHTML = `<div class="st-top"><img class="st-port" src="${portraitURL(d.look)}"><div class="st-info"><div class="rar r${d.rar}">${'★'.repeat(d.rar)}${c.lb ? ` <span class="lb">${c.lb}凸</span>` : ''}</div><div class="st-n">${U.esc(d.n)}</div><div class="st-t">${U.esc(d.title)}</div><div class="st-e"><span style="background:${ELEM[d.elem].c}">${ELEM[d.elem].n}</span> ${U.esc(d.role)}</div><div>Lv ${c.lv}　EXP ${c.exp}/${expNext(c.lv)}</div></div></div>
-      <div class="st-grid">${['hp', 'mp', 'atk', 'def', 'mag', 'spd'].map(k => `<div><span>${STAT_N[k]}</span><b>${k === 'hp' ? Math.max(0, c.hp) + '/' : k === 'mp' ? c.mp + '/' : ''}${s[k]}</b></div>`).join('')}</div>
-      <div class="st-sec">そうび</div><div class="st-eq">${['w', 'a', 'x'].map(sl => `<div><span>${SLOT_N[sl]}</span>${c.eq[sl] ? `<img src="${equipIconURL(c.eq[sl])}">${U.esc(equipName(c.eq[sl]))}` : '―'}</div>`).join('')}</div>
-      <div class="st-sec">スキル</div><div class="st-sk">${sk.map(k => `<div><b>${U.esc(SKILLS[k].n)}</b> <span class="mpc">MP${SKILLS[k].mp}</span><br><small>${U.esc(SKILLS[k].desc || '')}</small></div>`).join('')}${next.map(x => `<div class="lock">Lv${x[0]}で習得: ${U.esc(SKILLS[x[1]].n)}</div>`).join('')}</div>
+      <div class="st-grid">${['hp', 'atk', 'def', 'mag', 'spd'].map(k => `<div><span>${STAT_N[k]}</span><b>${k === 'hp' ? Math.max(0, c.hp) + '/' : ''}${s[k]}</b></div>`).join('')}</div>
+      <div class="st-sec">固有カード <small class="dim">(凸で強化。5凸でコスト2以上が-1)</small></div>
+      <div class="deck-grid">${charCards(id).map(cid => cardFaceHTML(cid)).join('')}</div>
       <div class="st-prof">${U.esc(d.profile)}</div>`;
     });
   },
 
-  // ---------- 装備 ----------
-  equipPick() {
-    return this.tabList({
-      title: 'そうび: キャラを選ぶ', tabs: this.charTabs(), sorts: this.charSorts(),
-      items: () => Object.keys(G.roster),
-      label: id => charLine(G.roster[id], `<div class="eqmini">${['w', 'a', 'x'].map(s => G.roster[id].eq[s] ? `<img src="${equipIconURL(G.roster[id].eq[s])}">` : '<i></i>').join('')}</div>`),
-      onSelect: async (id, ctx) => { await this.equip(id); ctx.refresh(true); },
-    });
-  },
-  equip(id) {
+  // ---------- デッキ ----------
+  // パーティ4人×固有5枚 + 共通カード5枚 = 25枚。共通カードの5枠をここで入れ替えます。
+  deckEdit() {
     return new Promise(res => {
-      const c = G.roster[id];
-      const L = this.screen(CHARS[id].n + ' のそうび');
+      const L = this.screen('デッキ編成');
       L.onClosed = res;
-      const statEl = U.el('div', 'eq-stats');
-      const listEl = U.el('div', 'sc-list');
-      L.body.append(statEl, listEl);
-      const showStats = (prev) => {
-        const s = charStats(c);
-        statEl.innerHTML = ['hp', 'mp', 'atk', 'def', 'mag', 'spd'].map(k => {
-          const v = prev ? prev[k] : s[k];
-          const diff = v - s[k];
-          return `<div><span>${STAT_N[k]}</span><b>${v}</b>${diff ? `<i class="${diff > 0 ? 'up' : 'down'}">${diff > 0 ? '+' : ''}${diff}</i>` : ''}</div>`;
-        }).join('') + `<div class="eq-elem">攻撃属性: <b style="color:${ELEM[(prev || s).elem].c}">${ELEM[(prev || s).elem].n}</b></div>`;
+      const slotsEl = U.el('div', 'sc-list');
+      const prev = U.el('div', '');
+      L.body.append(U.el('div', 'sc-note', '共通カードの枠を選ぶと入れ替えられます。同じカードは1枚まで。<br>パーティが4人未満だと、空き枠は「空白のカード」(効果なし)になります。'), slotsEl, prev);
+      const render = (keep) => {
+        G.deck = (G.deck || STARTER_DECK.slice()).slice(0, 5);
+        const items = G.deck.map((cid, i) => ({ label: `<span class="slt">共通${i + 1}</span><span class="rar r${CARDS[cid].rar}">★${CARDS[cid].rar}</span> ${U.esc(CARDS[cid].n)}${cardLevel(cid) ? ` <b class="lb">+${cardLevel(cid)}</b>` : ''} <small class="eqst">⚡${cardCost(cid)} ${U.esc(cardDesc(cid))}</small>` }));
+        if (!L.menu) { L.menu = new ListMenu({ items, onSelect: i => pick(i), onCancel: () => L.close() }); slotsEl.appendChild(L.menu.el); }
+        else L.menu.set(items, keep);
+        let html = '';
+        for (let i = 0; i < 4; i++) {
+          const c = partyChars()[i];
+          html += `<div class="st-sec">${c ? U.esc(CHARS[c.id].n) + 'の固有カード' : '空き枠'}</div><div class="deck-grid">${(c ? charCards(c.id) : ['blank', 'blank', 'blank', 'blank', 'blank']).map(cid => cardFaceHTML(cid)).join('')}</div>`;
+        }
+        html += `<div class="st-sec">共通カード</div><div class="deck-grid">${G.deck.map(cid => cardFaceHTML(cid)).join('')}</div>`;
+        prev.innerHTML = html;
       };
-      let mode = 'slot', slot = null, eqList = [];
-      const slots = () => {
-        mode = 'slot';
-        const items = ['w', 'a', 'x'].map(sl => ({ label: `<span class="slt">${SLOT_N[sl]}</span>${c.eq[sl] ? `<img class="ico" src="${equipIconURL(c.eq[sl])}"><span class="rar r${EQUIPS[c.eq[sl]].rar}">★${EQUIPS[c.eq[sl]].rar}</span> ${U.esc(equipName(c.eq[sl]))}` : '<span class="dim">― なし ―</span>'}` }));
-        if (L.menu) L.menu.set(items); else { L.menu = new ListMenu({ items, onSelect: (i) => mode === 'slot' ? pick(['w', 'a', 'x'][i]) : choose(i), onCancel: () => mode === 'slot' ? L.close() : slots(), onChange: (i) => { if (mode === 'eq') preview(i); } }); listEl.appendChild(L.menu.el); }
-        L.menu.i = 0; L.menu.mark();
-        showStats();
-      };
-      const preview = (i) => {
-        const eid = eqList[i];
-        const old = c.eq[slot]; c.eq[slot] = eid; const s = charStats(c); c.eq[slot] = old;
-        showStats(s);
-      };
-      const pick = (sl) => {
-        mode = 'eq'; slot = sl;
-        eqList = [null].concat(Object.keys(G.equips).filter(k => EQUIPS[k].slot === sl).sort((a, b) => EQUIPS[b].rar - EQUIPS[a].rar));
-        const items = eqList.map(eid => {
-          if (!eid) return { label: '<span class="dim">はずす</span>' };
-          const e = EQUIPS[eid], who = equippedBy(eid);
-          return { label: `<img class="ico" src="${equipIconURL(eid)}"><span class="rar r${e.rar}">★${e.rar}</span> ${U.esc(equipName(eid))} <small class="eqst">${Object.entries(e.st).map(([k, v]) => STAT_N[k] + '+' + v).join(' ')}${e.elem ? ' ' + ELEM[e.elem].n + '属性' : ''}</small>${who ? `<span class="tag ${who === id ? 'lead' : ''}">${who === id ? '装備中' : U.esc(CHARS[who].n)}</span>` : ''}` };
+      const pick = async (slot) => {
+        const cur = G.deck[slot];
+        const chosen = await new Promise(r2 => {
+          let got = null;
+          this.tabList({
+            title: `共通${slot + 1} に入れるカード`,
+            tabs: [{ n: 'すべて' }, { n: 'アタック', f: k => CARDS[k].type === 'a' }, { n: 'スキル', f: k => CARDS[k].type === 's' }, { n: '★5', f: k => CARDS[k].rar === 5 }, { n: '★4', f: k => CARDS[k].rar === 4 }, { n: '★3', f: k => CARDS[k].rar === 3 }],
+            sorts: [{ n: 'レア度', cmp: (a, b) => CARDS[b].rar - CARDS[a].rar || cardCost(a) - cardCost(b) }, { n: 'コスト', cmp: (a, b) => cardCost(a) - cardCost(b) || CARDS[b].rar - CARDS[a].rar }],
+            items: () => Object.keys(G.cards).filter(k => CARDS[k]),
+            label: k => `<span class="rar r${CARDS[k].rar}">★${CARDS[k].rar}</span> ${U.esc(CARDS[k].n)}${cardLevel(k) ? ` <b class="lb">+${cardLevel(k)}</b>` : ''} <small class="eqst">⚡${cardCost(k)} ${U.esc(cardDesc(k))}</small>${k === cur ? '<span class="tag lead">この枠</span>' : G.deck.includes(k) ? '<span class="tag">使用中</span>' : ''}`,
+            note: k => cardFaceHTML(k, { cls: 'big' }),
+            onSelect: async (k, ctx) => { got = k; ctx.close(); },
+          }).then(() => r2(got));
         });
-        L.menu.set(items);
-        L.menu.i = Math.max(0, eqList.indexOf(c.eq[sl])); L.menu.mark();
+        if (chosen && chosen !== cur) {
+          const j = G.deck.indexOf(chosen);
+          if (j >= 0) G.deck[j] = cur;
+          G.deck[slot] = chosen;
+          Sound.play('ok');
+        }
+        render(true);
       };
-      const choose = (i) => {
-        const eid = eqList[i];
-        if (eid) { const who = equippedBy(eid); if (who && who !== id) G.roster[who].eq[slot] = null; }
-        c.eq[slot] = eid;
-        const s = charStats(c); c.hp = Math.min(c.hp, s.hp); c.mp = Math.min(c.mp, s.mp);
-        slots();
-      };
-      slots();
+      render();
     });
   },
 
@@ -258,15 +243,14 @@ const Menu = {
       onSelect: async (id, ctx) => {
         const it = ITEMS[id];
         const pc = partyChars();
-        const r = await UI.ask(`${it.n} をだれに使う?`, pc.map(c => { const s = charStats(c); return `${CHARS[c.id].n}  HP${Math.max(0, c.hp)}/${s.hp} MP${c.mp}/${s.mp}`; }));
+        if (it.type === 'mp' || it.type === 'cure') { Sound.play('buzz'); UI.toast('戦闘中に使うアイテムです'); return; }
+        const r = await UI.ask(`${it.n} をだれに使う?`, pc.map(c => { const s = charStats(c); return `${CHARS[c.id].n}  HP${Math.max(0, c.hp)}/${s.hp}`; }));
         if (r < 0) return;
         const c = pc[r], s = charStats(c);
         let ok = true;
         if (it.type === 'heal') { if (c.hp <= 0 || c.hp >= s.hp) ok = false; else c.hp = Math.min(s.hp, c.hp + it.amt); }
-        else if (it.type === 'mp') { if (c.hp <= 0 || c.mp >= s.mp) ok = false; else c.mp = Math.min(s.mp, c.mp + it.amt); }
-        else if (it.type === 'cure') { if (!c.st || !c.st.poison) ok = false; else delete c.st.poison; }
-        else if (it.type === 'revive') { if (c.hp > 0) ok = false; else c.hp = Math.round(s.hp * it.amt); }
-        else if (it.type === 'full') { c.hp = s.hp; c.mp = s.mp; }
+        else if (it.type === 'revive') { if (c.hp >= s.hp) ok = false; else c.hp = Math.min(s.hp, c.hp + Math.round(s.hp * it.amt)); }
+        else if (it.type === 'full') { c.hp = s.hp; }
         else ok = false;
         if (!ok) { Sound.play('buzz'); UI.toast('効果がない'); return; }
         useItemCount(id);
@@ -345,7 +329,7 @@ const Menu = {
       L.body.innerHTML = `<div class="st-sec">封印の水晶 ${G.crystals.length}/4</div><div class="crs">${cr}</div>
       <div class="sc-note obj">${U.esc(Story.objective())}</div>
       <div class="st-sec">ダンジョン</div>${dl}
-      <div class="st-sec">データ</div><div class="st-grid"><div><span>プレイ時間</span><b>${fmtTime(G.playtime)}</b></div><div><span>宝箱</span><b>${opened}/${total}</b></div><div><span>仲間</span><b>${Object.keys(G.roster).length}/${Object.keys(CHARS).length}</b></div><div><span>召喚回数</span><b>${G.gacha.total}</b></div><div><span>武具</span><b>${Object.keys(G.equips).length}/${Object.keys(EQUIPS).length}</b></div><div><span>隠し宝</span><b>${Object.keys(G.hidden).length}/${WORLD.objs.hidden.length}</b></div></div>`;
+      <div class="st-sec">データ</div><div class="st-grid"><div><span>プレイ時間</span><b>${fmtTime(G.playtime)}</b></div><div><span>宝箱</span><b>${opened}/${total}</b></div><div><span>仲間</span><b>${Object.keys(G.roster).length}/${Object.keys(CHARS).length}</b></div><div><span>召喚回数</span><b>${G.gacha.total}</b></div><div><span>カード</span><b>${Object.keys(G.cards || {}).length}/${Object.keys(COMMON_CARDS).length}</b></div><div><span>隠し宝</span><b>${Object.keys(G.hidden).length}/${WORLD.objs.hidden.length}</b></div></div>`;
     });
   },
 

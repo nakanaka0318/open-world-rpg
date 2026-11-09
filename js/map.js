@@ -72,7 +72,7 @@ const DUNGEONS = [
       '#.......!.........e.#',
       '##########E##########',
     ],
-    chests: [{ stones: 150 }, { equip: 'galebow' }, { item: 'hipotion', n: 2 }],
+    chests: [{ stones: 150 }, { card: 'c_whirl' }, { item: 'hipotion', n: 2 }],
     tablets: [
       '扉の前の碑:\n「風の通り道を示せ。さすれば扉は開かれん」',
       'この先、風の大精霊の間。\n心せよ、旅人よ。',
@@ -109,7 +109,7 @@ const DUNGEONS = [
       '#.......................#',
       '############E############',
     ],
-    chests: [{ stones: 200 }, { equip: 'mithrilmail' }, { item: 'hipotion', n: 3 }],
+    chests: [{ stones: 200 }, { card: 'c_bash' }, { item: 'hipotion', n: 3 }],
     tablets: [
       'スフィンクスの扉。\n「我が問いに答えし者のみ、王の間へ進め」',
       '【一の碑】\n最初の数は、天に輝くものの数。\n太陽、月、そして星。',
@@ -146,7 +146,7 @@ const DUNGEONS = [
       '#...!.......X......e..#',
       '###########E###########',
     ],
-    chests: [{ stones: 200 }, { equip: 'pendant' }],
+    chests: [{ stones: 200 }, { card: 'c_bless' }],
     tablets: [
       '崩れた床は、岩で埋めれば渡れる。\n深い穴は、二つ埋めねば越えられぬ。\n誤れば、光る紋様を踏め。',
     ],
@@ -178,10 +178,10 @@ const DUNGEONS = [
       '#..e...............e..#',
       '###########E###########',
     ],
-    chests: [{ stones: 250 }, { stones: 150 }, { equip: 'brooch' }],
+    chests: [{ stones: 250 }, { stones: 150 }, { card: 'c_heavy' }],
     tablets: [
       '竜の間の扉。\n属性の理を知る者のみ通れる。',
-      '炎の竜イグニスは水を嫌う。\n溶岩に岩を落とすことはできぬ。\n三つの紋様に、三つの岩を。',
+      '炎の竜イグニスは力をためてから\n大きな一撃を放つ。予告を見逃すな。\n溶岩に岩を落とすことはできぬ。三つの紋様に、三つの岩を。',
     ],
     riddles: {
       R: { type: 'choice', prompt: '扉に文字が浮かぶ。\n「水は火を消し、火は風を焼き、\n　風は土を削り、土は水を堰き止める。\n　火を制するものを、制するものは何か」', options: ['火', '水', '風', '土'], answer: 3 },
@@ -670,11 +670,11 @@ function buildWorld() {
     return null;
   }
   const OW_CHESTS = [
-    [1, { stones: 100 }], [1, { item: 'potion', n: 3 }], [1, { equip: 'bunny' }], [1, { gold: 200 }], [1, { stones: 50 }], [1, { item: 'ether', n: 1 }], [1, { stones: 100 }], [1, { equip: 'leather' }],
-    [2, { stones: 100 }], [2, { equip: 'charm' }], [2, { item: 'ether', n: 2 }], [2, { stones: 150 }], [2, { gold: 300 }], [2, { item: 'potion', n: 5 }], [2, { stones: 100 }],
-    [3, { stones: 150 }], [3, { equip: 'powerring' }], [3, { item: 'feather', n: 1 }], [3, { gold: 500 }], [3, { stones: 150 }], [3, { item: 'hipotion', n: 2 }],
-    [4, { stones: 150 }], [4, { equip: 'magerobe' }], [4, { item: 'hipotion', n: 2 }], [4, { stones: 150 }], [4, { gold: 600 }], [4, { item: 'feather', n: 2 }],
-    [5, { stones: 200 }], [5, { item: 'elixir', n: 1 }], [5, { gold: 800 }], [5, { stones: 200 }], [5, { equip: 'nekomimi' }],
+    [1, { stones: 100 }], [1, { item: 'potion', n: 3 }], [1, { card: 'c_twin' }], [1, { gold: 200 }], [1, { stones: 50 }], [1, { item: 'ether', n: 1 }], [1, { stones: 100 }], [1, { card: 'c_trip' }],
+    [2, { stones: 100 }], [2, { card: 'c_wall' }], [2, { item: 'ether', n: 2 }], [2, { stones: 150 }], [2, { gold: 300 }], [2, { item: 'potion', n: 5 }], [2, { stones: 100 }],
+    [3, { stones: 150 }], [3, { card: 'c_aim' }], [3, { item: 'feather', n: 1 }], [3, { gold: 500 }], [3, { stones: 150 }], [3, { item: 'hipotion', n: 2 }],
+    [4, { stones: 150 }], [4, { card: 'c_venom' }], [4, { item: 'hipotion', n: 2 }], [4, { stones: 150 }], [4, { gold: 600 }], [4, { item: 'feather', n: 2 }],
+    [5, { stones: 200 }], [5, { item: 'elixir', n: 1 }], [5, { gold: 800 }], [5, { stones: 200 }], [5, { card: 'c_medit' }],
     [6, { stones: 100 }],
   ];
   const placed = [];

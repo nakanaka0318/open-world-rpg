@@ -15,13 +15,6 @@ function charStats(c) {
   const o = {};
   for (const k of ['hp', 'mp', 'atk', 'def', 'mag', 'spd']) o[k] = Math.floor((d.base[k] + d.grow[k] * (c.lv - 1)) * mul);
   o.elem = 'none';
-  for (const sl of ['w', 'a', 'x']) {
-    const eid = c.eq[sl];
-    if (!eid || !EQUIPS[eid]) continue;
-    const e = EQUIPS[eid], r = (G && G.equips[eid]) ? G.equips[eid].r : 0;
-    for (const k in e.st) o[k] += Math.floor(e.st[k] * (1 + 0.12 * r));
-    if (sl === 'w' && e.elem) o.elem = e.elem;
-  }
   return o;
 }
 function charSkills(c) { return CHARS[c.id].skills.filter(s => s[0] <= c.lv).map(s => s[1]); }
@@ -31,7 +24,9 @@ function newGame() {
   G = {
     v: 1,
     roster: {}, party: ['aria'],
-    equips: { bronze: { r: 0 }, traveler: { r: 0 } },
+    equips: {},
+    cards: Object.fromEntries(STARTER_DECK.map(k => [k, { r: 0 }])),
+    deck: STARTER_DECK.slice(),
     items: { potion: 5, antidote: 2 },
     gold: 150, stones: 750,
     flags: {}, chests: {}, crystals: [], bosses: {}, solved: {}, holes: {}, boulders: {}, rdoors: {}, hidden: {}, saves: { lumina: 1 },
@@ -42,7 +37,6 @@ function newGame() {
     login: '', playtime: 0, seal: false, seen: {},
   };
   G.roster.aria = mkChar('aria', 1);
-  G.roster.aria.eq.w = 'bronze'; G.roster.aria.eq.a = 'traveler';
   const s = charStats(G.roster.aria); G.roster.aria.hp = s.hp; G.roster.aria.mp = s.mp;
   return G;
 }
@@ -96,6 +90,16 @@ function obtainEquip(id) {
   G.gold += g;
   return { conv: g, text: g + 'G に変換' };
 }
+// 共通カードを入手 (重複は+1強化、+4を超えたらゴールドに)
+function obtainCard(id) {
+  if (!G.cards[id]) { G.cards[id] = { r: 0 }; return { isNew: true, text: 'NEW!' }; }
+  const e = G.cards[id];
+  if (e.r < 4) { e.r++; return { r: e.r, text: '強化 +' + e.r + '!' }; }
+  const g = { 3: 100, 4: 400, 5: 1500 }[COMMON_CARDS[id][4]];
+  G.gold += g;
+  return { conv: g, text: g + 'G に変換' };
+}
+function equipToCard(eid) { const pool = cardPool((EQUIPS[eid] || { rar: 3 }).rar); return pool[Math.floor(U.hash2(eid.length, eid.charCodeAt(0), 3) * pool.length)]; }
 function equippedBy(eid) { for (const k in G.roster) for (const s of ['w', 'a', 'x']) if (G.roster[k].eq[s] === eid) return k; return null; }
 function equipName(eid) { const r = G.equips[eid] ? G.equips[eid].r : 0; return EQUIPS[eid].n + (r ? ' +' + r : ''); }
 function addItem(id, n = 1) { G.items[id] = (G.items[id] || 0) + n; }
@@ -106,7 +110,8 @@ function grant(r) {
   if (r.stones) { G.stones += r.stones; return `星晶石 ×${r.stones}`; }
   if (r.gold) { G.gold += r.gold; return `${r.gold} G`; }
   if (r.item) { addItem(r.item, r.n || 1); return `${ITEMS[r.item].n} ×${r.n || 1}`; }
-  if (r.equip) { const res = obtainEquip(r.equip); return `★${EQUIPS[r.equip].rar} ${EQUIPS[r.equip].n}` + (res.isNew ? '' : `(${res.text})`); }
+  if (r.equip) r = { card: equipToCard(r.equip) };
+  if (r.card) { const res = obtainCard(r.card); return `★${CARDS[r.card].rar}カード「${CARDS[r.card].n}」` + (res.isNew ? '' : `(${res.text})`); }
   return '';
 }
 
@@ -138,6 +143,7 @@ function loadGame() {
     const base = newGame();
     G = Object.assign(base, o);
     G.gacha = Object.assign({ beginnerDone: false, total: 0, history: [] }, o.gacha);
+    if (!o.cards) { G.cards = Object.fromEntries(STARTER_DECK.map(k => [k, { r: 0 }])); G.deck = STARTER_DECK.slice(); }
     for (const k in G.roster) { const c = G.roster[k]; c.st = c.st || {}; c.eq = c.eq || { w: null, a: null, x: null }; }
     return true;
   } catch (e) { console.error(e); return false; }

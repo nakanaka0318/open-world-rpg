@@ -73,8 +73,8 @@ const Gacha = {
           const fd = CHARS[b.feature];
           ban.innerHTML = `<div class="g-rays"></div><img class="g-feat" src="${portraitURL(fd.look)}"><div class="g-ftxt"><div class="g-fstar">★★★★★</div><div class="g-fname">${U.esc(fd.n)}</div><div class="g-ftitle">${U.esc(fd.title)}</div><div class="g-fel" style="background:${ELEM[fd.elem].c}">${ELEM[fd.elem].n}属性 ／ ${U.esc(fd.role)}</div></div>`;
         } else {
-          const eqs = ['luminas', 'starrod', 'angeldress', 'goddess'];
-          ban.innerHTML = `<div class="g-rays"></div><div class="g-eqs">${eqs.map(e => `<img src="${equipIconURL(e)}">`).join('')}</div><div class="g-ftxt"><div class="g-fstar">★5 武具</div><div class="g-fname">伝説の武具</div><div class="g-ftitle">聖剣ルミナス・星詠みの杖 ほか</div></div>`;
+          const fc = cardPool(5).slice(0, 3);
+          ban.innerHTML = `<div class="g-rays"></div><div class="g-cards">${fc.map(k => cardFaceHTML(k)).join('')}</div><div class="g-ftxt"><div class="g-fstar">★5 カード</div><div class="g-fname">伝説のカード</div><div class="g-ftitle">「${U.esc(CARDS[fc[0]].n)}」「${U.esc(CARDS[fc[1]].n)}」ほか</div></div>`;
         }
         body.appendChild(ban);
         body.appendChild(U.el('div', 'g-sub', U.esc(b.sub)));
@@ -133,15 +133,16 @@ const Gacha = {
   // 提供一覧 (所持していないものはシルエット)
   pool(b) {
     return new Promise(res => {
-      const L = Menu.screen(b.kind === 'char' ? '提供キャラ一覧' : '提供武具一覧');
+      const L = Menu.screen(b.kind === 'char' ? '提供キャラ一覧' : '提供カード一覧');
       L.onClosed = res;
       let html = `<div class="sc-note">${U.esc(b.n)} ／ ★5 ${b.rates[0]}%・★4 ${b.rates[1]}%・★3 ${b.rates[2]}%</div>`;
       for (const r of [5, 4, 3]) {
-        const ids = b.kind === 'char' ? charPool(r).concat(r === 5 && b.limited ? ['stella'] : []) : equipPool(r);
-        const own = ids.filter(k => b.kind === 'char' ? G.roster[k] : G.equips[k]).length;
+        const ids = b.kind === 'char' ? charPool(r).concat(r === 5 && b.limited ? ['stella'] : []) : cardPool(r);
+        const own = ids.filter(k => b.kind === 'char' ? G.roster[k] : G.cards[k]).length;
         html += `<div class="pool-sec"><span class="rar r${r}">${'★'.repeat(r)}</span> <small class="dim">所持 ${own}/${ids.length}</small></div><div class="pool-grid">`;
         for (const k of ids) {
-          const has = b.kind === 'char' ? G.roster[k] : G.equips[k];
+          const has = b.kind === 'char' ? G.roster[k] : G.cards[k];
+          if (b.kind !== 'char') { html += `<div class="pool-c card ${has ? '' : 'no'}">${cardFaceHTML(k)}</div>`; continue; }
           const up = b.pickup === k || (b.elem && b.kind === 'char' && CHARS[k].elem === b.elem && r >= 4);
           const d = b.kind === 'char' ? CHARS[k] : EQUIPS[k];
           const img = b.kind === 'char' ? portraitURL(d.look) : equipIconURL(k);
@@ -156,9 +157,9 @@ const Gacha = {
     const hs = (G.gacha.history || []).map((h, i) => Object.assign({ i }, h));
     return Menu.tabList({
       title: '召喚履歴 (最新50件)',
-      tabs: [{ n: 'すべて' }, { n: '★5', f: h => h.r === 5 }, { n: '★4', f: h => h.r === 4 }, { n: 'キャラ', f: h => h.k === 'char' }, { n: '武具', f: h => h.k === 'equip' }],
+      tabs: [{ n: 'すべて' }, { n: '★5', f: h => h.r === 5 }, { n: '★4', f: h => h.r === 4 }, { n: 'キャラ', f: h => h.k === 'char' }, { n: 'カード', f: h => h.k === 'card' }],
       items: () => hs,
-      label: h => { const d = h.k === 'char' ? CHARS[h.id] : EQUIPS[h.id]; return `<img class="ico" src="${h.k === 'char' ? portraitURL(d.look) : equipIconURL(h.id)}"><span class="rar r${h.r}">${'★'.repeat(h.r)}</span> ${U.esc(d.n)}`; },
+      label: h => { const isC = h.k === 'char'; const d = isC ? CHARS[h.id] : (CARDS[h.id] || CARDS.blank); return `<img class="ico" src="${isC ? portraitURL(d.look) : cardArtURL(CARDS[h.id] ? h.id : 'blank')}"><span class="rar r${h.r}">${'★'.repeat(h.r)}</span> ${U.esc(d.n)}${isC ? '' : ' <small class="dim">カード</small>'}`; },
       empty: 'まだ召喚していない',
       onSelect: async () => { },
     });
@@ -178,14 +179,14 @@ const Gacha = {
         else id = pool[Math.floor(Math.random() * pool.length)];
         out.push({ kind: 'char', id, rar });
       } else {
-        const pool = equipPool(rar);
+        const pool = cardPool(rar);
         id = pool[Math.floor(Math.random() * pool.length)];
-        out.push({ kind: 'equip', id, rar });
+        out.push({ kind: 'card', id, rar });
       }
     }
     // 入手処理
     for (const o of out) {
-      o.res = o.kind === 'char' ? obtainChar(o.id) : obtainEquip(o.id);
+      o.res = o.kind === 'char' ? obtainChar(o.id) : obtainCard(o.id);
       G.gacha.history.unshift({ k: o.kind, id: o.id, r: o.rar });
     }
     G.gacha.history = G.gacha.history.slice(0, 50);
@@ -236,8 +237,8 @@ const Gacha = {
         });
         const fill = (c, r) => {
           const isC = r.kind === 'char';
-          const d = isC ? CHARS[r.id] : EQUIPS[r.id];
-          const img = isC ? portraitURL(d.look) : equipIconURL(r.id);
+          const d = isC ? CHARS[r.id] : CARDS[r.id];
+          const img = isC ? portraitURL(d.look) : cardArtURL(r.id);
           c.className = 'sm-card r' + r.rar + (isC ? ' ch' : ' eq');
           c.innerHTML = `<img src="${img}"><div class="smc-st">${'★'.repeat(r.rar)}</div><div class="smc-n">${U.esc(d.n)}</div>${r.res.isNew ? '<div class="smc-new">NEW</div>' : `<div class="smc-res">${U.esc(r.res.text)}</div>`}`;
         };
@@ -261,10 +262,10 @@ const Gacha = {
   reveal(parent, r) {
     return new Promise(res => {
       const isC = r.kind === 'char';
-      const d = isC ? CHARS[r.id] : EQUIPS[r.id];
+      const d = isC ? CHARS[r.id] : CARDS[r.id];
       const box = U.el('div', 'sm-reveal r' + r.rar);
-      const img = isC ? portraitURL(d.look) : equipIconURL(r.id);
-      box.innerHTML = `<div class="rv-rays"></div><img class="rv-img" src="${img}"><div class="rv-txt"><div class="rv-st">${'★'.repeat(r.rar)}</div><div class="rv-n">${U.esc(d.n)}</div>${isC ? `<div class="rv-t">${U.esc(d.title)}</div><div class="rv-el" style="background:${ELEM[d.elem].c}">${ELEM[d.elem].n}属性</div><div class="rv-p">「${U.esc(d.profile)}」</div>` : `<div class="rv-t">${SLOT_N[d.slot]} ${Object.entries(d.st).map(([k, v]) => STAT_N[k] + '+' + v).join(' ')}</div>`}${r.res.isNew ? '<div class="rv-new">NEW!</div>' : `<div class="rv-new sub">${U.esc(r.res.text)}</div>`}</div>`;
+      const img = isC ? portraitURL(d.look) : cardArtURL(r.id);
+      box.innerHTML = `<div class="rv-rays"></div>${isC ? `<img class="rv-img" src="${img}">` : `<div class="rv-card">${cardFaceHTML(r.id)}</div>`}<div class="rv-txt"><div class="rv-st">${'★'.repeat(r.rar)}</div><div class="rv-n">${U.esc(d.n)}</div>${isC ? `<div class="rv-t">${U.esc(d.title)}</div><div class="rv-el" style="background:${ELEM[d.elem].c}">${ELEM[d.elem].n}属性</div><div class="rv-p">「${U.esc(d.profile)}」</div>` : `<div class="rv-t">共通カード・${CARD_TYPE[d.type]} ⚡${cardCost(r.id)}</div><div class="rv-p">${U.esc(cardDesc(r.id))}</div>`}${r.res.isNew ? '<div class="rv-new">NEW!</div>' : `<div class="rv-new sub">${U.esc(r.res.text)}</div>`}</div>`;
       parent.appendChild(box);
       if (r.rar === 5) Sound.play('star5'); else Sound.play('star4');
       let done = false;

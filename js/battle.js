@@ -1,5 +1,7 @@
 'use strict';
-// ===== コマンドバトル (素早さ順ターン制 + 属性弱点) =====
+// ===== カードバトル (スレスパ風デッキ構築バトル) =====
+// パーティ4人×固有5枚 + 共通5枚 = 25枚。毎ターン エナジー3・5枚ドロー・手札は全部捨てる。
+// HPはパーティ全員の合計(共有)。敵は次の行動を予告し、ブロックでダメージを防ぐ。
 const BG_DEF = {
   meadow: { sky: ['#5aa0e8', '#a8d8f8'], ground: ['#5aa83c', '#3f8530'], hill: '#4a9132' },
   forest: { sky: ['#2a5a3a', '#5a8a5a'], ground: ['#3f7a35', '#2a5a28'], hill: '#24532a', tree: true },
@@ -12,113 +14,237 @@ const BG_DEF = {
   lava: { sky: ['#1a0808', '#5a1a10'], ground: ['#4a3532', '#2a1a18'], hill: '#3a2624', cave: true, lava: true },
   castle: { sky: ['#0a0614', '#2a1a40'], ground: ['#3a2f50', '#221a33'], hill: '#2c2440', cave: true },
 };
+const ST_N = { str: '筋力', dex: '敏捷', vuln: '脆弱', weak: '脱力', poison: '毒', regen: '再生', thorns: 'トゲ' };
+const ST_GOOD = { str: 1, dex: 1, regen: 1, thorns: 1 };
+const HAND_MAX = 10, DRAW_N = 5, ENERGY_MAX = 3;
+
+// 敵の行動 → 予告
+function enemyIntent(e) {
+  const d = e.d;
+  let pool = d.act.slice();
+  if (d.def >= 22 && !pool.some(a => a[0] === 'e_guard')) pool.push(['e_guard', 0.6]);
+  if (e.boss && e.hp < e.max * 0.4) pool = pool.map(([k, w]) => [k, SKILLS[k] && SKILLS[k].target === 'enemies' ? w * 2 : w]);
+  if (e.hp > e.max * 0.7) pool = pool.filter(([k]) => k !== 'e_heal');
+  if (e.last) pool = pool.map(([k, w]) => [k, k === e.last && k !== 'attack' ? w * 0.4 : w]);
+  const tot = pool.reduce((a, b) => a + b[1], 0);
+  let r = Math.random() * tot, k = pool[0][0];
+  for (const [kk, w] of pool) { r -= w; if (r <= 0) { k = kk; break; } }
+  e.last = k;
+  const A = d.atk * 1.15, M = d.mag * 1.05, sk = SKILLS[k] || { n: '' };
+  const I = { k, n: k === 'attack' ? 'こうげき' : k === 'e_guard' ? 'かまえる' : sk.n };
+  switch (k) {
+    case 'attack': I.dmg = A; break;
+    case 'e_bite': I.dmg = A * 1.25; break;
+    case 'e_poison': I.dmg = A * 0.7; I.poison = Math.max(2, Math.round(d.atk / 7)); break;
+    case 'e_fire': case 'e_ice': case 'e_wind': case 'e_dark': I.dmg = M; break;
+    case 'e_firebreath': case 'e_icebreath': I.dmg = M * 1.15; I.vuln = 1; break;
+    case 'e_leaf': case 'e_darkwave': I.dmg = M * 1.15; I.weak = 1; break;
+    case 'e_rock': I.dmg = A * 0.6; I.hits = 2; break;
+    case 'e_root': I.dmg = A * 1.1; I.weak = 1; break;
+    case 'e_smash': I.dmg = A * 1.6; break;
+    case 'e_drain': I.dmg = A * 0.9; I.drain = true; break;
+    case 'e_heal': I.heal = Math.round(e.max * 0.15); break;
+    case 'e_charge': I.str = Math.max(2, Math.round(d.atk * 0.1)); break;
+    case 'e_guard': I.block = Math.round(d.def * 0.7); break;
+    default: I.dmg = A;
+  }
+  if (I.dmg) I.dmg = Math.max(1, Math.round(I.dmg));
+  I.hits = I.hits || 1;
+  return I;
+}
 
 const Battle = {
   active: false,
   async start(enemyIds, opts = {}) {
     this.opts = opts;
     this.active = true;
-    this.turn = 0;
-    this.fx = [];
-    this.t = 0;
-    const counts = {};
+    this.t = 0; this.fx = []; this.turn = 0;
+    const counts = {}, seen = {};
     enemyIds.forEach(id => counts[id] = (counts[id] || 0) + 1);
-    const seen = {};
-    this.enemies = enemyIds.map((id, i) => {
+    this.enemies = enemyIds.map(id => {
       const d = ENEMIES[id];
       seen[id] = (seen[id] || 0) + 1;
-      const suf = counts[id] > 1 ? 'ABCD'[seen[id] - 1] : '';
-      return { id, d, n: d.n + suf, hp: d.hp, maxhp: d.hp, st: {}, alive: true, flash: 0, shake: 0, fade: 1, lunge: 0, boss: !!d.boss, x: 0, y: 0 };
+      const hp = d.chp || d.hp;
+      return { id, d, n: d.n + (counts[id] > 1 ? 'ABCD'[seen[id] - 1] : ''), hp, max: hp, block: 0, st: {}, alive: true, flash: 0, shake: 0, fade: 1, lunge: 0, boss: !!d.boss, x: 0, y: 0, w: 32, h: 32 };
     });
+    // パーティ (共有HP)
     this.party = partyChars();
-    for (const c of this.party) { c.st = c.st || {}; c.defend = false; delete c.st.buffs; }
+    const maxhp = this.party.reduce((a, c) => a + charStats(c).hp, 0);
+    const hp = this.party.reduce((a, c) => a + Math.max(0, c.hp), 0);
+    this.P = { hp: Math.max(1, hp), max: maxhp, block: 0, st: {} };
+    // デッキ
+    const deck = [];
+    for (let i = 0; i < 4; i++) { const c = this.party[i]; if (c) deck.push(...charCards(c.id)); else for (let k = 0; k < 5; k++) deck.push('blank'); }
+    deck.push(...(G.deck || STARTER_DECK).slice(0, 5));
+    while (deck.length < 25) deck.push('blank');
+    this.uid = 0;
+    this.drawPile = this.shuffle(deck.map(cid => ({ u: this.uid++, cid })));
+    this.hand = []; this.discard = []; this.exhaust = [];
+    this.energy = ENERGY_MAX; this.sel = -1; this.tgt = 0; this.targeting = false; this.busy = true;
     Sound.play('encounter');
     Game.scene = 'trans';
     await this.transition();
     Game.scene = 'battle';
     Sound.bgm(opts.boss ? 'boss' : 'battle');
+    document.body.classList.add('in-battle');
     this.buildUI();
     this.layout();
-    const result = await this.run();
+    requestAnimationFrame(() => this.layout());
+    const r = await this.run();
     this.cleanup();
-    return result;
+    return r;
   },
-  transition() {
-    return new Promise(res => {
-      const el = U.el('div', 'enc-trans');
-      UI.root.appendChild(el);
-      setTimeout(() => { el.remove(); res(); }, 620);
-    });
-  },
-  wait(ms) { return U.sleep(ms / (this.fast ? 2 : 1)); },
+  shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  transition() { return new Promise(res => { const el = U.el('div', 'enc-trans'); UI.root.appendChild(el); setTimeout(() => { el.remove(); res(); }, 620); }); },
+  wait(ms) { return U.sleep(ms / (this.fast ? 2.2 : 1)); },
 
   // ---------- UI ----------
   buildUI() {
-    const el = U.el('div', 'layer battle-layer');
-    this.msgEl = U.el('div', 'win bmsg', '');
+    const el = U.el('div', 'layer battle-layer cb');
+    const top = U.el('div', 'cb-top');
+    this.msgEl = U.el('div', 'cb-msg');
     const tools = U.el('div', 'btools');
     this.autoBtn = U.el('div', 'tbtn' + (this.auto ? ' on' : ''), 'AUTO');
     this.fastBtn = U.el('div', 'tbtn' + (this.fast ? ' on' : ''), '×2');
+    this.runBtn = U.el('div', 'tbtn' + (this.opts.boss ? ' dis' : ''), 'にげる');
     this.autoBtn.onclick = e => { e.stopPropagation(); this.toggleAuto(); };
     this.fastBtn.onclick = e => { e.stopPropagation(); this.fast = !this.fast; this.fastBtn.classList.toggle('on', this.fast); Sound.play('cursor'); };
-    tools.append(this.autoBtn, this.fastBtn);
-    this.cmdEl = U.el('div', 'win bcmd hidden');
-    this.partyEl = U.el('div', 'bparty');
+    this.runBtn.onclick = e => { e.stopPropagation(); this.tryEscape(); };
+    tools.append(this.autoBtn, this.fastBtn, this.runBtn);
+    top.append(this.msgEl, tools);
+    this.enEl = U.el('div', 'cb-enemies');
     this.popEl = U.el('div', 'pops');
-    el.append(this.msgEl, tools, this.popEl, this.cmdEl, this.partyEl);
-    this.cards = this.party.map(c => {
-      const d = CHARS[c.id];
-      const card = U.el('div', 'card');
-      card.innerHTML = `<img class="cport" src="${portraitURL(d.look)}"><div class="cel" style="background:${ELEM[d.elem].c}">${ELEM[d.elem].n}</div><div class="cn">${U.esc(d.n)}</div><div class="bar hp"><i></i></div><div class="nums"></div><div class="bar mp"><i></i></div><div class="cst"></div>`;
-      card.addEventListener('click', e => { e.stopPropagation(); if (this.pickAlly) this.pickAlly(this.party.indexOf(c)); });
-      this.partyEl.appendChild(card);
-      return card;
+    this.panel = U.el('div', 'cb-panel');
+    this.partyEl = U.el('div', 'cb-party');
+    this.infoEl = U.el('div', 'cb-info');
+    this.handEl = U.el('div', 'cb-hand');
+    const btns = U.el('div', 'cb-btns');
+    this.energyEl = U.el('div', 'cb-energy');
+    this.drawBtn = U.el('div', 'cb-pile', '');
+    this.discBtn = U.el('div', 'cb-pile', '');
+    this.itemBtn = U.el('div', 'cb-pile', 'どうぐ');
+    this.endBtn = U.el('div', 'cb-end', 'ターン終了');
+    this.drawBtn.onclick = e => { e.stopPropagation(); this.viewPile('山札 (順番はシャッフル)', this.drawPile); };
+    this.discBtn.onclick = e => { e.stopPropagation(); this.viewPile('捨て札', this.discard.concat(this.exhaust.map(x => Object.assign({ ex: 1 }, x)))); };
+    this.itemBtn.onclick = e => { e.stopPropagation(); this.useItem(); };
+    this.endBtn.onclick = e => { e.stopPropagation(); if (this.canAct()) this.endTurn(); };
+    btns.append(this.energyEl, this.drawBtn, this.discBtn, this.itemBtn, this.endBtn);
+    this.panel.append(this.partyEl, this.infoEl, this.handEl, btns);
+    this.cutEl = U.el('div', 'cutin');
+    el.append(top, this.enEl, this.popEl, this.panel, this.cutEl);
+    // 敵のオーバーレイ
+    this.enemies.forEach((e, i) => {
+      const o = U.el('div', 'cb-en');
+      o.innerHTML = '<div class="cbe-int"></div><div class="cbe-info"><div class="cbe-n"></div><div class="cbe-hp"><i></i><span></span></div><div class="cbe-st"></div></div>';
+      o.onclick = ev => { ev.stopPropagation(); this.clickEnemy(i); };
+      e.ov = o;
+      this.enEl.appendChild(o);
     });
-    this.layer = { el, handle: k => { if (k === 'menu') { this.toggleAuto(); return; } if (this.menu) this.menu.handle(k); else if ((k === 'a' || k === 'b') && this.onAny) this.onAny(); } };
-    el.addEventListener('click', e => {
-      if (this.pickEnemy) {
-        const r = UI.root.getBoundingClientRect();
-        const x = (e.clientX - r.left) / Game.scale, y = (e.clientY - r.top) / Game.scale;
-        const j = this.enemies.findIndex(en => en.alive && x >= en.x - 4 && x <= en.x + en.w + 4 && y >= en.y - 4 && y <= en.y + en.h + 4);
-        if (j >= 0) { this.pickEnemy(j); return; }
-      }
-      if (this.onAny) this.onAny();
-    });
+    this.layer = {
+      el, handle: k => {
+        if (this.onAny && (k === 'a' || k === 'b')) { this.onAny(); return; }
+        if (!this.canAct()) { if (k === 'menu') this.toggleAuto(); return; }
+        if (k === 'menu') { this.endTurn(); return; }
+        if (this.targeting) {
+          const al = this.aliveIdx();
+          if (k === 'left' || k === 'right') { let j = al.indexOf(this.tgt); j = (j + (k === 'left' ? al.length - 1 : 1)) % al.length; this.tgt = al[j]; Sound.play('cursor'); this.refresh(); }
+          else if (k === 'a') this.play(this.sel, this.tgt);
+          else if (k === 'b') { this.targeting = false; Sound.play('cancel'); this.refresh(); }
+          return;
+        }
+        if (k === 'left' || k === 'right') { if (!this.hand.length) return; this.sel = this.sel < 0 ? 0 : (this.sel + (k === 'left' ? this.hand.length - 1 : 1)) % this.hand.length; Sound.play('cursor'); this.refresh(); }
+        else if (k === 'up') { if (this.sel < 0 && this.hand.length) { this.sel = 0; this.refresh(); } }
+        else if (k === 'a') { if (this.sel < 0) { if (this.hand.length) { this.sel = 0; this.refresh(); } } else this.tapCard(this.sel); }
+        else if (k === 'b' || k === 'down') { this.sel = -1; this.targeting = false; this.refresh(); }
+      },
+    };
+    el.addEventListener('click', () => { if (this.onAny) this.onAny(); else if (this.canAct() && (this.sel >= 0)) { this.sel = -1; this.targeting = false; this.refresh(); } });
     UI.push(this.layer);
     this.refresh();
   },
+  canAct() { return !this.busy && !this.auto && !this.onAny && this.active; },
+  aliveIdx() { return this.enemies.map((e, i) => i).filter(i => this.enemies[i].alive); },
   toggleAuto() {
     this.auto = !this.auto; this.autoBtn.classList.toggle('on', this.auto); Sound.play('cursor');
-    if (this.auto && this.cancelInput) this.cancelInput();
+    if (this.auto && !this.busy && !this.onAny) this.scheduleAuto();
+    this.refresh();
   },
+  stChips(st) { return Object.keys(st).filter(k => st[k] > 0).map(k => `<span class="${ST_GOOD[k] ? 'sg' : 'sb'}">${ST_N[k]}${st[k]}</span>`).join(''); },
   refresh() {
-    this.party.forEach((c, i) => {
-      const s = charStats(c), card = this.cards[i];
-      card.classList.toggle('dead', c.hp <= 0);
-      card.querySelector('.hp i').style.width = (100 * Math.max(0, c.hp) / s.hp) + '%';
-      card.querySelector('.hp').classList.toggle('low', c.hp > 0 && c.hp < s.hp * 0.3);
-      card.querySelector('.mp i').style.width = (100 * Math.max(0, c.mp) / Math.max(1, s.mp)) + '%';
-      card.querySelector('.nums').textContent = `${Math.max(0, c.hp)}/${s.hp}`;
-      const sts = [];
-      if (c.st.poison) sts.push('<span class="sp">毒</span>');
-      if (c.st.buffs) for (const k in c.st.buffs) sts.push(`<span class="${c.st.buffs[k].mul > 1 ? 'su' : 'sd'}">${STAT_N[k]}${c.st.buffs[k].mul > 1 ? '↑' : '↓'}</span>`);
-      if (c.defend) sts.push('<span class="sg">防</span>');
-      card.querySelector('.cst').innerHTML = sts.join('');
+    const P = this.P;
+    // パーティ
+    this.partyEl.innerHTML = `<div class="cbp-ports">${[0, 1, 2, 3].map(i => { const c = this.party[i]; return c ? `<img src="${portraitURL(CHARS[c.id].look)}">` : '<i></i>'; }).join('')}</div>
+      <div class="cbp-main"><div class="cbp-hp${P.hp < P.max * 0.3 ? ' low' : ''}"><i style="width:${100 * P.hp / P.max}%"></i><span>HP ${P.hp} / ${P.max}</span></div><div class="cbp-st">${P.block ? `<span class="blk">ブロック${P.block}</span>` : ''}${this.stChips(P.st)}</div></div>`;
+    // 敵
+    const s = Game.scale;
+    this.enemies.forEach((e, i) => {
+      const o = e.ov;
+      o.style.left = (e.x + e.w / 2) * s + 'px'; o.style.top = e.y * s + 'px'; o.style.height = e.h * s + 'px';
+      o.classList.toggle('dead', !e.alive);
+      o.classList.toggle('tgt', this.targeting && this.tgt === i);
+      o.classList.toggle('can', this.sel >= 0 && !!this.hand[this.sel] && cardNeedsTarget(CARDS[this.hand[this.sel].cid]) && e.alive);
+      const I = e.intent;
+      let it = '';
+      if (I && e.alive) {
+        if (I.dmg) it += `<span class="ia">攻撃 ${this.previewDmg(e, I.dmg)}${I.hits > 1 ? '×' + I.hits : ''}</span>`;
+        if (I.block) it += '<span class="ib">防御</span>';
+        if (I.str) it += '<span class="ibf">強化</span>';
+        if (I.heal) it += '<span class="ih">回復</span>';
+        if (I.poison || I.weak || I.vuln) it += '<span class="idb">弱体</span>';
+      }
+      o.querySelector('.cbe-int').innerHTML = it;
+      o.querySelector('.cbe-n').textContent = e.n;
+      o.querySelector('.cbe-hp i').style.width = (100 * Math.max(0, e.hp) / e.max) + '%';
+      o.querySelector('.cbe-hp span').textContent = `${Math.max(0, e.hp)}/${e.max}`;
+      o.querySelector('.cbe-st').innerHTML = (e.block ? `<span class="blk">ブロック${e.block}</span>` : '') + this.stChips(e.st);
     });
+    // 手札
+    this.handEl.innerHTML = '';
+    this.handEl.style.setProperty('--n', Math.max(5, this.hand.length));
+    this.hand.forEach((h, i) => {
+      const c = CARDS[h.cid];
+      const playable = !c.blank && cardCost(h.cid) <= this.energy;
+      const w = U.el('div', 'cb-slot' + (i === this.sel ? ' sel' : '') + (playable ? ' ok' : ' no'));
+      w.innerHTML = cardFaceHTML(h.cid);
+      w.onclick = ev => { ev.stopPropagation(); if (this.canAct()) this.tapCard(i); };
+      this.handEl.appendChild(w);
+    });
+    this.energyEl.innerHTML = `<b>${this.energy}</b>/${ENERGY_MAX}`;
+    this.drawBtn.innerHTML = `山札<b>${this.drawPile.length}</b>`;
+    this.discBtn.innerHTML = `捨て札<b>${this.discard.length}</b>`;
+    this.endBtn.classList.toggle('dis', !this.canAct());
+    this.runBtn.classList.toggle('dis', !!this.opts.boss || !this.canAct());
+    // 説明
+    if (this.sel >= 0 && this.hand[this.sel]) {
+      const h = this.hand[this.sel], c = CARDS[h.cid];
+      const cost = cardCost(h.cid);
+      const hint = c.blank ? '使えないカード' : cost > this.energy ? 'エナジーが足りない' : this.targeting ? '◀▶で対象を選び、Aで使う(敵をタップでもOK)' : (cardNeedsTarget(c) && this.aliveIdx().length > 1 ? 'もう一度タップか、敵をタップして使う' : 'もう一度タップで使う');
+      this.infoEl.innerHTML = `<b>${U.esc(c.n)}</b> <span class="cost">⚡${cost < 0 ? '-' : cost}</span> ${U.esc(cardDesc(h.cid))}<br><small>${hint}</small>`;
+    } else this.infoEl.innerHTML = this.busy ? '' : (this.auto ? '<small>オートバトル中…(AUTOで解除)</small>' : '<small>カードをタップして選ぶ ／ MENU:ターン終了</small>');
   },
-  msg(t) { this.msgEl.innerHTML = t; this.msgEl.classList.toggle('hidden', !t); },
+  previewDmg(e, base) {
+    let n = base + (e.st.str || 0);
+    if (e.st.weak) n *= 0.75;
+    if (this.P.st.vuln) n *= 1.5;
+    return Math.floor(n);
+  },
+  msg(t) { this.msgEl.innerHTML = t || ''; this.msgEl.classList.toggle('hidden', !t); },
   layout() {
-    const n = this.enemies.length, vw = Game.vw, vh = Game.vh;
-    const base = Math.round(vh * (vh > vw ? 0.36 : 0.42));
+    if (!this.enemies) return;
+    const vw = Game.vw;
+    let panelTop = Game.vh * 0.55;
+    if (this.panel) { const r = this.panel.getBoundingClientRect(), rr = UI.root.getBoundingClientRect(); if (r.height) panelTop = (r.top - rr.top) / Game.scale; }
+    const top = 26, room = Math.max(40, panelTop - top - 34);
+    const n = this.enemies.length;
     this.enemies.forEach((e, i) => {
       const sp = enemySprite(e.d.spr, e.d.pal);
-      let sc = e.boss ? 2 : 2;
-      if (e.boss) sc = Math.max(1, Math.min(3, Math.floor(Math.min(vw * 0.6, vh * 0.42) / 32)));
-      else sc = vw < 260 && n >= 3 ? 2 : (vh > 300 && vw > 300 ? 3 : 2);
-      e.sc = sc; e.w = sp.width * sc; e.h = sp.height * sc;
+      let sc = Math.max(1, Math.min(e.boss ? 3 : 3, Math.floor(Math.min(room / sp.height, (vw / n) * 0.8 / sp.width))));
+      e.w = sp.width * sc; e.h = sp.height * sc;
       e.x = Math.round(vw * (i + 1) / (n + 1) - e.w / 2);
-      e.y = base - e.h;
+      e.y = Math.round(top + (room - e.h) * 0.75);
     });
+    this.hz = Math.round(this.enemies[0].y + this.enemies[0].h * 0.8);
+    if (this.layer) this.refresh();
   },
   pop(text, x, y, cls) {
     const s = Game.scale;
@@ -127,11 +253,15 @@ const Battle = {
     this.popEl.appendChild(p);
     setTimeout(() => p.remove(), 1100);
   },
-  popCard(i, text, cls) {
-    const card = this.cards[i]; if (!card) return;
-    const p = U.el('div', 'pop card-pop ' + (cls || ''), text);
-    card.appendChild(p);
+  popParty(text, cls) {
+    const r = this.partyEl.getBoundingClientRect(), rr = UI.root.getBoundingClientRect();
+    const p = U.el('div', 'pop ' + (cls || ''), text);
+    p.style.left = (r.left - rr.left + r.width * (0.45 + Math.random() * 0.2)) + 'px'; p.style.top = (r.top - rr.top) + 'px';
+    this.popEl.appendChild(p);
     setTimeout(() => p.remove(), 1100);
+    this.partyEl.classList.remove('hit', 'heal'); void this.partyEl.offsetWidth;
+    if (cls && cls.includes('dmg')) this.partyEl.classList.add('hit');
+    if (cls && cls.includes('heal')) this.partyEl.classList.add('heal');
   },
 
   // ---------- 描画 ----------
@@ -139,15 +269,14 @@ const Battle = {
     this.t += 1 / 60;
     const vw = Game.vw, vh = Game.vh;
     const bg = BG_DEF[this.opts.bg] || BG_DEF.meadow;
-    const hz = Math.round(vh * (vh > vw ? 0.28 : 0.32));
+    const hz = U.clamp(this.hz || Math.round(vh * 0.3), 20, vh - 10);
     let g = ctx.createLinearGradient(0, 0, 0, hz);
     g.addColorStop(0, bg.sky[0]); g.addColorStop(1, bg.sky[1]);
     ctx.fillStyle = g; ctx.fillRect(0, 0, vw, hz);
-    // 遠景
     ctx.fillStyle = bg.hill;
     for (let x = 0; x < vw; x += 2) {
       const h = bg.cave ? 10 + Math.abs(Math.sin(x * 0.09)) * 14 + Math.sin(x * 0.31) * 3 : 8 + Math.sin(x * 0.04) * 6 + Math.sin(x * 0.13) * 3;
-      if (bg.cave) { ctx.fillRect(x, 0, 2, Math.round(h * 0.6)); }
+      if (bg.cave) ctx.fillRect(x, 0, 2, Math.round(h * 0.6));
       ctx.fillRect(x, hz - Math.round(h), 2, Math.round(h));
     }
     if (bg.tree) { ctx.fillStyle = '#1d3b22'; for (let x = 4; x < vw; x += 22) { ctx.fillRect(x, hz - 26, 10, 26); ctx.fillRect(x - 4, hz - 34, 18, 14); } }
@@ -157,14 +286,13 @@ const Battle = {
     ctx.fillStyle = 'rgba(0,0,0,0.08)';
     for (let y = hz + 4, k = 0; y < vh; y += 4 + k, k++) ctx.fillRect(0, y, vw, 1);
     if (bg.lava) { ctx.fillStyle = `rgba(255,${120 + Math.round(Math.sin(this.t * 3) * 40)},40,0.25)`; ctx.fillRect(0, hz, vw, 3); }
-    // 敵
     for (const e of this.enemies) {
       if (e.fade <= 0) continue;
       const sp = enemySprite(e.d.spr, e.d.pal);
       let ox = 0;
       if (e.shake > 0) { ox = Math.round(Math.sin(e.shake * 40) * 3); e.shake -= 1 / 60; }
       let oy = Math.round(Math.sin(this.t * 2 + e.x) * 1.5);
-      if (e.lunge > 0) { oy += Math.round(Math.sin(e.lunge * Math.PI) * 6); e.lunge -= 1 / 20; }
+      if (e.lunge > 0) { oy += Math.round(Math.sin(e.lunge * Math.PI) * 8); e.lunge -= 1 / 20; }
       ctx.save();
       ctx.globalAlpha = Math.max(0, e.fade);
       ctx.fillStyle = 'rgba(0,0,0,0.25)';
@@ -179,395 +307,309 @@ const Battle = {
       }
       ctx.restore();
       if (!e.alive && e.fade > 0) e.fade -= 1 / 30;
-      // HPバー
-      if (e.alive && (e.hp < e.maxhp || e.boss)) {
-        const bw = Math.max(24, Math.min(e.w, 60)), bx = Math.round(e.x + e.w / 2 - bw / 2), by = e.y + e.h + 4;
-        ctx.fillStyle = '#181425'; ctx.fillRect(bx - 1, by - 1, bw + 2, 4);
-        ctx.fillStyle = e.hp / e.maxhp < 0.3 ? '#e43b44' : '#63c74d';
-        ctx.fillRect(bx, by, Math.round(bw * e.hp / e.maxhp), 2);
-      }
-      if (this.targetIdx !== undefined && this.enemies[this.targetIdx] === e && Math.floor(this.t * 4) % 2) {
-        const ax = Math.round(e.x + e.w / 2);
-        ctx.fillStyle = '#ffe66d';
-        for (let i = 0; i < 4; i++) ctx.fillRect(ax - 3 + i, e.y - 9 + i, 7 - i * 2, 1);
-      }
     }
-    // エフェクト
     this.fx = this.fx.filter(f => (f.t += 1 / 60) < f.dur);
     for (const f of this.fx) {
       const k = f.t / f.dur;
       ctx.save();
       if (f.type === 'slash') {
         ctx.fillStyle = f.color || '#fff'; ctx.globalAlpha = 1 - k;
-        for (let i = 0; i < 18; i++) { const p = (i / 18) * Math.min(1, k * 3); ctx.fillRect(Math.round(f.x - 14 + p * 28 * (f.dir || 1) + (f.dir < 0 ? 28 : 0) - (f.dir < 0 ? 28 : 0)), Math.round(f.y - 14 + p * 28), 2, 2); }
+        for (let i = 0; i < 18; i++) { const p = (i / 18) * Math.min(1, k * 3); ctx.fillRect(Math.round(f.x - 14 + p * 28), Math.round(f.y - 14 + p * 28), 2, 2); }
       } else if (f.type === 'burst') {
         ctx.globalAlpha = 1 - k;
         const r = 4 + k * f.r;
         for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2 + f.t * 2; ctx.fillStyle = i % 2 ? f.color : '#fff'; ctx.fillRect(Math.round(f.x + Math.cos(a) * r) - 1, Math.round(f.y + Math.sin(a) * r * 0.8) - 1, 3, 3); }
-        ctx.fillStyle = f.color; ctx.globalAlpha = (1 - k) * 0.35; ctx.beginPath(); ctx.arc(f.x, f.y, r * 0.7, 0, Math.PI * 2); ctx.fill();
       } else if (f.type === 'screen') {
-        ctx.globalAlpha = (1 - k) * 0.5; ctx.fillStyle = f.color; ctx.fillRect(0, 0, vw, vh);
-      } else if (f.type === 'rise') {
-        ctx.globalAlpha = 1 - k; ctx.fillStyle = f.color;
-        for (let i = 0; i < 10; i++) ctx.fillRect(Math.round(f.x + Math.sin(i * 7) * 14), Math.round(f.y - k * 24 - i * 3), 2, 2);
+        ctx.globalAlpha = (1 - k) * 0.45; ctx.fillStyle = f.color; ctx.fillRect(0, 0, vw, vh);
       }
       ctx.restore();
     }
   },
 
   // ---------- 進行 ----------
-  async run() {
-    const names = this.enemies.map(e => e.n);
-    this.msg(this.opts.boss ? `<b class="bossname">${U.esc(names[0])}</b> が あらわれた!` : `${U.esc(names.join('、'))} が あらわれた!`);
-    await this.wait(900);
-    for (; ;) {
-      this.turn++;
-      for (const c of this.party) c.defend = false;
+  run() {
+    return new Promise(async res => {
+      this.resolve = res;
+      const names = this.enemies.map(e => e.n);
+      this.msg(this.opts.boss ? `<b class="bossname">${U.esc(names[0])}</b> が あらわれた!` : `${U.esc(names.join('、'))} が あらわれた!`);
+      for (const e of this.enemies) e.intent = enemyIntent(e);
       this.refresh();
-      const cmds = await this.collect();
-      if (cmds === 'escape') {
-        const ok = await this.tryEscape();
-        if (ok) return 'escape';
-        cmds.length = 0;
-      }
-      const acts = [];
-      if (Array.isArray(cmds)) for (const a of cmds) acts.push(a);
-      for (const e of this.enemies) if (e.alive) acts.push(this.enemyAct(e));
-      for (const a of acts) {
-        const s = a.side === 'p' ? this.effStat(a.actor, 'spd') : this.effStat(a.actor, 'spd');
-        a.ord = (a.prio || 0) * 1000 + s * (0.85 + Math.random() * 0.3);
-      }
-      acts.sort((a, b) => b.ord - a.ord);
-      for (const a of acts) {
-        if (a.side === 'p' ? a.actor.hp <= 0 : !a.actor.alive) continue;
-        await this.exec(a);
-        this.refresh();
-        const end = this.checkEnd();
-        if (end) return await this.finish(end);
-      }
-      await this.endTurn();
-      const end = this.checkEnd();
-      if (end) return await this.finish(end);
-    }
-  },
-  checkEnd() {
-    if (this.enemies.every(e => !e.alive)) return 'win';
-    if (this.party.every(c => c.hp <= 0)) return 'lose';
-    return null;
-  },
-  async endTurn() {
-    const tick = (u, isP, i) => {
-      if (u.st.poison && (isP ? u.hp > 0 : u.alive)) {
-        const mx = isP ? charStats(u).hp : u.maxhp;
-        const d = Math.max(1, Math.floor(mx * 0.07));
-        u.hp = Math.max(1, u.hp - d);
-        if (isP) this.popCard(i, d, 'dmg poison'); else this.pop(d, u.x + u.w / 2, u.y + u.h / 3, 'dmg poison');
-      }
-      if (u.st.buffs) for (const k in u.st.buffs) { if (--u.st.buffs[k].turns <= 0) delete u.st.buffs[k]; }
-    };
-    this.party.forEach((c, i) => tick(c, true, i));
-    this.enemies.forEach(e => tick(e, false));
-    this.refresh();
-    await this.wait(200);
-  },
-  effStat(u, k) {
-    const isP = !!u.id && !!CHARS[u.id] && !u.d;
-    const base = isP ? charStats(u)[k] : u.d[k];
-    const b = u.st && u.st.buffs && u.st.buffs[k];
-    return Math.max(1, Math.round(base * (b ? b.mul : 1)));
-  },
-
-  // コマンド入力
-  collect() {
-    return new Promise(async resolve => {
-      const cmds = [];
-      const alive = this.party.map((c, i) => i).filter(i => this.party[i].hp > 0);
-      let k = 0;
-      const finish = (v) => { this.hideCmd(); this.cards.forEach(c => c.classList.remove('act')); this.msg(''); resolve(v); };
-      if (this.auto) { for (const i of alive) cmds.push(this.autoCmd(this.party[i])); await this.wait(150); finish(cmds); return; }
-      const ask = async () => {
-        if (this.auto) { for (let j = k; j < alive.length; j++) cmds[j] = this.autoCmd(this.party[alive[j]]); finish(cmds); return; }
-        if (k >= alive.length) { finish(cmds); return; }
-        const i = alive[k], c = this.party[i];
-        this.cards.forEach((cd, j) => cd.classList.toggle('act', j === i));
-        const r = await this.commandFor(c, i, k === 0);
-        if (r === 'auto') { ask(); return; }
-        if (r === 'back') { if (k > 0) { k--; cmds.pop(); } ask(); return; }
-        if (r === 'escape') { finish('escape'); return; }
-        cmds[k] = r; k++;
-        ask();
-      };
-      ask();
+      await this.wait(800);
+      this.msg('');
+      this.startTurn();
     });
   },
-  hideCmd() { this.menu = null; this.cmdEl.classList.add('hidden'); this.cmdEl.innerHTML = ''; this.targetIdx = undefined; this.pickAlly = null; this.pickEnemy = null; },
-  showMenu(title, items, onSelect, onCancel, onChange, cols) {
-    this.cmdEl.innerHTML = '';
-    this.cmdEl.classList.remove('hidden');
-    if (title) this.cmdEl.appendChild(U.el('div', 'bcmd-t', title));
-    const lm = new ListMenu({ items, onSelect, onCancel, onChange, cols });
-    this.cmdEl.appendChild(lm.el);
-    this.menu = lm;
-    return lm;
+  drawCards(n) {
+    for (let i = 0; i < n; i++) {
+      if (this.hand.length >= HAND_MAX) break;
+      if (!this.drawPile.length) {
+        if (!this.discard.length) break;
+        this.drawPile = this.shuffle(this.discard); this.discard = [];
+        UI.toast('捨て札を山札に戻した', 900);
+      }
+      this.hand.push(this.drawPile.pop());
+    }
   },
-  commandFor(c, i, first) {
-    return new Promise(res => {
-      this.cancelInput = () => { this.cancelInput = null; this.hideCmd(); res('auto'); };
-      const d = CHARS[c.id];
-      const done = v => { this.cancelInput = null; this.hideCmd(); res(v); };
-      const main = () => {
-        this.targetIdx = undefined;
-        this.msg(`<b>${U.esc(d.n)}</b> は どうする?`);
-        this.showMenu(null, [
-          { label: '⚔ こうげき' }, { label: '✦ スキル' }, { label: '🛡 ぼうぎょ' }, { label: '🧪 どうぐ' }, { label: '💨 にげる', disabled: !!this.opts.boss },
-        ], (idx) => {
-          if (idx === 0) target('enemy', null, t => done({ side: 'p', actor: c, ci: i, sk: 'attack', t }), main);
-          else if (idx === 1) skills();
-          else if (idx === 2) done({ side: 'p', actor: c, ci: i, sk: 'defend', prio: 5 });
-          else if (idx === 3) items();
-          else if (idx === 4) done('escape');
-        }, () => done('back'), null, 1);
-      };
-      const skills = () => {
-        const list = charSkills(c);
-        const s = charStats(c);
-        this.msg(`MP ${c.mp}/${s.mp}`);
-        if (!list.length) { this.msg('使えるスキルがない!'); setTimeout(main, 700); return; }
-        this.showMenu(null, list.map(id => {
-          const sk = SKILLS[id];
-          const el = sk.elem ? `<span class="tel" style="color:${ELEM[sk.elem].c}">${ELEM[sk.elem].n}</span>` : '';
-          return { label: `${el}${U.esc(sk.n)}<span class="mpc">${sk.mp}</span>`, disabled: c.mp < sk.mp };
-        }), (idx) => {
-          const id = list[idx], sk = SKILLS[id];
-          target(sk.target, sk, t => done({ side: 'p', actor: c, ci: i, sk: id, t }), skills);
-        }, main, (idx) => { const sk = SKILLS[list[idx]]; if (sk) this.msg(`${U.esc(sk.desc || '')} <span class="mpc">消費MP ${sk.mp}</span>`); }, 1);
-      };
-      const items = () => {
-        const list = Object.keys(G.items).filter(k => G.items[k] > 0 && ITEMS[k]);
-        if (!list.length) { this.msg('どうぐを持っていない!'); setTimeout(main, 700); return; }
-        this.showMenu(null, list.map(id => ({ label: `${U.esc(ITEMS[id].n)}<span class="mpc">×${G.items[id]}</span>` })), (idx) => {
-          const id = list[idx], it = ITEMS[id];
-          target(it.type === 'revive' ? 'dead' : 'ally', null, t => done({ side: 'p', actor: c, ci: i, item: id, t, prio: 3 }), items);
-        }, main, (idx) => { const it = ITEMS[list[idx]]; if (it) this.msg(U.esc(it.desc)); }, 1);
-      };
-      const target = (type, sk, ok, back) => {
-        if (type === 'enemies' || type === 'allies' || type === 'self') { ok(type === 'self' ? i : -1); return; }
-        if (type === 'enemy') {
-          const al = this.enemies.map((e, j) => j).filter(j => this.enemies[j].alive);
-          const lm = this.showMenu('だれに?', al.map(j => {
-            const e = this.enemies[j]; const w = sk && sk.elem ? elemMult(sk.elem, e.d.elem) : (SKILLS.attack && charStats(c).elem !== 'none' ? elemMult(charStats(c).elem, e.d.elem) : 1);
-            return { label: U.esc(e.n) + (w > 1 && G.seen[e.id] ? '<span class="weak">WEAK</span>' : '') };
-          }), idx => ok(al[idx]), back, idx => { this.targetIdx = al[idx]; }, 1);
-          this.targetIdx = al[0];
-          this.pickEnemy = j => { const k2 = al.indexOf(j); if (k2 >= 0) { lm.i = k2; lm.mark(); lm.select(); } };
-          return;
-        }
-        const al = this.party.map((p, j) => j).filter(j => type === 'dead' ? this.party[j].hp <= 0 : this.party[j].hp > 0);
-        if (!al.length) { this.msg('対象がいない!'); setTimeout(back, 700); return; }
-        const lm = this.showMenu('だれに?', al.map(j => { const p = this.party[j], s = charStats(p); return { label: `${U.esc(CHARS[p.id].n)} <span class="mpc">${Math.max(0, p.hp)}/${s.hp}</span>` }; }), idx => ok(al[idx]), back, idx => { this.cards.forEach((cd, j) => cd.classList.toggle('tgt', j === al[idx])); }, 1);
-        this.pickAlly = j => { const k2 = al.indexOf(j); if (k2 >= 0) { lm.i = k2; lm.mark(); lm.select(); } };
-      };
-      main();
-    }).then(v => { this.cards.forEach(cd => cd.classList.remove('tgt')); return v; });
+  async startTurn() {
+    if (await this.checkEnd()) return;
+    this.turn++;
+    const P = this.P;
+    P.block = 0;
+    if (P.st.poison) { const d = P.st.poison; P.hp = Math.max(0, P.hp - d); P.st.poison--; this.popParty(d, 'dmg poison'); if (await this.checkEnd()) return; }
+    this.energy = ENERGY_MAX;
+    this.drawCards(DRAW_N);
+    this.sel = -1; this.targeting = false; this.busy = false;
+    Sound.play('cursor');
+    this.refresh();
+    if (this.auto) this.scheduleAuto();
   },
-  autoCmd(c) {
-    const i = this.party.indexOf(c);
-    const s = charStats(c);
-    const sks = charSkills(c).filter(id => SKILLS[id].mp <= c.mp);
-    const low = this.party.filter(p => p.hp > 0 && p.hp < charStats(p).hp * 0.45);
-    const dead = this.party.filter(p => p.hp <= 0);
-    if (dead.length && sks.includes('revive')) return { side: 'p', actor: c, ci: i, sk: 'revive', t: this.party.indexOf(dead[0]) };
-    if (low.length >= 2) { const h = ['prayer', 'healall'].find(k => sks.includes(k)); if (h) return { side: 'p', actor: c, ci: i, sk: h, t: -1 }; }
-    if (low.length) { const h = ['healmore', 'heal'].find(k => sks.includes(k)); if (h) { low.sort((a, b) => a.hp / charStats(a).hp - b.hp / charStats(b).hp); return { side: 'p', actor: c, ci: i, sk: h, t: this.party.indexOf(low[0]) }; } }
-    const alive = this.enemies.filter(e => e.alive);
-    const atk = sks.filter(id => ['phys', 'mag'].includes(SKILLS[id].type) && id !== 'drain');
-    let best = 'attack', bestScore = (s.elem !== 'none' ? 1 : 1) * 1, bt = null;
-    if (c.mp > s.mp * 0.25) {
-      for (const id of atk) {
-        const sk = SKILLS[id];
-        for (const e of alive) {
-          const st = sk.type === 'phys' ? s.atk : s.mag;
-          let sc = sk.pow * (sk.hits || 1) * elemMult(sk.elem, e.d.elem) * st / Math.max(1, s.atk);
-          if (sk.target === 'enemies') sc *= Math.min(alive.length, 3) * 0.8;
-          if (sc > bestScore) { bestScore = sc; best = id; bt = e; }
-        }
+  tapCard(i) {
+    const h = this.hand[i]; if (!h) return;
+    const c = CARDS[h.cid];
+    if (this.sel !== i) { this.sel = i; this.targeting = false; Sound.play('cursor'); this.refresh(); return; }
+    if (c.blank || cardCost(h.cid) > this.energy) { Sound.play('buzz'); return; }
+    if (cardNeedsTarget(c)) {
+      const al = this.aliveIdx();
+      if (al.length === 1) { this.play(i, al[0]); return; }
+      if (!this.targeting) { this.targeting = true; this.tgt = al.includes(this.tgt) ? this.tgt : al[0]; Sound.play('ok'); this.refresh(); return; }
+      this.play(i, this.tgt); return;
+    }
+    this.play(i, -1);
+  },
+  clickEnemy(j) {
+    if (!this.canAct() || !this.enemies[j].alive) return;
+    if (this.sel >= 0 && this.hand[this.sel] && cardNeedsTarget(CARDS[this.hand[this.sel].cid])) this.play(this.sel, j);
+  },
+  async play(i, tj) {
+    const h = this.hand[i];
+    if (!h || this.busy) return;
+    const c = CARDS[h.cid];
+    const cost = cardCost(h.cid);
+    if (c.blank || cost > this.energy) { Sound.play('buzz'); return; }
+    this.busy = true;
+    this.energy -= cost;
+    this.hand.splice(i, 1);
+    this.sel = -1; this.targeting = false;
+    if (c.flags.exhaust) this.exhaust.push(h); else this.discard.push(h);
+    this.refresh();
+    await this.cutin(h.cid);
+    await this.applyCard(h.cid, tj);
+    this.busy = false;
+    if (await this.checkEnd()) return;
+    this.refresh();
+  },
+  async cutin(cid) {
+    const c = CARDS[cid];
+    const owner = c.owner && CHARS[c.owner];
+    this.cutEl.className = 'cutin';
+    this.cutEl.innerHTML = owner ? `<img src="${portraitURL(owner.look)}"><div class="ci-t"><small>${U.esc(owner.n)}</small><b>${U.esc(c.n)}</b></div>` : `<div class="ci-t solo"><b>${U.esc(c.n)}</b></div>`;
+    this.cutEl.style.setProperty('--cc', owner ? ELEM[owner.elem].c : '#c8d0ff');
+    void this.cutEl.offsetWidth;
+    this.cutEl.classList.add('show', c.type === 'a' ? 'atk' : 'skl');
+    this.msg(`${owner ? `<b>${U.esc(owner.n)}</b> の ` : ''}<span class="skn">${U.esc(c.n)}</span>!`);
+    await this.wait(owner ? 520 : 300);
+  },
+  async applyCard(cid, tj) {
+    const c = CARDS[cid], ops = cardOps(cid), P = this.P;
+    const tgt = () => { let e = this.enemies[tj]; if (!e || !e.alive) e = this.enemies.find(x => x.alive); return e; };
+    for (const o of ops) {
+      if (!this.enemies.some(e => e.alive)) break;
+      switch (o.k) {
+        case 'd': for (let h = 0; h < o.hits; h++) { const e = tgt(); if (!e) break; this.hitEnemy(e, o.n); await this.wait(o.hits > 1 ? 170 : 260); } break;
+        case 'D': for (let h = 0; h < o.hits; h++) { for (const e of this.enemies.filter(x => x.alive)) this.hitEnemy(e, o.n); this.fx.push({ type: 'screen', color: '#fff', t: 0, dur: 0.25 }); await this.wait(280); } break;
+        case 'b': { const n = o.n + (P.st.dex || 0); P.block += n; Sound.play('buff'); this.popParty('ブロック+' + n, 'buff'); break; }
+        case 'h': { const v = Math.min(P.max - P.hp, o.n); P.hp += v; Sound.play('heal'); this.popParty('+' + o.n, 'heal'); break; }
+        case 'c': this.drawCards(o.n); Sound.play('cursor'); break;
+        case 'e': this.energy += o.n; Sound.play('magic'); this.popParty('エナジー+' + o.n, 'mp'); break;
+        case 's': this.addSt(P, 'str', o.n); this.popParty(ST_N.str + '+' + o.n, 'buff'); Sound.play('buff'); break;
+        case 'f': this.addSt(P, 'dex', o.n); this.popParty(ST_N.dex + '+' + o.n, 'buff'); Sound.play('buff'); break;
+        case 'g': this.addSt(P, 'regen', o.n); this.popParty(ST_N.regen + o.n, 'heal'); Sound.play('heal'); break;
+        case 't': this.addSt(P, 'thorns', o.n); this.popParty(ST_N.thorns + o.n, 'buff'); Sound.play('buff'); break;
+        case 'v': case 'w': case 'p': { const e = tgt(); if (e) this.debuff(e, { v: 'vuln', w: 'weak', p: 'poison' }[o.k], o.n); break; }
+        case 'V': case 'W': case 'P': for (const e of this.enemies.filter(x => x.alive)) this.debuff(e, { V: 'vuln', W: 'weak', P: 'poison' }[o.k], o.n); break;
+      }
+      this.refresh();
+      await this.wait(120);
+    }
+  },
+  addSt(u, k, n) { u.st[k] = (u.st[k] || 0) + n; },
+  debuff(e, k, n) { this.addSt(e, k, n); this.pop(ST_N[k] + n, e.x + e.w / 2, e.y + e.h * 0.2, k === 'poison' ? 'poison' : 'debuff'); Sound.play('debuff'); },
+  hitEnemy(e, base) {
+    const P = this.P;
+    let n = base + (P.st.str || 0);
+    if (P.st.weak) n *= 0.75;
+    if (e.st.vuln) n *= 1.5;
+    n = Math.max(0, Math.floor(n));
+    const blocked = Math.min(e.block, n); e.block -= blocked;
+    const dmg = n - blocked;
+    e.hp -= dmg; e.flash = 0.25; e.shake = 0.3;
+    G.seen[e.id] = 1;
+    const cx = e.x + e.w / 2, cy = e.y + e.h / 2;
+    this.fx.push({ type: n > 20 ? 'burst' : 'slash', x: cx, y: cy, color: '#fff', r: 20, t: 0, dur: 0.35 });
+    Sound.play(n >= 25 ? 'crit' : 'hit');
+    this.pop(blocked && !dmg ? 'ブロック' : dmg, cx, e.y + e.h * 0.35, 'dmg' + (n >= 25 ? ' crit' : ''));
+    if (e.hp <= 0) { e.hp = 0; e.alive = false; Sound.play('die'); }
+    this.refresh();
+  },
+  async endTurn() {
+    if (this.busy) return;
+    this.busy = true;
+    this.sel = -1; this.targeting = false;
+    const P = this.P;
+    // 手札を捨てる
+    const keep = [];
+    for (const h of this.hand) (CARDS[h.cid].flags.retain ? keep : this.discard).push(h);
+    this.hand = keep;
+    if (P.st.regen) { const v = Math.min(P.max - P.hp, P.st.regen); P.hp += v; this.popParty('+' + P.st.regen, 'heal'); P.st.regen--; }
+    for (const k of ['weak', 'vuln']) if (P.st[k]) P.st[k]--;
+    this.refresh();
+    await this.wait(250);
+    // 敵のターン
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      e.block = 0;
+      if (e.st.poison) { const d = e.st.poison; e.hp -= d; e.st.poison--; this.pop(d, e.x + e.w / 2, e.y + e.h / 3, 'dmg poison'); if (e.hp <= 0) { e.hp = 0; e.alive = false; Sound.play('die'); this.refresh(); continue; } }
+      await this.enemyAct(e);
+      for (const k of ['weak', 'vuln']) if (e.st[k]) e.st[k]--;
+      this.refresh();
+      if (await this.checkEnd()) return;
+    }
+    if (await this.checkEnd()) return;
+    for (const e of this.enemies) if (e.alive) e.intent = enemyIntent(e);
+    await this.wait(200);
+    this.startTurn();
+  },
+  async enemyAct(e) {
+    const I = e.intent, P = this.P;
+    if (!I) return;
+    this.msg(`<b>${U.esc(e.n)}</b> の <span class="skn">${U.esc(I.n)}</span>!`);
+    e.lunge = 1;
+    await this.wait(320);
+    if (I.block) { e.block += I.block; this.pop('ブロック' + I.block, e.x + e.w / 2, e.y, 'buff'); Sound.play('buff'); }
+    if (I.str) { this.addSt(e, 'str', I.str); this.pop(ST_N.str + '+' + I.str, e.x + e.w / 2, e.y, 'buff'); Sound.play('buff'); }
+    if (I.heal) { e.hp = Math.min(e.max, e.hp + I.heal); this.pop('+' + I.heal, e.x + e.w / 2, e.y + e.h / 3, 'heal'); Sound.play('heal'); }
+    if (I.dmg) {
+      for (let h = 0; h < I.hits; h++) {
+        let n = I.dmg + (e.st.str || 0);
+        if (e.st.weak) n *= 0.75;
+        if (P.st.vuln) n *= 1.5;
+        n = Math.floor(n);
+        const blocked = Math.min(P.block, n); P.block -= blocked;
+        const dmg = n - blocked;
+        P.hp = Math.max(0, P.hp - dmg);
+        Sound.play(dmg ? 'damage' : 'buff');
+        this.fx.push({ type: 'screen', color: dmg ? '#e43b44' : '#7fe8ff', t: 0, dur: 0.2 });
+        this.popParty(dmg ? dmg : 'ブロック', dmg ? 'dmg' : 'buff');
+        if (I.drain && dmg) e.hp = Math.min(e.max, e.hp + dmg);
+        if (P.st.thorns) { e.hp -= P.st.thorns; this.pop(P.st.thorns, e.x + e.w / 2, e.y + e.h / 3, 'dmg'); if (e.hp <= 0) { e.hp = 0; e.alive = false; Sound.play('die'); } }
+        this.refresh();
+        await this.wait(260);
+        if (P.hp <= 0 || !e.alive) break;
       }
     }
-    const tgt = bt || alive.slice().sort((a, b) => a.hp - b.hp)[0];
-    const sk = SKILLS[best];
-    return { side: 'p', actor: c, ci: i, sk: best, t: sk.target === 'enemies' ? -1 : this.enemies.indexOf(tgt) };
+    if (I.poison) { this.addSt(P, 'poison', I.poison); this.popParty(ST_N.poison + I.poison, 'poison'); }
+    if (I.weak) { this.addSt(P, 'weak', I.weak); this.popParty(ST_N.weak + I.weak, 'debuff'); }
+    if (I.vuln) { this.addSt(P, 'vuln', I.vuln); this.popParty(ST_N.vuln + I.vuln, 'debuff'); }
+    this.refresh();
+    await this.wait(200);
+    this.msg('');
   },
-  enemyAct(e) {
-    const acts = e.d.act;
-    let pool = acts.slice();
-    if (e.boss && e.hp < e.maxhp * 0.35) pool = pool.map(([k, w]) => [k, SKILLS[k] && SKILLS[k].target === 'enemies' ? w * 2 : w]);
-    if (e.hp > e.maxhp * 0.7) pool = pool.filter(([k]) => k !== 'e_heal');
-    const tot = pool.reduce((a, b) => a + b[1], 0);
-    let r = Math.random() * tot, sk = pool[0][0];
-    for (const [k, w] of pool) { r -= w; if (r <= 0) { sk = k; break; } }
-    const alive = this.party.map((c, i) => i).filter(i => this.party[i].hp > 0);
-    const t = alive[Math.floor(Math.random() * alive.length)];
-    return { side: 'e', actor: e, sk, t };
+  async checkEnd() {
+    if (this.done) return true;
+    if (this.enemies.every(e => !e.alive)) { this.done = true; this.resolve(await this.finish('win')); return true; }
+    if (this.P.hp <= 0) { this.done = true; this.resolve(await this.finish('lose')); return true; }
+    return false;
   },
 
-  // 行動実行
-  async exec(a) {
-    if (a.sk === 'defend') {
-      a.actor.defend = true;
-      this.msg(`<b>${U.esc(CHARS[a.actor.id].n)}</b> は 身を守っている。`);
-      this.refresh();
-      await this.wait(500);
-      return;
-    }
-    if (a.item) return this.execItem(a);
-    const sk = SKILLS[a.sk];
-    const isP = a.side === 'p';
-    const name = isP ? CHARS[a.actor.id].n : a.actor.n;
-    if (isP && sk.mp) { if (a.actor.mp < sk.mp) { this.msg(`${U.esc(name)} は MPが足りない!`); await this.wait(600); return; } a.actor.mp -= sk.mp; }
-    this.msg(a.sk === 'attack' ? `<b>${U.esc(name)}</b> の こうげき!` : `<b>${U.esc(name)}</b> の <span class="skn">${U.esc(sk.n)}</span>!`);
-    if (isP) { const cd = this.cards[a.ci]; cd.classList.remove('hop'); void cd.offsetWidth; cd.classList.add('hop'); }
-    else { a.actor.lunge = 1; }
-    this.refresh();
-    await this.wait(380);
-    // 対象決定
-    let targets = [];
-    const foes = isP ? this.enemies : this.party;
-    const allies = isP ? this.party : this.enemies;
-    const aliveOf = (arr, side) => arr.filter(u => side === 'e' ? u.alive : u.hp > 0);
-    if (sk.target === 'enemy') {
-      let t = foes[a.t];
-      if (!t || (isP ? !t.alive : t.hp <= 0)) t = aliveOf(foes, isP ? 'e' : 'p')[0];
-      if (t) targets = [t];
-    } else if (sk.target === 'enemies') targets = aliveOf(foes, isP ? 'e' : 'p');
-    else if (sk.target === 'ally') { let t = allies[a.t]; if (!t || t.hp <= 0) t = a.actor; targets = [t]; }
-    else if (sk.target === 'allies') targets = aliveOf(allies, isP ? 'p' : 'e');
-    else if (sk.target === 'self') targets = [a.actor];
-    else if (sk.target === 'dead') { const t = allies[a.t]; if (t && t.hp <= 0) targets = [t]; }
-    if (!targets.length) { await this.wait(300); return; }
-    const sound = sk.elem === 'fire' ? 'fire' : sk.elem === 'water' ? 'ice' : sk.type === 'mag' ? 'magic' : 'hit';
-    if (sk.type === 'phys' || sk.type === 'mag') {
-      const hits = sk.hits || 1;
-      for (let h = 0; h < hits; h++) {
-        for (const t of targets) {
-          if (isP ? !t.alive : t.hp <= 0) continue;
-          await this.hit(a.actor, t, sk, isP, sound);
-        }
-        if (hits > 1) await this.wait(160);
+  // ---------- オート ----------
+  scheduleAuto() { clearTimeout(this.autoTimer); this.autoTimer = setTimeout(() => this.autoTurn(), 60); },
+  async autoTurn() {
+    if (this.autoRunning || !this.auto || this.done || !this.active) return;
+    this.autoRunning = true;
+    let finished = false;
+    try {
+      await this.wait(250);
+      for (let guard = 0; guard < 25 && this.auto && !this.done; guard++) {
+        if (this.busy) { await this.wait(100); continue; }
+        const pick = this.autoPick();
+        if (!pick) { finished = true; break; }
+        this.sel = pick.i; this.refresh();
+        await this.wait(180);
+        await this.play(pick.i, pick.t);
+        await this.wait(120);
       }
-      if (sk.target === 'enemies' && !isP) this.fx.push({ type: 'screen', color: ELEM[sk.elem || 'none'].c, t: 0, dur: 0.4 });
-    } else if (sk.type === 'heal') {
-      Sound.play('heal');
-      for (const t of targets) {
-        const tp = isP ? t : null;
-        if (isP) {
-          const s = charStats(t), amt = Math.round((this.effStat(a.actor, 'mag') * 1.1 + 14) * sk.pow * (0.92 + Math.random() * 0.16));
-          const v = Math.min(s.hp - t.hp, amt); t.hp += v;
-          this.popCard(this.party.indexOf(t), '+' + amt, 'heal');
-          this.glowCard(this.party.indexOf(t), 'heal');
-          if (sk.buff) { t.st.buffs = t.st.buffs || {}; t.st.buffs[sk.buff[0]] = { mul: sk.buff[1], turns: sk.buff[2] }; }
-        } else {
-          const amt = Math.round(t.maxhp * 0.12 * sk.pow);
-          t.hp = Math.min(t.maxhp, t.hp + amt);
-          this.pop('+' + amt, t.x + t.w / 2, t.y + t.h / 3, 'heal');
-          this.fx.push({ type: 'rise', x: t.x + t.w / 2, y: t.y + t.h * 0.8, color: '#9ef07a', t: 0, dur: 0.8 });
-        }
-      }
-      await this.wait(650);
-    } else if (sk.type === 'revive') {
-      Sound.play('heal');
-      for (const t of targets) { const s = charStats(t); t.hp = Math.max(1, Math.round(s.hp * sk.pow)); t.st = {}; this.popCard(this.party.indexOf(t), '復活!', 'heal'); this.glowCard(this.party.indexOf(t), 'heal'); }
-      await this.wait(700);
-    } else if (sk.type === 'cure') {
-      Sound.play('heal');
-      for (const t of targets) { delete t.st.poison; this.popCard(this.party.indexOf(t), '回復', 'heal'); }
-      await this.wait(600);
-    } else if (sk.type === 'buff') {
-      Sound.play('buff');
-      for (const t of targets) {
-        t.st.buffs = t.st.buffs || {}; t.st.buffs[sk.stat] = { mul: sk.mul, turns: sk.turns + 1 };
-        if (isP) { this.popCard(this.party.indexOf(t), STAT_N[sk.stat] + 'UP', 'buff'); this.glowCard(this.party.indexOf(t), 'buff'); }
-        else this.pop(STAT_N[sk.stat] + 'UP', t.x + t.w / 2, t.y, 'buff');
-      }
-      await this.wait(600);
-    } else if (sk.type === 'debuff') {
-      Sound.play('debuff');
-      for (const t of targets) {
-        t.st.buffs = t.st.buffs || {}; t.st.buffs[sk.stat] = { mul: sk.mul, turns: sk.turns + 1 };
-        this.pop(STAT_N[sk.stat] + 'DOWN', t.x + t.w / 2, t.y, 'debuff');
-        this.fx.push({ type: 'burst', x: t.x + t.w / 2, y: t.y + t.h / 2, color: '#b36bff', r: 18, t: 0, dur: 0.5 });
-      }
-      await this.wait(600);
-    }
+    } finally { this.autoRunning = false; }
+    if (finished && this.auto && !this.done && !this.busy) this.endTurn();
   },
-  glowCard(i, cls) { const cd = this.cards[i]; if (!cd) return; cd.classList.remove('g-heal', 'g-buff', 'g-hit'); void cd.offsetWidth; cd.classList.add('g-' + cls); },
-  async hit(att, def, sk, isP, sound) {
-    const atkSide = isP ? att : att;
-    const phys = sk.type === 'phys';
-    const A = phys ? this.effStat(att, 'atk') : this.effStat(att, 'mag');
-    const D = phys ? this.effStat(def, 'def') : Math.round(this.effStat(def, 'def') * 0.5 + this.effStat(def, 'mag') * 0.35);
-    let elem = sk.elem;
-    if (!elem && isP && sk === SKILLS.attack) elem = charStats(att).elem;
-    const defElem = isP ? def.d.elem : CHARS[def.id].elem;
-    const em = elemMult(elem, defElem);
-    let dmg = (A * A) / (A + D) * 0.9 * sk.pow * (0.9 + Math.random() * 0.2) * em;
-    let crit = false;
-    if (phys && Math.random() < 0.08) { crit = true; dmg *= 1.6; }
-    if (!isP && def.defend) dmg *= 0.5;
-    dmg = Math.max(1, Math.round(dmg));
-    if (isP) {
-      // 敵へ
-      def.hp -= dmg; def.flash = 0.25; def.shake = 0.3;
-      G.seen[def.id] = 1;
-      const cx = def.x + def.w / 2, cy = def.y + def.h / 2;
-      if (phys) this.fx.push({ type: 'slash', x: cx, y: cy, color: elem && elem !== 'none' ? ELEM[elem].c : '#fff', t: 0, dur: 0.3, dir: 1 });
-      else this.fx.push({ type: 'burst', x: cx, y: cy, color: ELEM[elem || 'none'].c, r: 22, t: 0, dur: 0.5 });
-      Sound.play(crit ? 'crit' : sound);
-      this.pop(dmg, cx, def.y + def.h * 0.3, 'dmg' + (crit ? ' crit' : ''));
-      if (em > 1) this.pop('WEAK!', cx, def.y, 'weak');
-      else if (em < 1) this.pop('RESIST', cx, def.y, 'resist');
-      if (crit) this.pop('CRITICAL!', cx, def.y - 10, 'weak');
-      if (sk.drain) { const s = charStats(att); const v = Math.round(dmg * sk.drain); att.hp = Math.min(s.hp, att.hp + v); this.popCard(this.party.indexOf(att), '+' + v, 'heal'); }
-      if (def.hp <= 0) { def.hp = 0; def.alive = false; await this.wait(120); Sound.play('die'); }
-    } else {
-      // 味方へ
-      const i = this.party.indexOf(def);
-      def.hp -= dmg;
-      Sound.play('damage');
-      this.glowCard(i, 'hit');
-      this.fx.push({ type: 'screen', color: '#e43b44', t: 0, dur: 0.2 });
-      this.popCard(i, dmg, 'dmg' + (crit ? ' crit' : ''));
-      if (em > 1) this.popCard(i, 'WEAK!', 'weak up');
-      if (sk.poison && Math.random() < sk.poison && def.hp > 0) { def.st.poison = true; this.popCard(i, '毒!', 'poison up'); }
-      if (sk.drain) { const v = Math.round(dmg * sk.drain); att.hp = Math.min(att.maxhp, att.hp + v); }
-      if (def.hp <= 0) { def.hp = 0; def.st = {}; }
-    }
-    this.refresh();
-    await this.wait(420);
+  autoPick() {
+    const P = this.P, alive = this.enemies.filter(e => e.alive);
+    if (!alive.length) return null;
+    const incoming = alive.reduce((a, e) => a + (e.intent && e.intent.dmg ? this.previewDmg(e, e.intent.dmg) * e.intent.hits : 0), 0);
+    const need = Math.max(0, incoming - P.block);
+    const target = alive.slice().sort((a, b) => a.hp - b.hp)[0];
+    let best = null;
+    this.hand.forEach((h, i) => {
+      const c = CARDS[h.cid], cost = cardCost(h.cid);
+      if (c.blank || cost > this.energy) return;
+      let sc = 0;
+      for (const o of cardOps(h.cid)) {
+        const dm = (o.n + (P.st.str || 0)) * o.hits;
+        if (o.k === 'd') sc += Math.min(dm, target.hp + target.block) * 1.0 + (dm >= target.hp + target.block ? 8 : 0);
+        if (o.k === 'D') sc += alive.reduce((a, e) => a + Math.min(dm, e.hp + e.block), 0);
+        if (o.k === 'b') sc += Math.min(o.n + (P.st.dex || 0), need) * 1.1;
+        if (o.k === 'h') sc += P.hp < P.max * 0.6 ? Math.min(o.n, P.max - P.hp) * 0.8 : 0;
+        if (o.k === 'g') sc += P.hp < P.max * 0.8 ? o.n * 1.5 : 0;
+        if (o.k === 'c') sc += o.n * 4;
+        if (o.k === 'e') sc += o.n * 6;
+        if ('sf'.includes(o.k)) sc += o.n * 5;
+        if (o.k === 't') sc += o.n * 2;
+        if ('vw'.includes(o.k)) sc += o.n * 3;
+        if ('VW'.includes(o.k)) sc += o.n * 3 * alive.length;
+        if (o.k === 'p') sc += o.n * 1.5;
+        if (o.k === 'P') sc += o.n * 1.5 * alive.length;
+      }
+      const val = sc / Math.max(0.6, cost);
+      if (sc > 0 && (!best || val > best.val)) best = { i, val, t: cardNeedsTarget(c) ? this.enemies.indexOf(target) : -1 };
+    });
+    return best;
   },
-  async execItem(a) {
-    const it = ITEMS[a.item];
-    const name = CHARS[a.actor.id].n;
-    if (!G.items[a.item]) { this.msg('どうぐがなくなっていた!'); await this.wait(500); return; }
-    const t = this.party[a.t];
-    if (!t) return;
-    if (it.type === 'revive' ? t.hp > 0 : t.hp <= 0) { this.msg('しかし 効果がなかった!'); await this.wait(500); return; }
-    useItemCount(a.item);
-    this.msg(`<b>${U.esc(name)}</b> は ${U.esc(it.n)} を使った!`);
-    Sound.play('heal');
-    const s = charStats(t);
-    if (it.type === 'heal') { t.hp = Math.min(s.hp, t.hp + it.amt); this.popCard(a.t, '+' + it.amt, 'heal'); }
-    if (it.type === 'mp') { t.mp = Math.min(s.mp, t.mp + it.amt); this.popCard(a.t, 'MP+' + it.amt, 'mp'); }
-    if (it.type === 'cure') { delete t.st.poison; this.popCard(a.t, '回復', 'heal'); }
-    if (it.type === 'revive') { t.hp = Math.round(s.hp * it.amt); this.popCard(a.t, '復活!', 'heal'); }
-    if (it.type === 'full') { t.hp = s.hp; t.mp = s.mp; this.popCard(a.t, '全回復!', 'heal'); }
-    this.glowCard(a.t, 'heal');
+
+  // ---------- その他の操作 ----------
+  viewPile(title, list) {
+    const el = U.el('div', 'layer pile-layer');
+    const counts = {};
+    for (const h of list) counts[h.cid] = (counts[h.cid] || 0) + 1;
+    const ids = Object.keys(counts).sort((a, b) => (CARDS[a].owner || 'zz').localeCompare(CARDS[b].owner || 'zz') || a.localeCompare(b));
+    el.innerHTML = `<div class="pile-h">${U.esc(title)} (${list.length}枚) <span class="dim">タップで閉じる</span></div><div class="pile-grid">${ids.map(id => `<div class="pile-c">${cardFaceHTML(id)}${counts[id] > 1 ? `<b class="pile-n">×${counts[id]}</b>` : ''}</div>`).join('') || '<div class="dim">なし</div>'}</div>`;
+    const l = { el, handle: k => { if (k === 'a' || k === 'b') UI.pop(l); } };
+    el.onclick = e => { e.stopPropagation(); UI.pop(l); };
+    UI.push(l);
+  },
+  async useItem() {
+    if (!this.canAct()) return;
+    const ids = Object.keys(G.items).filter(k => G.items[k] > 0 && ITEMS[k] && ITEMS[k].type !== 'none');
+    if (!ids.length) { UI.toast('どうぐを持っていない'); return; }
+    this.busy = true;
+    const r = await UI.ask('どうぐを使う(エナジー消費なし)', ids.map(k => `${ITEMS[k].n} ×${G.items[k]} ― ${ITEMS[k].bdesc || ITEMS[k].desc}`));
+    if (r >= 0) {
+      const it = ITEMS[ids[r]], P = this.P;
+      useItemCount(ids[r]);
+      Sound.play('heal');
+      if (it.type === 'heal') { const v = Math.min(P.max - P.hp, it.amt); P.hp += v; this.popParty('+' + it.amt, 'heal'); }
+      if (it.type === 'mp') { this.energy += 1; this.popParty('エナジー+1', 'mp'); }
+      if (it.type === 'cure') { delete P.st.poison; delete P.st.weak; delete P.st.vuln; this.popParty('回復', 'heal'); }
+      if (it.type === 'revive') { const v = Math.round(P.max * 0.3); P.hp = Math.min(P.max, P.hp + v); this.popParty('+' + v, 'heal'); }
+      if (it.type === 'full') { P.hp = P.max; this.popParty('全回復!', 'heal'); }
+    }
+    this.busy = false;
     this.refresh();
-    await this.wait(650);
   },
   async tryEscape() {
+    if (!this.canAct() || this.opts.boss) { if (this.opts.boss) UI.toast('ボスからは逃げられない!'); return; }
+    this.busy = true;
     this.msg('逃げ出そうとした…');
     await this.wait(400);
-    const ps = this.party.filter(c => c.hp > 0).reduce((s, c) => s + charStats(c).spd, 0) / Math.max(1, this.party.filter(c => c.hp > 0).length);
+    const ps = this.party.reduce((s, c) => s + charStats(c).spd, 0) / Math.max(1, this.party.length);
     const es = this.enemies.filter(e => e.alive).reduce((s, e) => s + e.d.spd, 0) / Math.max(1, this.enemies.filter(e => e.alive).length);
     const ch = U.clamp(0.6 + (ps - es) * 0.02 + (this.escTries || 0) * 0.15, 0.3, 0.95);
     this.escTries = (this.escTries || 0) + 1;
@@ -575,22 +617,32 @@ const Battle = {
       Sound.play('escape');
       this.msg('うまく逃げ切れた!');
       await this.wait(600);
-      return true;
+      this.done = true;
+      this.syncHp();
+      this.resolve('escape');
+      return;
     }
     this.msg('しかし まわりこまれてしまった!');
     await this.wait(600);
-    return false;
+    this.busy = false;
+    this.endTurn();
+  },
+  // 共有HPを各キャラへ戻す (最大HPの割合で分配)
+  syncHp() {
+    const ratio = U.clamp(this.P.hp / this.P.max, 0, 1);
+    for (const c of this.party) { const s = charStats(c); c.hp = this.P.hp <= 0 ? 0 : Math.max(1, Math.round(s.hp * ratio)); c.st = {}; }
   },
   async finish(res) {
-    this.hideCmd();
+    this.busy = true;
+    this.sel = -1;
+    this.syncHp();
     if (res === 'lose') {
       Sound.stopBgm();
       Sound.play('die');
-      this.msg('パーティは全滅してしまった…');
+      this.msg('パーティは力尽きてしまった…');
       await this.wait(1600);
       return 'lose';
     }
-    // 勝利
     let exp = 0, gold = 0, stones = 0;
     const drops = [];
     for (const e of this.enemies) {
@@ -607,22 +659,16 @@ const Battle = {
     for (const k in G.roster) {
       const c = G.roster[k];
       const inParty = this.party.includes(c);
-      if (inParty && c.hp <= 0) continue;
+      const before = charStats(c).hp;
       const ups = gainExp(c, inParty ? exp : Math.floor(exp / 2));
-      if (ups.length && inParty) {
-        const u = ups[ups.length - 1];
-        lvMsgs.push({ c, lv: u.lv, skills: ups.flatMap(x => x.skills) });
-      } else if (ups.length) lvMsgs.push({ c, lv: ups[ups.length - 1].lv, skills: [], reserve: true });
+      if (ups.length) lvMsgs.push({ c, lv: ups[ups.length - 1].lv, reserve: !inParty });
     }
-    for (const c of this.party) c.st = {};
-    // リザルト
     const box = U.el('div', 'win result');
     let html = `<div class="rt">VICTORY!</div><div class="rrow"><span>経験値</span><b>${exp} EXP</b></div><div class="rrow"><span>ゴールド</span><b>${gold} G</b></div>`;
     if (stones) html += `<div class="rrow st"><span>星晶石</span><b>+${stones}</b></div>`;
     if (drops.length) html += `<div class="rrow"><span>アイテム</span><b>${drops.map(d => U.esc(ITEMS[d].n)).join('、')}</b></div>`;
-    for (const m of lvMsgs) {
-      html += `<div class="rlv"><img src="${portraitURL(CHARS[m.c.id].look)}"><div><b>${U.esc(CHARS[m.c.id].n)}</b> は レベル${m.lv} になった!${m.skills.length ? `<br><span class="skn">${m.skills.map(s => U.esc(SKILLS[s].n)).join('、')}</span> を覚えた!` : ''}</div></div>`;
-    }
+    html += `<div class="rrow"><span>残りHP</span><b>${this.P.hp}/${this.P.max}</b></div>`;
+    for (const m of lvMsgs) html += `<div class="rlv"><img src="${portraitURL(CHARS[m.c.id].look)}"><div><b>${U.esc(CHARS[m.c.id].n)}</b> は レベル${m.lv} になった!<br><small>カードの威力が上がった</small></div></div>`;
     box.innerHTML = html;
     this.layer.el.appendChild(box);
     if (lvMsgs.length) setTimeout(() => Sound.play('levelup'), 700);
@@ -631,10 +677,12 @@ const Battle = {
     return 'win';
   },
   cleanup() {
+    document.body.classList.remove('in-battle');
     this.active = false;
+    this.done = false;
+    this.autoRunning = false;
     if (this.layer) UI.pop(this.layer);
-    this.layer = null; this.menu = null; this.onAny = null;
+    this.layer = null; this.onAny = null;
     Game.scene = 'field';
-    for (const c of this.party) { c.defend = false; if (c.st) delete c.st.buffs; }
   },
 };

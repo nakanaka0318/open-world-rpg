@@ -304,12 +304,12 @@ const STAT_N = { hp: 'HP', mp: 'MP', atk: '攻撃', def: '防御', mag: '魔力'
 // cat: heal(回復) / status(状態回復) / rare(貴重品)。カテゴリはメニューのタブに使われます。
 const ITEM_CATS = [['all', 'すべて'], ['heal', '回復'], ['status', '状態'], ['rare', '貴重品']];
 const ITEMS = {
-  potion: { n: 'ポーション', cat: 'heal', price: 30, type: 'heal', amt: 60, desc: 'HPを60回復' },
+  potion: { n: 'ポーション', cat: 'heal', price: 30, type: 'heal', amt: 60, desc: 'HPを60回復 (戦闘中はパーティのHP)' },
   hipotion: { n: 'ハイポーション', cat: 'heal', price: 120, type: 'heal', amt: 220, desc: 'HPを220回復' },
-  ether: { n: 'エーテル', cat: 'heal', price: 100, type: 'mp', amt: 30, desc: 'MPを30回復' },
-  antidote: { n: 'どくけし草', cat: 'status', price: 20, type: 'cure', desc: '毒を治す' },
-  feather: { n: '天使の羽', cat: 'status', price: 240, type: 'revive', amt: 0.5, desc: '戦闘不能から復活' },
-  elixir: { n: 'エリクサー', cat: 'rare', price: 0, type: 'full', desc: 'HPとMPを全回復' },
+  ether: { n: 'エーテル', cat: 'heal', price: 100, type: 'mp', amt: 1, desc: '戦闘中に使うと エナジー+1', bdesc: 'エナジー+1' },
+  antidote: { n: 'どくけし草', cat: 'status', price: 20, type: 'cure', desc: '毒・脱力・脆弱を治す(戦闘中)', bdesc: '毒・脱力・脆弱を治す' },
+  feather: { n: '天使の羽', cat: 'heal', price: 240, type: 'revive', amt: 0.3, desc: 'パーティのHPを最大の30%回復', bdesc: 'HPを最大の30%回復' },
+  elixir: { n: 'エリクサー', cat: 'rare', price: 0, type: 'full', desc: 'HPを全回復' },
 };
 
 // ---------- 敵 ----------
@@ -333,11 +333,11 @@ const ENEMIES = {
   dknight: { n: 'スケルトンナイト', spr: 'skel', pal: { B: '#c8c8d8', W: '#d8d8e8', A: '#8a92a6' }, elem: 'dark', hp: 220, atk: 64, def: 44, mag: 20, spd: 16, exp: 120, gold: 64, act: [['attack', 3], ['e_charge', 1]] },
   darkghost: { n: 'ダークレイス', spr: 'ghost', pal: { B: '#4a3a6a', E: '#ffe66d' }, elem: 'dark', hp: 180, atk: 48, def: 36, mag: 62, spd: 20, exp: 115, gold: 58, act: [['e_dark', 2], ['e_drain', 1]], drop: [['ether', 0.2]] },
   // ボス
-  treant: { n: '森の大精霊ドリアード', spr: 'treant', pal: { G: '#3f8f3e', T: '#7a5a3a', R: '#3a1a10' }, elem: 'wind', boss: true, hp: 520, atk: 30, def: 16, mag: 24, spd: 9, exp: 320, gold: 300, act: [['attack', 2], ['e_root', 2], ['e_leaf', 2], ['e_heal', 1]] },
-  golemk: { n: '砂の守護者ゴーレム', spr: 'golem', pal: { B: '#c8a060', A: '#5ae8f0' }, elem: 'earth', boss: true, hp: 980, atk: 46, def: 34, mag: 20, spd: 7, exp: 650, gold: 500, act: [['attack', 2], ['e_smash', 2], ['e_rock', 2], ['e_charge', 1]] },
-  frostd: { n: '氷竜フロストドラゴン', spr: 'dragon', pal: { B: '#7ac8f0', A: '#3a7ad8', S: '#e8f8ff' }, elem: 'water', boss: true, hp: 1500, atk: 60, def: 40, mag: 56, spd: 16, exp: 1000, gold: 700, act: [['attack', 2], ['e_ice', 2], ['e_icebreath', 2], ['e_bite', 1]] },
-  flamed: { n: '炎竜イグニス', spr: 'dragon', pal: { B: '#d8352a', A: '#f08a24', S: '#ffd34d' }, elem: 'fire', boss: true, hp: 2100, atk: 76, def: 48, mag: 70, spd: 18, exp: 1500, gold: 900, act: [['attack', 2], ['e_fire', 2], ['e_firebreath', 2], ['e_charge', 1]] },
-  demon: { n: '魔王ノクス', spr: 'demon', pal: { S: '#a8b8d8', K: '#3a1a5a', A: '#e8e0d0', G: '#f5c542', E: '#ff3b3b' }, elem: 'dark', boss: true, hp: 3800, atk: 88, def: 54, mag: 90, spd: 22, exp: 5000, gold: 3000, act: [['attack', 2], ['e_dark', 2], ['e_darkwave', 2], ['e_drain', 1], ['e_charge', 1]] },
+  treant: { n: '森の大精霊ドリアード', spr: 'treant', pal: { G: '#3f8f3e', T: '#7a5a3a', R: '#3a1a10' }, elem: 'wind', boss: true, hp: 520, chp: 220, atk: 30, def: 16, mag: 24, spd: 9, exp: 320, gold: 300, act: [['attack', 2], ['e_root', 2], ['e_leaf', 2], ['e_heal', 1]] },
+  golemk: { n: '砂の守護者ゴーレム', spr: 'golem', pal: { B: '#c8a060', A: '#5ae8f0' }, elem: 'earth', boss: true, hp: 980, chp: 360, atk: 46, def: 34, mag: 20, spd: 7, exp: 650, gold: 500, act: [['attack', 2], ['e_smash', 2], ['e_rock', 2], ['e_charge', 1]] },
+  frostd: { n: '氷竜フロストドラゴン', spr: 'dragon', pal: { B: '#7ac8f0', A: '#3a7ad8', S: '#e8f8ff' }, elem: 'water', boss: true, hp: 1500, chp: 460, atk: 60, def: 40, mag: 56, spd: 16, exp: 1000, gold: 700, act: [['attack', 2], ['e_ice', 2], ['e_icebreath', 2], ['e_bite', 1]] },
+  flamed: { n: '炎竜イグニス', spr: 'dragon', pal: { B: '#d8352a', A: '#f08a24', S: '#ffd34d' }, elem: 'fire', boss: true, hp: 2100, chp: 600, atk: 76, def: 48, mag: 70, spd: 18, exp: 1500, gold: 900, act: [['attack', 2], ['e_fire', 2], ['e_firebreath', 2], ['e_charge', 1]] },
+  demon: { n: '魔王ノクス', spr: 'demon', pal: { S: '#a8b8d8', K: '#3a1a5a', A: '#e8e0d0', G: '#f5c542', E: '#ff3b3b' }, elem: 'dark', boss: true, hp: 3800, chp: 800, atk: 88, def: 54, mag: 90, spd: 22, exp: 5000, gold: 3000, act: [['attack', 2], ['e_dark', 2], ['e_darkwave', 2], ['e_drain', 1], ['e_charge', 1]] },
 };
 
 // エリア別出現 (lv目安)
@@ -369,7 +369,7 @@ const BANNER_DEFS = [
   { id: 'pickup', n: g => CHARS[weeklyPickup()].n + ' ピックアップ', sub: () => '期間限定!今週の★5 ' + CHARS[weeklyPickup()].n + ' 出現率UP', kind: 'char', rates: [3, 12, 85], pickup: () => weeklyPickup(), color: () => ELEM[CHARS[weeklyPickup()].elem].c },
   { id: 'limited', n: '【限定】星詠みの姫君', sub: '水晶の加護により解放!限定★5 ステラ登場', kind: 'char', rates: [3, 12, 85], pickup: 'stella', limited: true, color: '#ffe66d', show: g => g.crystals.length >= 2 },
   { id: 'elem', n: () => ELEM[weeklyElem()].n + '属性フェス', sub: () => '今週は' + ELEM[weeklyElem()].n + '属性のキャラが出やすい!(該当★4・★5の出現率UP)', kind: 'char', rates: [3, 12, 85], elem: () => weeklyElem(), color: () => ELEM[weeklyElem()].c, show: g => g.crystals.length >= 1, feature: () => charPool(5).find(k => CHARS[k].elem === weeklyElem()) || 'seres' },
-  { id: 'equip', n: '武具召喚', sub: '強力な武器・防具・アクセサリーが手に入る', kind: 'equip', rates: [4, 16, 80], color: '#c8d0e0' },
+  { id: 'card', n: 'カード召喚', sub: 'デッキに入れる共通カードが手に入る。同じカードが出ると+1強化', kind: 'card', rates: [4, 16, 80], color: '#c8d0e0' },
 ];
 function weeklyPickup() { return PICKUP_ROT[U.weekIndex() % PICKUP_ROT.length]; }
 function weeklyElem() { const es = ['fire', 'water', 'wind', 'earth', 'light', 'dark']; return es[(U.weekIndex() + 3) % es.length]; }

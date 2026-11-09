@@ -28,7 +28,7 @@ const NPCS = {
         '水晶は 風の神殿(西の森)から集めるのがよいじゃろう。\n森の魔物は手ごわいが、仲間がいれば大丈夫じゃ。',
         `水晶は ${n} つ集まったか。見事じゃ!\n南東の砂漠に 砂の遺跡がある。謎解きが得意な者が向いておる。`,
         `${n} つ目の水晶…!あと少しじゃ。\n北の雪山の洞窟は暗い。足元に気をつけるのじゃぞ。`,
-        '残るは東の火山じゃ!炎の竜は水を嫌うと聞く。',
+        '残るは東の火山じゃ!炎の竜は力をためて大技を放つ。\nブロックの準備を忘れるでないぞ。',
         '4つの水晶がそろった…!\n湖の橋へ行き、封印を解くのじゃ!',
       ];
       await UI.say(G.flags.cleared ? 'アリアや、ありがとう。世界に星の光が戻った…!' : lines[Math.min(n, 4)], { name: this.name });
@@ -51,7 +51,7 @@ const NPCS = {
   },
   lumina_kid: {
     name: 'こどものミミ', look: NL('#f6a2c0', '#5a8ad8', 'twin', 'ribbon', '#ffffff'),
-    async talk() { await UI.say(['ねえねえ、知ってる?\n水は火に、火は風に、風は土に、土は水に つよいんだよ!', '光と闇は おたがいに弱点なんだって!\n敵の色をよく見てね!'], { name: this.name, look: this.look }); },
+    async talk() { await UI.say(['ねえねえ、知ってる?\n戦いはカードで決まるんだって!\n毎ターン5枚引いて、エナジー3つで使うの。', '敵の頭の上に「攻撃」って出てたら、ブロックで守ってね!\n毒は少しずつ効くから、ボスに強いよ!'], { name: this.name, look: this.look }); },
   },
   lumina_guard: {
     name: '見張りのエマ', look: NL('#5a3a2a', '#8a92a6', 'pony', 'band', '#e43b44'),
@@ -93,7 +93,7 @@ const NPCS = {
     name: '狩人のアイラ', look: NL('#8a5a3a', '#6a4a2a', 'pony', 'band', '#3f8f5e', '#3a5a2a'),
     async talk() {
       if (!G.flags.hunter) { G.flags.hunter = 1; G.stones += 100; Sound.play('chest'); Game.hud(); await UI.say(['こんな雪の中までようこそ。\nこれ、山で拾ったの。あげる!', '星晶石×100 を受け取った!'], { name: this.name, look: this.look }); return; }
-      await UI.say(['雪原のオオカミは群れで来るわ。\n火の魔法が苦手なのは…あ、違った。土に弱いのよ。', '東の雪山を越えると氷の洞窟。\n入口の前にクリスタルがあるから、触れておくと便利よ。'], { name: this.name, look: this.look });
+      await UI.say(['雪原のオオカミは群れで来るわ。\n敵全体を攻撃できるカードがあると楽よ。', '東の雪山を越えると氷の洞窟。\n入口の前にクリスタルがあるから、触れておくと便利よ。'], { name: this.name, look: this.look });
     },
   },
   desert_nomad: {
@@ -106,8 +106,8 @@ const NPCS = {
   volc_smith: {
     name: '鍛冶屋のガーネット', look: NL('#d8352a', '#5a4a4a', 'twin', 'band', '#f5c542', '#f5c542'),
     async talk() {
-      if (!G.flags.smith) { G.flags.smith = 1; const t = grant({ equip: 'flamesword' }); Sound.play('chest'); await UI.say(['火山の熱で鍛えた自慢の一本よ!\n持っていきなさい!', `${t} を受け取った!`], { name: this.name, look: this.look }); return; }
-      await UI.say('炎の竜は水に弱いわ。\n水属性の仲間を連れていくといいわよ!', { name: this.name, look: this.look });
+      if (!G.flags.smith) { G.flags.smith = 1; const t = grant({ card: 'c_spike' }); Sound.play('chest'); await UI.say(['火山の熱で鍛えた技を、カードに込めておいたわ!\n持っていきなさい!', `${t} を受け取った!`], { name: this.name, look: this.look }); return; }
+      await UI.say('炎の竜は筋力をためてくるわ。\n脱力のカードで力を削ぐといいわよ!', { name: this.name, look: this.look });
     },
   },
   lighthouse: {

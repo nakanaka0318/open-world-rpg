@@ -347,7 +347,7 @@ const Field = {
     if (t === T.WELL) { await UI.say('井戸をのぞきこんだ。\n水面に自分の顔がうつっている。'); return true; }
     if (t === T.GATE) { await UI.say('鉄格子が道をふさいでいる。\nどこかに仕掛けがあるようだ。'); return true; }
     if (t === T.HOLE) { await UI.say('深い穴だ。落ちたら戻れそうにない…\n何かで埋められないだろうか。'); return true; }
-    if (t === T.SHELF) { await UI.say(U.pick(['古い冒険の本が並んでいる。', '「はじめての召喚術」という本がある。\n星晶石を捧げると仲間が現れるらしい。', '料理の本だ。おいしそう…', '「属性の書」\n水は火に、火は風に、風は土に、土は水に強い。\n光と闇は互いに弱点となる。'])); return true; }
+    if (t === T.SHELF) { await UI.say(U.pick(['古い冒険の本が並んでいる。', '「はじめての召喚術」という本がある。\n星晶石を捧げると仲間が現れるらしい。', '料理の本だ。おいしそう…', '「カードの心得」\n敵の頭上には次の行動が見える。\n攻撃が来るときはブロックで守るべし。'])); return true; }
     if (t === T.BED) { await UI.say('ふかふかのベッドだ。'); return true; }
     if (t === T.POT) { await UI.say('つぼの中は空っぽだ。'); return true; }
     return false;

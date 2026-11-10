@@ -9,7 +9,7 @@ const { chromium } = require('playwright');
   const cases = process.env.CASES ? JSON.parse(process.env.CASES) : [[1, ['slime', 'slime']], [2, ['slime', 'mush']], [5, ['wolf', 'mush2']], [5, ['treant']], [9, ['scorp', 'sandslime']], [9, ['golemk']], [12, ['snowwolf', 'iceghost']], [12, ['frostd']], [15, ['hellhound', 'wisp']], [15, ['flamed']], [20, ['dknight', 'darkghost']], [22, ['demon']]];
   for (const [lv, grp] of cases) {
     const runs = [];
-    for (let k = 0; k < 2; k++) {
+    for (let k = 0; k < (+process.env.RUNS || 2); k++) {
       const r = await p.evaluate(async ([lv, grp]) => {
         for (const id in G.roster) { const c = G.roster[id]; c.lv = lv; c.exp = 0; fullHeal(c); }
         Battle.auto = true; Battle.fast = true;

@@ -54,6 +54,11 @@ for (const k in FB_BODIES) {
   B.all = FBM.or(B.neck, B.torso, B.arm, B.hand, B.leg, B.foot);
 }
 
+function fbMix(a, b, t) {
+  const p = h => [1, 3, 5].map(k => parseInt(h.slice(k, k + 2), 16));
+  const A = p(a.length === 4 ? '#' + a[1] + a[1] + a[2] + a[2] + a[3] + a[3] : a), Bc = p(b);
+  return '#' + A.map((v, k) => Math.round(v + (Bc[k] - v) * t).toString(16).padStart(2, '0')).join('');
+}
 function fbGrid() { return { c: new Array(FB_W * FB_H).fill(null) }; }
 // 図形を塗る。shade: 右端に影・左端にハイライト / line: 下にある色との境目に線
 function fbFill(g, m, col, o = {}) {
@@ -69,6 +74,7 @@ function fbFill(g, m, col, o = {}) {
       if (!at(x + 1, y) || !at(x + 2, y) || !at(x, y + 1)) c = dk;
       else if (!at(x - 1, y) || !at(x, y - 1)) c = lt;
     }
+    if (o.alpha && g.c[i]) { g.c[i] = fbMix(g.c[i], c, o.alpha); continue; }
     const edge = !at(x - 1, y) || !at(x + 1, y) || !at(x, y - 1) || !at(x, y + 1);
     if (edge && o.line !== false && g.c[i] && g.c[i] !== col) c = ln;
     g.c[i] = c;
@@ -501,13 +507,25 @@ const FB_OUTFITS = {
     fbFill(g, FBM.ell(39, 54, 2, 2), WHITE);
   },
   bikini(g, B, K) {
-    const C = K.L.cloth, P = U.shade(K.A, 0.2);
-    fbFill(g, FBM.or(FBM.poly([[26, 36.5], [31.3, 36.5], [30.4, 32]]), FBM.poly([[32.7, 36.5], [38, 36.5], [33.6, 32]])), C);
-    fbLine(g, 30, 32, 31, 26, C); fbLine(g, 34, 32, 33, 26, C);
-    fbFill(g, FBM.and(B.torso, FBM.band(53, 58)), C);
-    fbFill(g, FBM.poly([[24.5, 53], [31, 55], [28.5, 78], [21, 75]]), P);
-    fbFill(g, FBM.ell(26, 54, 2, 1.5), P);
+    const C = K.L.cloth, P = U.shade(K.A, 0.25), inT = m => FBM.and(B.torso, m);
+    const noArm = FBM.not(FBM.or(B.arm, B.hand));
+    // トップ (三角ビキニ + 中央のリング + ホルターネック)
+    const top = inT(FBM.or(FBM.poly([[25, 37.6], [31.6, 37.6], [29.4, 31.2]]), FBM.poly([[32.4, 37.6], [39, 37.6], [34.6, 31.2]])));
+    fbFill(g, top, C);
+    fbLine(g, 29, 31, 30, 27, C); fbLine(g, 35, 31, 34, 27, C);
+    fbDot(g, 32, 35, GOLD); fbDot(g, 32, 36, GOLD);
+    for (const x of [25, 39]) if (B.torso(x, 36)) fbDot(g, x, 36, C);
+    // ボトム (サイドにひも)
+    const bottom = FBM.sym([[32, 52.5], [B.hip + 0.3, 52.5], [B.hip + 1.2, 55], [30.2, 58.5], [32, 59]]);
+    fbFill(g, bottom, C);
+    fbDot(g, Math.ceil(B.hip + 0.3), 52, GOLD); fbDot(g, Math.floor(63.7 - B.hip), 52, GOLD);
+    // パレオ (腰に巻いた透ける布。右の腰で結ぶ)
+    const pareo = FBM.and(FBM.poly([[B.hip, 53], [64 - B.hip, 53], [43.5, 75], [26, 86], [19.5, 79]]), noArm);
+    fbFill(g, pareo, P, { alpha: 0.55 });
+    if (K.hash % 2) for (let y = 58; y < 84; y += 5) for (let x = 20 + (y % 10 ? 2 : 0); x < 44; x += 5) if (pareo(x, y)) FB_MOTIF.light(g, x, y, U.shade(P, -0.25));
+    fbFill(g, FBM.and(FBM.or(FBM.ell(39.4, 54, 2, 1.6), FBM.poly([[39, 55], [41, 55], [42.5, 64], [40.5, 64]])), noArm), U.shade(P, -0.1));
     fbFill(g, B.foot, '#c89060');
+    fbLine(g, 28, 104, 29, 106, '#c89060'); fbLine(g, 36, 104, 35, 106, '#c89060');
   },
   slitdress(g, B, K) {
     const C = K.L.cloth || '#8a1a3a';

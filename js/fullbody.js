@@ -30,14 +30,14 @@ const FBM = {
   band(y0, y1) { return (x, y) => y >= y0 && y < y1; },
 };
 
-// 体のパーツ
+// 体のパーツ (細め・小柄。肩はなで肩、腕と脚は細く先に向かって細くなる)
 const FB_BODY = {
-  neck: FBM.rect(29, 22, 35, 30),
-  torso: FBM.sym([[32, 26], [25, 27], [20, 30], [22, 40], [25, 50], [23, 60], [32, 61]]),
-  arm: FBM.both(FBM.poly([[20, 29], [23, 32], [21, 46], [19, 59], [15, 59], [16, 46], [17, 31]])),
-  hand: FBM.both(FBM.ell(17, 61, 2.6, 3.2)),
-  leg: FBM.both(FBM.poly([[23.5, 57], [31.6, 57], [31, 80], [30, 100], [29.6, 117], [26.4, 117], [25, 100], [24, 80]])),
-  foot: FBM.both(FBM.poly([[25.5, 115], [30.5, 115], [31, 121], [24.5, 121]])),
+  neck: FBM.rect(30, 22, 34, 29),
+  torso: FBM.sym([[32, 26], [28.5, 27], [25.6, 29], [24.8, 31.5], [26.2, 38], [27.4, 46], [26.2, 52], [25, 57.5], [32, 58.5]]),
+  arm: FBM.both(FBM.poly([[25.3, 29], [27, 31.5], [25.6, 44], [24.6, 55], [22, 55], [22.6, 44], [23.6, 31]])),
+  hand: FBM.both(FBM.ell(23.3, 56.8, 1.9, 2.3)),
+  leg: FBM.both(FBM.poly([[25.6, 55], [31.6, 55], [31.1, 75], [30.5, 91], [30.1, 106], [27.9, 106], [27.1, 91], [26.3, 75]])),
+  foot: FBM.both(FBM.poly([[27.6, 104.5], [30.6, 104.5], [31, 109.5], [26.8, 109.5]])),
 };
 FB_BODY.all = FBM.or(FB_BODY.neck, FB_BODY.torso, FB_BODY.arm, FB_BODY.hand, FB_BODY.leg, FB_BODY.foot);
 
@@ -47,7 +47,7 @@ function fbFill(g, m, col, o = {}) {
   const mk = new Uint8Array(FB_W * FB_H);
   for (let y = 0; y < FB_H; y++) for (let x = 0; x < FB_W; x++) if (m(x, y)) mk[y * FB_W + x] = 1;
   const at = (x, y) => x >= 0 && y >= 0 && x < FB_W && y < FB_H && mk[y * FB_W + x];
-  const dk = U.shade(col, -0.2), lt = U.shade(col, 0.22), ln = o.lineCol || U.shade(col, -0.55);
+  const dk = U.shade(col, -0.16), lt = U.shade(col, 0.22), ln = o.lineCol || U.shade(col, -0.36);
   for (let y = 0; y < FB_H; y++) for (let x = 0; x < FB_W; x++) {
     const i = y * FB_W + x;
     if (!mk[i]) continue;
@@ -71,122 +71,122 @@ function fbDot(g, x, y, col) { if (x >= 0 && y >= 0 && x < FB_W && y < FB_H) g.c
 const SKIN = '#fde3cf';
 // よく使う衣装パーツ
 const FBP = {
-  skirt: (y0, y1, fl, top = 24) => FBM.poly([[top, y0], [64 - top, y0], [64 - top + fl, y1], [top - fl, y1]]),
+  skirt: (y0, y1, fl, top = 26.5) => FBM.poly([[top, y0], [64 - top, y0], [64 - top + fl, y1], [top - fl, y1]]),
   sleeve: (y1) => FBM.and(FB_BODY.arm, FBM.band(0, y1)),
   socks: (y0) => FBM.and(FB_BODY.leg, FBM.band(y0, 128)),
-  shoes: (g, col) => fbFill(g, FBM.or(FB_BODY.foot, FBM.and(FB_BODY.leg, FBM.band(113, 128))), col),
+  shoes: (g, col) => fbFill(g, FBM.or(FB_BODY.foot, FBM.and(FB_BODY.leg, FBM.band(103, 128))), col),
   frill(g, y, x0, x1, col) { for (let x = Math.ceil(x0); x < x1; x++) { fbDot(g, x, y, col); if (x % 2) fbDot(g, x, y + 1, col); } },
+  necklace(g) { for (let x = 29; x <= 35; x++) fbDot(g, x, 28 + Math.round(1.6 - Math.abs(x - 32) * 0.4), '#f5c542'); },
 };
+const FB_SLEEVE_YUKATA = FBM.both(FBM.poly([[25, 29], [21.5, 32], [19.5, 52], [25, 52], [26, 38]]));
 
-// 衣装ごとの描き方。L = look, C = 服の色, A = 飾りの色
+// 衣装ごとの描き方。L = look (cloth: 服の色, acc: 飾りの色, collar: 襟の色)
 const FB_OUTFITS = {
   default(g, L) {
     const C = L.cloth;
     FBP.shoes(g, '#6a3c22');
-    fbFill(g, FBM.and(FB_BODY.leg, FBM.band(98, 128)), '#7a4a2c');
-    fbFill(g, FBM.or(FBM.and(FB_BODY.torso, FBM.band(26, 52)), FBP.sleeve(40)), C);
-    fbFill(g, FBP.skirt(49, 80, 6), U.shade(C, -0.12));
-    fbFill(g, FBM.rect(24, 48, 40, 51), L.acc);
-    fbFill(g, FBM.sym([[27, 26], [32, 26], [32, 33]]), '#ffffff', { shade: false });
-    fbFill(g, FBM.ell(32, 32, 2, 2), L.acc);
-    FBP.frill(g, 79, 18, 46, '#ffffff');
+    fbFill(g, FBM.and(FB_BODY.leg, FBM.band(92, 128)), '#7a4a2c');
+    fbFill(g, FBM.or(FBM.and(FB_BODY.torso, FBM.band(26, 48)), FBP.sleeve(37)), C);
+    fbFill(g, FBP.skirt(45, 72, 6), U.shade(C, -0.1));
+    fbFill(g, FBM.rect(27, 44, 37, 46.5), L.acc);
+    fbFill(g, FBM.sym([[29, 26], [32, 26], [32, 31]]), '#ffffff', { shade: false });
+    fbFill(g, FBM.ell(32, 31, 1.5, 1.5), L.acc, { shade: false });
+    FBP.frill(g, 71, 20, 44, '#ffffff');
   },
   uniform(g, L) {
     const N = L.collar || '#2a3a6a';
     FBP.shoes(g, '#4a2c1c');
-    fbFill(g, FBP.socks(92), '#ffffff');
-    fbFill(g, FBM.or(FBM.and(FB_BODY.torso, FBM.band(26, 53)), FBP.sleeve(57)), '#f4f4fa');
-    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(53, 57)), N);
-    fbFill(g, FBP.skirt(49, 77, 5), N);
-    for (let x = 21; x < 44; x += 3) fbLine(g, x, 53, x + (x - 32) / 6, 75, U.shade(N, -0.4));
-    fbFill(g, FBM.sym([[22, 27], [32, 27], [32, 41], [24, 33]]), N);
-    fbFill(g, FBM.or(FBM.ell(29.5, 38, 3, 2), FBM.ell(34.5, 38, 3, 2), FBM.poly([[31, 39], [33, 39], [35, 46], [29, 46]])), '#e43b44');
+    fbFill(g, FBP.socks(84), '#ffffff');
+    fbFill(g, FBM.or(FBM.and(FB_BODY.torso, FBM.band(26, 49)), FBP.sleeve(53)), '#f4f4fa');
+    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(51, 54)), N);
+    fbFill(g, FBP.skirt(45, 69, 5), N);
+    for (let x = 24; x < 41; x += 3) fbLine(g, x, 48, Math.round(x + (x - 32) / 5), 67, U.shade(N, -0.35));
+    fbFill(g, FBM.sym([[25.4, 27.5], [32, 27], [32, 38], [26.5, 32.5]]), N);
+    fbFill(g, FBM.or(FBM.ell(30.3, 35.5, 2, 1.4), FBM.ell(33.7, 35.5, 2, 1.4), FBM.poly([[31.3, 36], [32.7, 36], [34, 42], [30, 42]])), '#e43b44');
   },
   yukata(g, L) {
     const C = L.cloth, A = L.acc;
     fbFill(g, FB_BODY.foot, '#8a5a32');
-    const robe = FBM.sym([[32, 26], [24, 27], [20, 30], [21, 60], [22, 117], [32, 117]]);
-    fbFill(g, robe, C);
-    fbFill(g, FBM.both(FBM.poly([[20, 29], [15, 32], [12, 58], [20, 58], [22, 40]])), C);
-    for (let y = 30; y < 116; y += 7) for (let x = 14 + (y % 14 ? 3 : 0); x < 50; x += 7) if (robe(x, y) || FBM.both(FBM.poly([[20, 29], [15, 32], [12, 58], [20, 58], [22, 40]]))(x, y)) { fbDot(g, x, y, A); fbDot(g, x + 1, y, A); fbDot(g, x, y + 1, A); }
-    fbLine(g, 28, 26, 34, 42, '#ffffff'); fbLine(g, 36, 26, 32, 36, '#ffffff');
-    fbFill(g, FBM.rect(21, 43, 43, 51), A);
-    fbFill(g, FBM.poly([[36, 44], [44, 40], [46, 50], [38, 50]]), A);
-    fbLine(g, 32, 51, 33, 116, U.shade(C, -0.45));
-    fbFill(g, FBM.and(FB_BODY.hand), SKIN);
+    const robe = FBM.sym([[32, 26], [28.5, 27], [24.8, 30], [25.6, 56], [26, 105.5], [32, 105.5]]);
+    fbFill(g, FBM.or(robe, FB_SLEEVE_YUKATA), C);
+    for (let y = 30; y < 104; y += 6) for (let x = 18 + (y % 12 ? 3 : 0); x < 47; x += 6) if (robe(x, y) || FB_SLEEVE_YUKATA(x, y)) { fbDot(g, x, y, A); fbDot(g, x + 1, y, A); fbDot(g, x, y + 1, A); }
+    fbLine(g, 29, 26, 34, 39, '#ffffff'); fbLine(g, 35, 26, 32, 33, '#ffffff');
+    fbFill(g, FBM.rect(25.5, 42, 38.5, 48), A);
+    fbFill(g, FBM.poly([[36, 42], [42, 39], [43, 47], [37, 47]]), A);
+    fbLine(g, 32, 48, 32, 104, U.shade(C, -0.35));
+    fbFill(g, FB_BODY.hand, SKIN);
   },
   swim(g, L) {
     const C = L.cloth;
-    fbFill(g, FBM.or(FBM.ell(28, 36, 4.2, 3.2), FBM.ell(36, 36, 4.2, 3.2)), C);
-    fbLine(g, 27, 33, 29, 26, C); fbLine(g, 37, 33, 35, 26, C);
-    fbFill(g, FBM.poly([[23.5, 55], [40.5, 55], [38, 61], [32, 64], [26, 61]]), C);
+    fbFill(g, FBM.or(FBM.ell(29.6, 34.5, 2.8, 2.2), FBM.ell(34.4, 34.5, 2.8, 2.2)), C);
+    fbLine(g, 29, 32, 30, 26, C); fbLine(g, 35, 32, 34, 26, C);
+    fbFill(g, FBM.poly([[25.8, 53], [38.2, 53], [36.5, 57.5], [32, 59.5], [27.5, 57.5]]), C);
   },
   bikini(g, L) {
-    const C = L.cloth;
-    fbFill(g, FBM.or(FBM.poly([[24, 38], [31, 38], [30, 32]]), FBM.poly([[33, 38], [40, 38], [34, 32]])), C);
-    fbLine(g, 30, 32, 31, 26, C); fbLine(g, 34, 32, 33, 26, C); fbLine(g, 24, 38, 21, 37, C); fbLine(g, 40, 38, 43, 37, C);
-    fbFill(g, FBM.poly([[24, 56], [40, 56], [37, 61], [32, 63], [27, 61]]), C);
-    fbFill(g, FBM.poly([[22, 56], [30, 58], [26, 84], [18, 80]]), U.shade(L.acc, 0.2));
-    fbFill(g, FBM.ell(25, 57, 2.5, 2), U.shade(L.acc, 0.2));
+    const C = L.cloth, P = U.shade(L.acc, 0.2);
+    fbFill(g, FBM.or(FBM.poly([[26.2, 36.5], [31.3, 36.5], [30.4, 32]]), FBM.poly([[32.7, 36.5], [37.8, 36.5], [33.6, 32]])), C);
+    fbLine(g, 30, 32, 31, 26, C); fbLine(g, 34, 32, 33, 26, C);
+    fbFill(g, FBM.poly([[26, 54], [38, 54], [36, 57.5], [32, 59.5], [28, 57.5]]), C);
+    fbFill(g, FBM.poly([[25, 54], [31, 55.5], [28.5, 77], [21.5, 74]]), P);
+    fbFill(g, FBM.ell(26.5, 54.8, 2, 1.5), P);
     fbFill(g, FB_BODY.foot, '#c89060');
   },
   maid(g, L) {
     const C = L.cloth || '#2a2a3e';
     FBP.shoes(g, '#1a1420');
-    fbFill(g, FBP.socks(90), '#ffffff');
-    fbFill(g, FBM.or(FBM.and(FB_BODY.torso, FBM.band(26, 52)), FBP.sleeve(54)), C);
-    fbFill(g, FBM.or(FBM.ell(18, 33, 4, 4), FBM.ell(46, 33, 4, 4)), C);
-    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(52, 55)), '#ffffff');
-    fbFill(g, FBP.skirt(49, 84, 8), C);
-    FBP.frill(g, 84, 16, 48, '#ffffff');
-    fbFill(g, FBM.or(FBM.rect(27, 32, 37, 46), FBM.poly([[26, 46], [38, 46], [40, 80], [24, 80]])), '#ffffff');
-    FBP.frill(g, 80, 24, 40, '#e8e8f0');
-    fbFill(g, FBM.sym([[27, 26], [32, 26], [32, 31]]), '#ffffff', { shade: false });
-    fbFill(g, FBM.or(FBM.ell(30, 30, 2, 1.5), FBM.ell(34, 30, 2, 1.5)), '#e43b44');
+    fbFill(g, FBP.socks(84), '#ffffff');
+    fbFill(g, FBM.or(FBM.and(FB_BODY.torso, FBM.band(26, 48)), FBP.sleeve(52), FBM.ell(24.6, 31, 2.8, 3), FBM.ell(39.4, 31, 2.8, 3)), C);
+    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(50, 53)), '#ffffff');
+    fbFill(g, FBP.skirt(45, 75, 7), C);
+    FBP.frill(g, 75, 18, 46, '#ffffff');
+    fbFill(g, FBM.or(FBM.rect(28.5, 31, 35.5, 43), FBM.poly([[27.5, 43], [36.5, 43], [38, 71], [26, 71]])), '#ffffff');
+    FBP.frill(g, 71, 26, 38, '#e8e8f0');
+    fbFill(g, FBM.sym([[29, 26], [32, 26], [32, 30]]), '#ffffff', { shade: false });
+    fbFill(g, FBM.or(FBM.ell(30.6, 29.5, 1.6, 1.2), FBM.ell(33.4, 29.5, 1.6, 1.2)), '#e43b44', { shade: false });
   },
   dress(g, L) {
     const C = L.cloth;
-    fbFill(g, FBM.and(FB_BODY.torso, FBM.band(34, 52)), C);
-    fbFill(g, FBP.skirt(49, 122, 14), C);
-    for (let x = 22; x < 44; x += 5) fbLine(g, x, 54, x + (x - 32) * 0.6, 120, U.shade(C, -0.3));
-    FBP.frill(g, 121, 10, 54, '#ffffff');
-    FBP.frill(g, 34, 22, 42, '#ffffff');
-    for (let x = 28; x <= 36; x++) fbDot(g, x, 29 + Math.round(Math.abs(x - 32) * -0.4 + 1.6), '#f5c542');
-    fbFill(g, FBM.ell(32, 32, 1.6, 1.6), '#f5c542', { shade: false });
-    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(44, 60)), '#ffffff');
+    fbFill(g, FBM.and(FB_BODY.torso, FBM.band(33, 48)), C);
+    fbFill(g, FBP.skirt(45, 110, 12), C);
+    for (let x = 24; x < 41; x += 4) fbLine(g, x, 50, Math.round(x + (x - 32) * 0.7), 108, U.shade(C, -0.22));
+    FBP.frill(g, 109, 13, 51, '#ffffff');
+    FBP.frill(g, 33, 25, 39, '#ffffff');
+    FBP.necklace(g);
+    fbFill(g, FBM.ell(32, 31, 1.3, 1.4), '#f5c542', { shade: false });
+    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(42, 60)), '#ffffff');
   },
   gala(g, L) {
     const C = '#f4f0ff';
-    fbFill(g, FBM.and(FB_BODY.torso, FBM.band(34, 52)), C);
-    fbFill(g, FBP.skirt(49, 122, 16), C);
-    for (let x = 22; x < 44; x += 4) fbLine(g, x, 54, x + (x - 32) * 0.7, 120, '#d8d0f0');
-    fbFill(g, FBM.rect(23, 48, 41, 52), '#f5c542');
-    fbFill(g, FBM.poly([[38, 48], [46, 44], [46, 56], [39, 52]]), '#f5c542');
-    FBP.frill(g, 121, 8, 56, '#f5c542');
-    FBP.frill(g, 34, 22, 42, '#f5c542');
-    fbFill(g, FBM.ell(32, 31, 1.6, 1.6), '#7fe8ff', { shade: false });
-    for (const [x, y] of [[20, 70], [40, 64], [28, 90], [44, 100], [16, 108], [34, 112], [24, 60], [48, 84]]) { fbDot(g, x, y, '#ffe66d'); fbDot(g, x - 1, y, '#fff7c0'); fbDot(g, x + 1, y, '#fff7c0'); fbDot(g, x, y - 1, '#fff7c0'); fbDot(g, x, y + 1, '#fff7c0'); }
-    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(44, 60)), '#ffffff');
+    fbFill(g, FBM.and(FB_BODY.torso, FBM.band(33, 48)), C);
+    fbFill(g, FBP.skirt(45, 110, 14), C);
+    for (let x = 24; x < 41; x += 3) fbLine(g, x, 50, Math.round(x + (x - 32) * 0.8), 108, '#ddd6f2');
+    fbFill(g, FBM.rect(26.5, 44, 37.5, 47), '#f5c542');
+    fbFill(g, FBM.poly([[36, 44], [42, 41], [42, 50], [37, 47]]), '#f5c542');
+    FBP.frill(g, 109, 11, 53, '#f5c542');
+    FBP.frill(g, 33, 25, 39, '#f5c542');
+    fbFill(g, FBM.ell(32, 31, 1.3, 1.4), '#7fe8ff', { shade: false });
+    for (const [x, y] of [[22, 66], [40, 60], [29, 84], [43, 92], [19, 100], [34, 102], [26, 56], [46, 78]]) { fbDot(g, x, y, '#ffe66d'); for (const [a, b] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) fbDot(g, x + a, y + b, '#fff7c0'); }
+    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(42, 60)), '#ffffff');
   },
   bunny(g, L) {
     const C = L.cloth || '#1e1a2a';
-    fbFill(g, FBM.and(FB_BODY.leg, FBM.band(57, 128)), '#5a4652');
+    fbFill(g, FBM.and(FB_BODY.leg, FBM.band(54, 128)), '#6a5462');
     FBP.shoes(g, '#1a1420');
-    fbFill(g, FBM.sym([[25, 37], [32, 36], [32, 66], [28, 62], [22, 60], [25, 50], [24, 40]]), C);
-    fbFill(g, FBM.rect(28, 25, 37, 28), '#ffffff');
-    fbFill(g, FBM.or(FBM.ell(30, 28.5, 2, 1.5), FBM.ell(34, 28.5, 2, 1.5)), '#e43b44');
-    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(53, 57)), '#ffffff');
-    fbFill(g, FBM.ell(42, 58, 2.6, 2.6), '#ffffff');
+    fbFill(g, FBM.sym([[26.4, 35.5], [32, 35], [32, 60], [29, 57], [25.2, 55], [27.2, 47], [26.2, 39]]), C);
+    fbFill(g, FBM.rect(29.5, 25, 34.5, 27.5), '#ffffff', { shade: false });
+    fbFill(g, FBM.or(FBM.ell(30.6, 28.3, 1.6, 1.2), FBM.ell(33.4, 28.3, 1.6, 1.2)), '#e43b44', { shade: false });
+    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(50, 53)), '#ffffff');
+    fbFill(g, FBM.ell(38.6, 54, 2, 2), '#ffffff');
   },
   slitdress(g, L) {
     const C = L.cloth || '#8a1a3a';
     fbFill(g, FB_BODY.foot, '#1a1420');
-    const skirt = FBM.and(FBP.skirt(49, 122, 12), FBM.not(FBM.poly([[34, 86], [41, 86], [46, 122], [34, 122]])));
-    fbFill(g, FBM.or(FBM.sym([[23, 33], [29, 33], [32, 44], [32, 52], [24, 52]]), skirt), C);
-    for (let x = 23; x < 34; x += 4) fbLine(g, x, 56, x + (x - 32) * 0.5, 120, U.shade(C, -0.35));
-    for (let x = 28; x <= 36; x++) fbDot(g, x, 29 + Math.round(Math.abs(x - 32) * -0.4 + 1.6), '#f5c542');
-    fbFill(g, FBM.ell(32, 32, 1.4, 1.6), '#e43b44', { shade: false });
-    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(42, 60)), '#2a1a24');
+    const skirt = FBM.and(FBP.skirt(45, 110, 10), FBM.not(FBM.and(FB_BODY.leg, FBM.poly([[33, 80], [38, 80], [40, 110], [33, 110]]))));
+    fbFill(g, FBM.or(FBM.sym([[25, 33], [29.4, 33], [32, 41], [32, 48], [26.6, 48]]), skirt), C);
+    for (let x = 24; x < 33; x += 4) fbLine(g, x, 52, Math.round(x + (x - 32) * 0.5), 108, U.shade(C, -0.28));
+    FBP.necklace(g);
+    fbFill(g, FBM.ell(32, 31, 1.2, 1.4), '#e43b44', { shade: false });
+    fbFill(g, FBM.and(FB_BODY.arm, FBM.band(40, 60)), '#2a1a24');
   },
 };
 
@@ -194,13 +194,13 @@ const FB_OUTFITS = {
 function fbHairBack(g, L) {
   const H = L.hair;
   let m = null;
-  if (L.style === 'long' || !L.style) m = FBM.sym([[32, 10], [17, 10], [15, 40], [18, 68], [24, 72], [32, 70]]);
-  if (L.style === 'twin') m = FBM.both(FBM.poly([[12, 10], [19, 10], [18, 30], [16, 55], [12, 68], [8, 55], [9, 30]]));
-  if (L.style === 'pony') m = FBM.poly([[44, 6], [50, 8], [53, 30], [50, 54], [46, 60], [46, 30]]);
+  if (L.style === 'long' || !L.style) m = FBM.sym([[32, 10], [19, 10], [18, 36], [20.5, 56], [24.5, 60], [32, 58]]);
+  if (L.style === 'twin') m = FBM.both(FBM.poly([[13, 10], [19, 10], [18.5, 30], [17, 50], [14, 60], [10.5, 50], [10.5, 30]]));
+  if (L.style === 'pony') m = FBM.poly([[44, 6], [49.5, 8], [51.5, 28], [49, 46], [46, 52], [46, 28]]);
   if (!m) return;
   fbFill(g, m, H);
   const dk = U.shade(H, -0.28);
-  for (let y = 18; y < 70; y++) for (let x = 0; x < FB_W; x++) if (m(x, y) && m(x - 2, y) && m(x + 2, y) && (x + Math.floor(y / 9)) % 6 === 0) fbDot(g, x, y, dk);
+  for (let y = 18; y < 64; y++) for (let x = 0; x < FB_W; x++) if (m(x, y) && m(x - 2, y) && m(x + 2, y) && (x + Math.floor(y / 9)) % 6 === 0) fbDot(g, x, y, dk);
 }
 
 const FB_CACHE = {};
@@ -209,7 +209,7 @@ function fullBody(look) {
   if (FB_CACHE[key]) return FB_CACHE[key];
   const g = fbGrid();
   fbHairBack(g, look);
-  fbFill(g, FB_BODY.all, SKIN, { line: true, lineCol: '#d89a80' });
+  fbFill(g, FB_BODY.all, SKIN, { line: true, lineCol: '#e4ae96' });
   fbFill(g, FB_BODY.hand, SKIN);
   (FB_OUTFITS[look.outfit] || FB_OUTFITS.default)(g, look);
   // 外側のアウトライン
@@ -226,9 +226,9 @@ function fullBody(look) {
     const [r, gg, b] = hex(col.length === 4 ? '#' + col[1] + col[1] + col[2] + col[2] + col[3] + col[3] : col);
     d[i * 4] = r; d[i * 4 + 1] = gg; d[i * 4 + 2] = b; d[i * 4 + 3] = 255;
   }
-  x.putImageData(img, 0, 0);
+  x.putImageData(img, 0, 8);
   // 頭 (立ち絵の上27行)
-  x.drawImage(portrait(look), 0, 0, 32, 27, 16, 0, 32, 27);
+  x.drawImage(portrait(look), 0, 0, 32, 27, 16, 8, 32, 27);
   return (FB_CACHE[key] = c);
 }
 const FB_URL = {};

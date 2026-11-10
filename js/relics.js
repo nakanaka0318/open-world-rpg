@@ -49,6 +49,21 @@ const RELICS = {
     desc: L => `アタックを${L >= 5 ? 2 : 3}枚使うたびに筋力+1`,
     attack: (B, L, n) => { if (n % (L >= 5 ? 2 : 3) === 0) B.relicSt('str', 1); },
   },
+  rapidhat: {
+    n: 'うさぎの懐中ハット', icon: 'tiara',
+    desc: L => `戦闘開始時、トリックカードを${2 + Math.floor(L / 2)}枚手札に加える`,
+    start: (B, L) => { for (let k = 0; k < 2 + Math.floor(L / 2); k++) B.addToHand(U.pick(Object.keys(TRICK_CARDS))); },
+  },
+  viola: {
+    n: '真紅のペンダント', icon: 'amulet',
+    desc: L => `HPが半分以下のとき、与えるダメージ+${25 + 5 * L}%`,
+    bonus: { dmg: (L, B) => B.P.hp <= B.P.max / 2 ? (25 + 5 * L) / 100 : 0 },
+  },
+  aurora: {
+    n: '極光のティアラ', icon: 'tiara',
+    desc: L => `チャージ1段階ごとの威力上昇 +50% → +${70 + 6 * L}%`,
+    bonus: { charge: L => (20 + 6 * L) / 100 },
+  },
   misuzu: {
     n: '陽だまりの髪飾り', icon: 'tiara',
     desc: L => `戦闘開始時、再生${3 + L}`,

@@ -475,3 +475,5 @@ body.touch.in-battle #pad { visibility: hidden; }
 .cb-party.relicon { animation: relicon .9s; }
 @keyframes relicon { 30% { box-shadow: 0 0 16px #ffd94a; border-color: #ffd94a; } }
 .map-row { display: flex; align-items: center; justify-content: space-between; gap: .5em; flex-wrap: wrap; }
+.cc-cost.free { background: radial-gradient(circle at 35% 30%, #d8fff0, #3ae8a0 55%, #108a50); }
+.cc-charge { position: absolute; right: 3%; top: 2%; background: #c27ff0; color: #fff; border-radius: 6px; padding: 0 .3em; font-size: .7em; font-weight: bold; z-index: 2; animation: pulse 1s infinite; }

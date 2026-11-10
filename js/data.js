@@ -206,6 +206,27 @@ const CHARS = {
     profile: '教会のちびっこシスター。背伸びしたいお年頃。',
   },
   // ---- 追加キャラ ----
+  rapidhat: {
+    n: 'ラピッドハット', title: 'うさぎ連れの手品師', rar: 5, elem: 'wind', role: '手品師', gacha: true,
+    base: { hp: 54, mp: 20, atk: 17, def: 10, mag: 14, spd: 17 }, grow: { hp: 10, mp: 2.6, atk: 3.1, def: 1.7, mag: 2.2, spd: 2.1 },
+    skills: [[1, 'double']],
+    look: { hair: '#f6d8a0', eye: '#e43b44', cloth: '#2a2a5a', acc: '#e43b44', accType: 'silkhat', style: 'twin', hat: '#22223a' },
+    profile: 'シルクハットから何でも取り出す旅の手品師。相棒のうさぎは帽子の中で昼寝中。',
+  },
+  viola: {
+    n: 'ヴィオラ', title: '真紅の吸血探偵', rar: 5, elem: 'dark', role: '吸血姫', gacha: true,
+    base: { hp: 60, mp: 14, atk: 23, def: 8, mag: 12, spd: 14 }, grow: { hp: 11, mp: 1.8, atk: 4.0, def: 1.4, mag: 1.6, spd: 1.8 },
+    skills: [[1, 'slash']],
+    look: { hair: '#f2f0f6', eye: '#d8203a', cloth: '#4a1a2a', acc: '#a8303a', accType: 'batwing', style: 'long' },
+    profile: '夜の街の事件を解く吸血鬼の探偵。血を代償に、真相も敵もまとめて切り裂く。',
+  },
+  aurora: {
+    n: 'オーロラ', title: '極光の大魔法使い', rar: 5, elem: 'light', role: '大魔法使い', gacha: true,
+    base: { hp: 50, mp: 34, atk: 9, def: 9, mag: 22, spd: 10 }, grow: { hp: 9, mp: 4.0, atk: 1.3, def: 1.6, mag: 3.8, spd: 1.3 },
+    skills: [[1, 'holy']],
+    look: { hair: '#7ae8c8', eye: '#c27ff0', cloth: '#2a2a6a', acc: '#f6a2f0', accType: 'witch', style: 'long', hat: '#3a2a7a' },
+    profile: '北の果てで夜空の光を研究する大魔法使い。呪文はとにかく長いが、そのぶん威力は絶大。',
+  },
   kanae: {
     n: 'かなえ', title: '物静かなメイド', rar: 5, elem: 'water', role: 'メイド', gacha: true,
     base: { hp: 56, mp: 28, atk: 14, def: 12, mag: 18, spd: 14 }, grow: { hp: 10, mp: 3.4, atk: 2.4, def: 2.0, mag: 3.3, spd: 1.7 },
@@ -394,7 +415,7 @@ const AREAS = {
 
 // ---------- ガチャ ----------
 const GACHA_COST = { single: 50, ten: 500 };
-const PICKUP_ROT = ['seres', 'noa', 'homura', 'sylphy', 'marina', 'terra', 'kanae', 'lumia', 'misuzu'];
+const PICKUP_ROT = ['seres', 'noa', 'homura', 'sylphy', 'marina', 'terra', 'kanae', 'lumia', 'misuzu', 'rapidhat', 'viola', 'aurora'];
 function charPool(rar, opts = {}) {
   return Object.keys(CHARS).filter(k => CHARS[k].rar === rar && (CHARS[k].gacha || (opts.limited && k === 'stella')));
 }

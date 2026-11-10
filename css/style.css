@@ -509,3 +509,7 @@ body.touch.in-battle #pad { visibility: hidden; }
 .pick-c.cur { transform: translateY(-8px) scale(1.05); }
 .pick-c.cur .ccard { border-color: #ffe66d; box-shadow: 0 0 14px #ffe66d; }
 .ccard.tw { border-color: #fff; background: linear-gradient(170deg, #6a3a9a, #1a0a3a 70%); box-shadow: 0 0 0 1px #ffe66d, 0 0 10px rgba(200, 140, 255, .8); }
+
+body.in-battle .tower-layer { display: none; }
+.cb-top .btools { position: static; flex: 0 0 auto; }
+.cb-msg { min-width: 0; }

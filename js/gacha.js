@@ -39,6 +39,13 @@ function equipIconURL(id) {
   const col = e.elem ? ELEM[e.elem].c : { 3: '#7ac8f0', 4: '#c27ff0', 5: '#ffd94a' }[e.rar];
   return (ICON_URL[id] = iconCanvas(equipKind(id), col).toDataURL());
 }
+// ガチャ結果の表示用 (キャラ/カード/衣装)
+function gItem(kind, id) {
+  if (kind === 'char') return { img: portraitURL(CHARS[id].look), n: CHARS[id].n };
+  if (kind === 'skin') { const s = SKINS[id]; return { img: portraitURL(skinLook(id)), n: `${CHARS[s.char].n}「${s.n}」` }; }
+  const c = CARDS[id] || CARDS.blank;
+  return { img: cardArtURL(CARDS[id] ? id : 'blank'), n: c.n };
+}
 const RAR_COL = { 3: '#5aa0e8', 4: '#e8b83a', 5: 'rainbow' };
 
 const Gacha = {
@@ -69,7 +76,11 @@ const Gacha = {
         body.innerHTML = '';
         const ban = U.el('div', 'g-banner');
         ban.style.setProperty('--bc', b.color);
-        if (b.feature) {
+        if (b.kind === 'skin') {
+          const own = Object.keys(G.roster);
+          const fs = own.slice(0, 3);
+          ban.innerHTML = `<div class="g-rays"></div><div class="g-skins">${fs.map((k, i) => `<img src="${portraitURL(skinLook(k + '@' + ['dress', 'swim', 'yukata'][i]))}">`).join('')}</div><div class="g-ftxt"><div class="g-fstar">衣装ガチャ</div><div class="g-fname">きせかえ</div><div class="g-ftitle">制服・浴衣・水着・メイド服・ドレス</div></div>`;
+        } else if (b.feature) {
           const fd = CHARS[b.feature];
           ban.innerHTML = `<div class="g-rays"></div><img class="g-feat" src="${portraitURL(fd.look)}"><div class="g-ftxt"><div class="g-fstar">★★★★★</div><div class="g-fname">${U.esc(fd.n)}</div><div class="g-ftitle">${U.esc(fd.title)}</div><div class="g-fel" style="background:${ELEM[fd.elem].c}">${ELEM[fd.elem].n}属性 ／ ${U.esc(fd.role)}</div></div>`;
         } else {
@@ -88,7 +99,7 @@ const Gacha = {
           }
           body.appendChild(row);
         }
-        body.appendChild(U.el('div', 'g-rate', `提供割合 ★5 ${b.rates[0]}% ／ ★4 ${b.rates[1]}% ／ ★3 ${b.rates[2]}%<br>10連は ★4以上 1枠確定!`));
+        body.appendChild(U.el('div', 'g-rate', b.kind === 'skin' ? `提供割合 ★5(ドレス) ${b.rates[0]}% ／ ★4 ${b.rates[1]}%<br>衣装は見た目だけ変わります。メニューのキャラ詳細で着替えられます` : `提供割合 ★5 ${b.rates[0]}% ／ ★4 ${b.rates[1]}% ／ ★3 ${b.rates[2]}%<br>10連は ★4以上 1枠確定!`));
         const btns = U.el('div', 'g-btns');
         const one = U.el('div', 'g-btn single' + (focus === 0 ? ' cur' : ''), `単発召喚<br><span class="gem">◆</span>${GACHA_COST.single}`);
         const ten = U.el('div', 'g-btn ten' + (focus === 1 ? ' cur' : ''), `10連召喚<br><span class="gem">◆</span>${b.tenCost || GACHA_COST.ten}`);
@@ -100,7 +111,7 @@ const Gacha = {
         btns.append(one, ten);
         body.appendChild(btns);
         const links = U.el('div', 'g-links');
-        const info = U.el('div', 'g-info', b.kind === 'char' ? '提供キャラ一覧 ▸' : '提供武具一覧 ▸');
+        const info = U.el('div', 'g-info', b.kind === 'char' ? '提供キャラ一覧 ▸' : b.kind === 'skin' ? '提供衣装一覧 ▸' : '提供カード一覧 ▸');
         info.onclick = e => { e.stopPropagation(); showPool(b); };
         const hist = U.el('div', 'g-info', '召喚履歴 ▸');
         hist.onclick = e => { e.stopPropagation(); this.history(); };
@@ -156,6 +167,7 @@ const Gacha = {
 
   // 提供一覧 (所持していないものはシルエット)
   pool(b) {
+    if (b.kind === 'skin') return this.skinPoolView(b);
     return new Promise(res => {
       const L = Menu.screen(b.kind === 'char' ? '提供キャラ一覧' : '提供カード一覧');
       L.onClosed = res;
@@ -178,13 +190,28 @@ const Gacha = {
       L.body.querySelectorAll('[data-ch]').forEach(el => el.onclick = e => { e.stopPropagation(); Sound.play('ok'); Menu.charPreview(el.dataset.ch); });
     });
   },
+  skinPoolView(b) {
+    return new Promise(res => {
+      const L = Menu.screen('提供衣装一覧');
+      L.onClosed = res;
+      let html = '<div class="sc-note">仲間にしたキャラの衣装だけが出ます。キャラが増えると種類も増えます</div>';
+      for (const r of [5, 4]) {
+        const ids = skinPool(r);
+        const own = ids.filter(k => G.skins[k]).length;
+        html += `<div class="pool-sec"><span class="rar r${r}">${'★'.repeat(r)}</span> <small class="dim">所持 ${own}/${ids.length}</small></div><div class="pool-grid">`;
+        for (const k of ids) html += `<div class="pool-c ${G.skins[k] ? '' : 'no'}"><img src="${portraitURL(skinLook(k))}"><div>${U.esc(CHARS[SKINS[k].char].n)}</div><div class="dim">${U.esc(SKINS[k].n)}</div></div>`;
+        html += '</div>';
+      }
+      L.body.innerHTML = html;
+    });
+  },
   history() {
     const hs = (G.gacha.history || []).map((h, i) => Object.assign({ i }, h));
     return Menu.tabList({
       title: '召喚履歴 (最新50件)',
-      tabs: [{ n: 'すべて' }, { n: '★5', f: h => h.r === 5 }, { n: '★4', f: h => h.r === 4 }, { n: 'キャラ', f: h => h.k === 'char' }, { n: 'カード', f: h => h.k === 'card' }],
+      tabs: [{ n: 'すべて' }, { n: '★5', f: h => h.r === 5 }, { n: '★4', f: h => h.r === 4 }, { n: 'キャラ', f: h => h.k === 'char' }, { n: 'カード', f: h => h.k === 'card' }, { n: '衣装', f: h => h.k === 'skin' }],
       items: () => hs,
-      label: h => { const isC = h.k === 'char'; const d = isC ? CHARS[h.id] : (CARDS[h.id] || CARDS.blank); return `<img class="ico" src="${isC ? portraitURL(d.look) : cardArtURL(CARDS[h.id] ? h.id : 'blank')}"><span class="rar r${h.r}">${'★'.repeat(h.r)}</span> ${U.esc(d.n)}${isC ? '' : ' <small class="dim">カード</small>'}`; },
+      label: h => { const it = gItem(h.k === 'skin' && !SKINS[h.id] ? 'card' : h.k, h.id); return `<img class="ico" src="${it.img}"><span class="rar r${h.r}">${'★'.repeat(h.r)}</span> ${U.esc(it.n)}${h.k === 'card' ? ' <small class="dim">カード</small>' : h.k === 'skin' ? ' <small class="dim">衣装</small>' : ''}`; },
       empty: 'まだ召喚していない',
       onSelect: async () => { },
     });
@@ -203,6 +230,11 @@ const Gacha = {
         if (rar === 5 && b.pickup) id = pickupDraw(b);
         else id = pool[Math.floor(Math.random() * pool.length)];
         out.push({ kind: 'char', id, rar });
+      } else if (b.kind === 'skin') {
+        let pool = skinPool(rar);
+        if (!pool.length) { rar = rar === 5 ? 4 : 5; pool = skinPool(rar); }
+        id = pool[Math.floor(Math.random() * pool.length)];
+        out.push({ kind: 'skin', id, rar });
       } else {
         const pool = cardPool(rar);
         id = pool[Math.floor(Math.random() * pool.length)];
@@ -211,7 +243,7 @@ const Gacha = {
     }
     // 入手処理
     for (const o of out) {
-      o.res = o.kind === 'char' ? obtainChar(o.id) : obtainCard(o.id);
+      o.res = o.kind === 'char' ? obtainChar(o.id) : o.kind === 'skin' ? obtainSkin(o.id) : obtainCard(o.id);
       G.gacha.history.unshift({ k: o.kind, id: o.id, r: o.rar });
     }
     G.gacha.history = G.gacha.history.slice(0, 50);
@@ -261,11 +293,10 @@ const Gacha = {
           return c;
         });
         const fill = (c, r) => {
-          const isC = r.kind === 'char';
-          const d = isC ? CHARS[r.id] : CARDS[r.id];
-          const img = isC ? portraitURL(d.look) : cardArtURL(r.id);
+          const isC = r.kind !== 'card';
+          const it = gItem(r.kind, r.id);
           c.className = 'sm-card r' + r.rar + (isC ? ' ch' : ' eq');
-          c.innerHTML = `<img src="${img}"><div class="smc-st">${'★'.repeat(r.rar)}</div><div class="smc-n">${U.esc(d.n)}</div>${r.res.isNew ? '<div class="smc-new">NEW</div>' : `<div class="smc-res">${U.esc(r.res.text)}</div>`}`;
+          c.innerHTML = `<img src="${it.img}"><div class="smc-st">${'★'.repeat(r.rar)}</div><div class="smc-n">${U.esc(it.n)}</div>${r.res.isNew ? '<div class="smc-new">NEW</div>' : `<div class="smc-res">${U.esc(r.res.text)}</div>`}`;
         };
         for (let i = 0; i < results.length; i++) {
           const r = results[i];
@@ -286,9 +317,19 @@ const Gacha = {
   // ★5 / 新規キャラの全画面演出
   reveal(parent, r) {
     return new Promise(res => {
+      const box = U.el('div', 'sm-reveal r' + r.rar);
+      if (r.kind === 'skin') {
+        const s = SKINS[r.id], cd = CHARS[s.char];
+        box.innerHTML = `<div class="rv-rays"></div><img class="rv-img" src="${portraitURL(skinLook(r.id))}"><div class="rv-txt"><div class="rv-st">${'★'.repeat(r.rar)}</div><div class="rv-n">${U.esc(cd.n)}</div><div class="rv-t">衣装「${U.esc(s.n)}」</div><div class="rv-p">メニューのキャラ詳細で着替えられます</div>${r.res.isNew ? '<div class="rv-new">NEW!</div>' : `<div class="rv-new sub">${U.esc(r.res.text)}</div>`}</div>`;
+        parent.appendChild(box);
+        Sound.play('star5');
+        let done = false;
+        const fin = () => { if (done) return; done = true; box.classList.add('out'); setTimeout(() => { box.remove(); res(); }, 250); };
+        setTimeout(() => { box.onclick = e => { e.stopPropagation(); fin(); }; this._advance = fin; }, 500);
+        return;
+      }
       const isC = r.kind === 'char';
       const d = isC ? CHARS[r.id] : CARDS[r.id];
-      const box = U.el('div', 'sm-reveal r' + r.rar);
       const img = isC ? portraitURL(d.look) : cardArtURL(r.id);
       box.innerHTML = `<div class="rv-rays"></div>${isC ? `<img class="rv-img" src="${img}">` : `<div class="rv-card">${cardFaceHTML(r.id)}</div>`}<div class="rv-txt"><div class="rv-st">${'★'.repeat(r.rar)}</div><div class="rv-n">${U.esc(d.n)}</div>${isC ? `<div class="rv-t">${U.esc(d.title)}</div><div class="rv-el" style="background:${ELEM[d.elem].c}">${ELEM[d.elem].n}属性</div><div class="rv-p">「${U.esc(d.profile)}」</div>${RELICS[r.id] ? `<div class="rv-relic">レリック: <b>${U.esc(RELICS[r.id].n)}</b><br><small>${U.esc(RELICS[r.id].desc(relicLevel(r.id)))}</small></div>` : ''}` : `<div class="rv-t">共通カード・${CARD_TYPE[d.type]} ⚡${cardCost(r.id)}</div><div class="rv-p">${U.esc(cardDesc(r.id))}</div>`}${r.res.isNew ? '<div class="rv-new">NEW!</div>' : `<div class="rv-new sub">${U.esc(r.res.text)}</div>`}</div>`;
       parent.appendChild(box);

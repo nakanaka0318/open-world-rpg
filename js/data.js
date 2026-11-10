@@ -451,11 +451,45 @@ function equipPool(rar) { return Object.keys(EQUIPS).filter(k => EQUIPS[k].rar =
 // バナーはこの配列に1行足すだけで増やせます。
 //  show(G): 表示条件 / pickup: 確率UPの★5 / pickup4: 確率UPの★4 / elem: その属性のキャラが出やすい
 //  rates: [★5%, ★4%, ★3%] / tenCost: 10連の価格 / onlyTen: 10連のみ / once: 1回限り
+// ---------- 衣装 (スキン) ----------
+// 見た目だけが変わる。衣装ガチャか、絆レベル最大のごほうびで手に入る。
+// look の上書き: cloth(服の色) outfit(上半身の形: swim/yukata/dress/uniform/maid/gala) collar(セーラー襟の色)
+const SKIN_THEMES = {
+  uniform: { n: '制服', rar: 4, look: c => ({ outfit: 'uniform', cloth: '#f4f4fa', collar: U.shade(ELEM[c.elem].c, -0.45) }) },
+  yukata: { n: '浴衣', rar: 4, look: c => ({ outfit: 'yukata', cloth: U.shade(ELEM[c.elem].c, -0.15) }) },
+  swim: { n: '水着', rar: 4, look: c => ({ outfit: 'swim', cloth: U.shade(c.look.cloth, 0.15) }) },
+  maid: { n: 'メイド服', rar: 4, look: () => ({ outfit: 'maid', cloth: '#2a2a3e' }) },
+  dress: { n: 'ドレス', rar: 5, look: c => ({ outfit: 'dress', cloth: U.shade(c.look.cloth, 0.1) }) },
+  bond: { n: '絆のドレス', rar: 5, gacha: false, look: () => ({ outfit: 'gala', cloth: '#f4f0ff' }) },
+};
+const SKINS = {};
+for (const id in CHARS) for (const t in SKIN_THEMES) {
+  const th = SKIN_THEMES[t];
+  SKINS[id + '@' + t] = { id: id + '@' + t, char: id, theme: t, n: th.n, rar: th.rar, gacha: th.gacha !== false, look: th.look(CHARS[id]) };
+}
+function skinLook(sid) { const s = SKINS[sid]; return Object.assign({}, CHARS[s.char].look, s.look); }
+// 今の衣装を反映した見た目
+function charLook(id) {
+  const r = G && G.roster && G.roster[id];
+  return r && r.skin && SKINS[r.skin] && G.skins && G.skins[r.skin] ? skinLook(r.skin) : CHARS[id].look;
+}
+function skinsOf(id) { return Object.keys(SKINS).filter(k => SKINS[k].char === id); }
+// 衣装ガチャの対象: 仲間にしたキャラの衣装だけ出る
+function skinPool(rar) { return Object.keys(SKINS).filter(k => SKINS[k].gacha && SKINS[k].rar === rar && G.roster[SKINS[k].char]); }
+const SKIN_DUP_STONES = 50;
+function obtainSkin(sid) {
+  G.skins = G.skins || {};
+  if (G.skins[sid]) { G.stones += SKIN_DUP_STONES; return { isNew: false, text: `重複: 星晶石+${SKIN_DUP_STONES}` }; }
+  G.skins[sid] = 1;
+  return { isNew: true, text: 'NEW' };
+}
+
 const BANNER_DEFS = [
   { id: 'beginner', n: 'はじめての召喚', sub: '1回限り!10連が半額 ★4以上1枠確定', kind: 'char', rates: [3, 15, 82], tenCost: 250, onlyTen: true, once: true, color: '#ff9fd0', show: g => !g.gacha.beginnerDone, feature: () => weeklyPickup() },
   { id: 'pickup', n: () => CHARS[selPickup()].n + ' ピックアップ', sub: '好きな★5を選んでピックアップ!選んだ★5は他の★5の8倍出やすい', kind: 'char', rates: [3, 12, 85], pickup: () => selPickup(), selectable: true, color: () => ELEM[CHARS[selPickup()].elem].c },
   { id: 'limited', n: '【限定】星詠みの姫君', sub: '水晶の加護により解放!限定★5 ステラ登場', kind: 'char', rates: [3, 12, 85], pickup: 'stella', limited: true, color: '#ffe66d', show: g => g.crystals.length >= 2 },
   { id: 'elem', n: () => ELEM[weeklyElem()].n + '属性フェス', sub: () => '今週は' + ELEM[weeklyElem()].n + '属性のキャラが出やすい!(該当★4・★5の出現率UP)', kind: 'char', rates: [3, 12, 85], elem: () => weeklyElem(), color: () => ELEM[weeklyElem()].c, show: g => g.crystals.length >= 1, feature: () => charPool(5).find(k => CHARS[k].elem === weeklyElem()) || 'seres' },
+  { id: 'skin', n: '衣装ガチャ', sub: '仲間の衣装(見た目だけ変わる)が手に入る。仲間にしたキャラの衣装だけが出ます。重複は星晶石50個に', kind: 'skin', rates: [12, 88, 0], color: '#ff9fd0' },
   { id: 'card', n: 'カード召喚', sub: 'デッキに入れる共通カードが手に入る。同じカードが出ると+1強化', kind: 'card', rates: [4, 16, 80], color: '#c8d0e0' },
 ];
 // ピックアップ: 選んだキャラは他の★5の8倍の重みで抽選

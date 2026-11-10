@@ -533,3 +533,12 @@ body.in-battle .tower-layer { display: none; }
 .cutin.ult.show { animation: cutin 1.15s ease-out forwards; }
 .cutin.ult .ci-t b { font-size: 1.9em; color: #ffe66d; }
 .cutin.ult .ci-t small::after { content: ' 奥義'; color: #ffd94a; }
+/* 衣装 */
+.g-skins { position: absolute; left: 3%; top: 8%; width: 56%; display: flex; gap: 2%; align-items: flex-end; }
+.g-skins img { flex: 1; width: 30%; image-rendering: pixelated; border-radius: 8px; background: radial-gradient(circle at 50% 35%, #ffc8e8, #8a3a8a); border: 2px solid #fff; }
+.g-skins img:nth-child(1) { transform: translateY(-6%); }
+.skin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.2em, 1fr)); gap: .4em; margin: .3em 0; }
+.skin-c { text-align: center; border: 2px solid #3a3a6a; border-radius: 8px; padding: .25em; background: #1a1848; cursor: pointer; font-size: .8em; }
+.skin-c img { width: 100%; image-rendering: pixelated; border-radius: 6px; background: radial-gradient(circle at 50% 35%, #5a6ad8, #1a2058); }
+.skin-c.on { border-color: #ffd94a; background: #2e2660; }
+.skin-c.no { opacity: .35; filter: grayscale(.8); cursor: default; }

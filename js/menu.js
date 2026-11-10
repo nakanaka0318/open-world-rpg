@@ -9,7 +9,7 @@ const CRYSTAL_INFO = {
 
 function charLine(c, extra = '') {
   const d = CHARS[c.id], s = charStats(c);
-  return `<div class="cl"><img class="clp" src="${portraitURL(d.look)}"><div class="clt"><div class="cln"><span class="rar r${d.rar}">${'★'.repeat(d.rar)}</span> ${U.esc(d.n)} <span class="lb">${c.lb ? c.lb + '凸' : ''}</span></div><div class="cls"><span class="tel" style="color:${ELEM[d.elem].c}">${ELEM[d.elem].n}</span> Lv${c.lv} HP${Math.max(0, c.hp)}/${s.hp} 攻${s.atk} 魔${s.mag}</div></div>${extra}</div>`;
+  return `<div class="cl"><img class="clp" src="${portraitURL(charLook(c.id))}"><div class="clt"><div class="cln"><span class="rar r${d.rar}">${'★'.repeat(d.rar)}</span> ${U.esc(d.n)} <span class="lb">${c.lb ? c.lb + '凸' : ''}</span></div><div class="cls"><span class="tel" style="color:${ELEM[d.elem].c}">${ELEM[d.elem].n}</span> Lv${c.lv} HP${Math.max(0, c.hp)}/${s.hp} 攻${s.atk} 魔${s.mag}</div></div>${extra}</div>`;
 }
 
 const Menu = {
@@ -38,7 +38,7 @@ const Menu = {
       const foot = U.el('div', 'mn-foot');
       el.append(top, grid, foot);
       const render = () => {
-        top.innerHTML = `<div class="mn-party">${partyChars().map(c => { const d = CHARS[c.id], s = charStats(c); return `<div class="mp-c"><img src="${portraitURL(d.look)}"><div class="mp-n">${U.esc(d.n)}</div><div class="mp-l">Lv${c.lv}</div><div class="bar hp"><i style="width:${100 * Math.max(0, c.hp) / s.hp}%"></i></div></div>`; }).join('')}</div>`;
+        top.innerHTML = `<div class="mn-party">${partyChars().map(c => { const d = CHARS[c.id], s = charStats(c); return `<div class="mp-c"><img src="${portraitURL(charLook(c.id))}"><div class="mp-n">${U.esc(d.n)}</div><div class="mp-l">Lv${c.lv}</div><div class="bar hp"><i style="width:${100 * Math.max(0, c.hp) / s.hp}%"></i></div></div>`; }).join('')}</div>`;
         foot.innerHTML = `<span class="gem">◆</span>星晶石 ${G.stones}　<span class="gold">G</span> ${G.gold}　⏱ ${fmtTime(G.playtime)}　水晶 ${G.crystals.length}/4`;
       };
       const items = [
@@ -193,12 +193,25 @@ const Menu = {
       const c = G.roster[id], d = CHARS[id], s = charStats(c);
       const L = this.screen(d.n + ' のステータス', { cls: 'status' });
       L.onClosed = res;
-      L.body.innerHTML = `<div class="st-top"><img class="st-port" src="${portraitURL(d.look)}"><div class="st-info"><div class="rar r${d.rar}">${'★'.repeat(d.rar)}${c.lb ? ` <span class="lb">${c.lb}凸</span>` : ''}</div><div class="st-n">${U.esc(d.n)}</div><div class="st-t">${U.esc(d.title)}</div><div class="st-e"><span style="background:${ELEM[d.elem].c}">${ELEM[d.elem].n}</span> ${U.esc(d.role)}</div><div>Lv ${c.lv}　EXP ${c.exp}/${expNext(c.lv)}</div></div></div>
+      const render = () => {
+      L.body.innerHTML = `<div class="st-top"><img class="st-port" src="${portraitURL(charLook(id))}"><div class="st-info"><div class="rar r${d.rar}">${'★'.repeat(d.rar)}${c.lb ? ` <span class="lb">${c.lb}凸</span>` : ''}</div><div class="st-n">${U.esc(d.n)}</div><div class="st-t">${U.esc(d.title)}</div><div class="st-e"><span style="background:${ELEM[d.elem].c}">${ELEM[d.elem].n}</span> ${U.esc(d.role)}</div><div>Lv ${c.lv}　EXP ${c.exp}/${expNext(c.lv)}</div></div></div>
       <div class="st-grid">${['hp', 'atk', 'def', 'mag', 'spd'].map(k => `<div><span>${STAT_N[k]}</span><b>${k === 'hp' ? Math.max(0, c.hp) + '/' : ''}${s[k]}</b></div>`).join('')}</div>
       ${RELICS[id] ? `<div class="st-sec">レリック <small class="dim">(パーティにいると戦闘中に発動。凸で強化)</small></div>${relicHTML(id)}` : ''}${ultHTML(id)}
       <div class="st-sec">固有カード <small class="dim">(凸で強化。5凸でコスト2以上が-1)</small></div>
       <div class="deck-grid">${charCards(id).map(cid => cardFaceHTML(cid)).join('')}</div>
+      <div class="st-sec">衣装 <small class="dim">(タップで着替え。見た目だけ変わる。衣装ガチャで入手)</small></div>
+      <div class="skin-grid"><div class="skin-c${!c.skin ? ' on' : ''}" data-sk=""><img src="${portraitURL(d.look)}"><div>いつもの服</div></div>${skinsOf(id).map(k => `<div class="skin-c${c.skin === k ? ' on' : ''}${G.skins[k] ? '' : ' no'}" data-sk="${k}"><img src="${portraitURL(skinLook(k))}"><div>${G.skins[k] ? U.esc(SKINS[k].n) : '？？？'}</div></div>`).join('')}</div>
       <div class="st-prof">${U.esc(d.profile)}</div>`;
+      L.body.querySelectorAll('[data-sk]').forEach(el => el.onclick = e => {
+        e.stopPropagation();
+        const k = el.dataset.sk;
+        if (k && !G.skins[k]) { Sound.play('buzz'); UI.toast(SKINS[k].gacha ? '衣装ガチャで手に入る' : '絆レベルを最大にすると手に入る'); return; }
+        c.skin = k || null; Sound.play('ok');
+        const y = L.body.scrollTop; render(); L.body.scrollTop = y;
+        Game.autoSave && Game.autoSave(true);
+      });
+      };
+      render();
     });
   },
 

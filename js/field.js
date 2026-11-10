@@ -502,7 +502,7 @@ const Field = {
     if (o === this.p) {
       if (this.invuln > 0 && Math.floor(this.time * 12) % 2) return;
       const lead = G.roster[G.party[0]] || G.roster.aria;
-      const look = CHARS[lead.id].look;
+      const look = charLook(lead.id);
       const fr = o.moving ? (o.steps % 2 ? 1 : 2) : 0;
       this.shadow(ctx, sx, sy);
       ctx.drawImage(girlSprite(look, o.dir, o.moving && o.t < 0.6 ? fr : 0), sx, sy - 2);

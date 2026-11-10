@@ -231,7 +231,7 @@ function cardDesc(cid, ops) {
 const CARD_ICON = {};
 function cardArtURL(cid) {
   const c = CARDS[cid];
-  if (c.owner && CHARS[c.owner]) return portraitURL(CHARS[c.owner].look);
+  if (c.owner && CHARS[c.owner]) return portraitURL(charLook(c.owner));
   if (CARD_ICON[cid]) return CARD_ICON[cid];
   const main = c.ops[0] ? c.ops[0].k : 'b';
   const kind = c.blank ? 'ring' : 'dD'.includes(main) ? 'sword' : main === 'b' || main === 't' ? 'armor' : 'hg'.includes(main) ? 'amulet' : 'ce'.includes(main) ? 'staff' : 'tiara';

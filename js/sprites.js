@@ -748,6 +748,15 @@ const PORT_BASE = [
   '...oCCCCCCCCCCcAAcCCCCCCCCCCo',
   '...oCCCCCCCCCCCccCCCCCCCCCCCo',
 ];
+// 衣装(スキン)の上半身。立ち絵の下5行を差し替える (左右対称)
+const OUTFITS = {
+  swim: ['......ooSSSSSCSSSSCSSSSSoo', '.....oSSSSSSSCSSSSCSSSSSSSo', '....oSSSSSSSSCSSSSCSSSSSSSSo', '...oSSSSSSSScCCccCCcSSSSSSSSo', '...oSSSSSSSSScCccCcSSSSSSSSSo'],
+  yukata: ['......ooCACCcXSSSSXcCCACoo', '.....oCCCCACCcXSSXcCCACCCCo', '....oCACCCCCCCcXXcCCCCCCCACo', '...oCCCCACCCCCCccCCCCCCACCCCo', '...oCCACCCCACCCCCCCCACCCCACCo'],
+  dress: ['......ooSSSSSSSSSSSSSSSSoo', '.....oSSSSSSSGSSSSGSSSSSSSo', '....oXSSSSSSSSGAAGSSSSSSSSXo', '...oXCXCXCXCXCXCCXCXCXCXCXCXo', '...oCCCYCCCCCCCCCCCCCCCCYCCCo'],
+  uniform: ['......ooNNNNNXSSSSXNNNNNoo', '.....oCNNNNNNNXSSXNNNNNNNCo', '....oCCNNNNNNNNRRNNNNNNNNCCo', '...oCCCCCNNNNNRRRRNNNNNCCCCCo', '...oCCCCCCCCNNNRRNNNCCCCCCCCo'],
+  maid: ['......ooCCCCcXSSSSXcCCCCoo', '.....oCCCCCCcXXRRXXcCCCCCCo', '....oCCCCCCCXXXXXXXXCCCCCCCo', '...oCCCCCCXXXXXXXXXXXXCCCCCCo', '...oCCCCCXXXXXXXXXXXXXXCCCCCo'],
+  gala: ['......ooSSSSSSSSSSSSSSSSoo', '.....oSSSSSSSYSSSSYSSSSSSSo', '....oXSSSSSSSSYGGYSSSSSSSSXo', '...oXCXCYCXCXCXCCXCXCXCYCXCXo', '...oCCYCCCCCYCCCCCCYCCCCCYCCo'],
+};
 const HAIR_FRONT = [
   '', '',
   '...........oooooooooo',
@@ -1489,7 +1498,7 @@ function portrait(look) {
     S: '#fde3cf', s: '#f0bfa0', P: '#f7a1a8', E: '#2a1d3a', W: '#ffffff', m: '#c2565e',
     I: look.eye, i: U.shade(look.eye, 0.45),
     C: look.cloth, c: U.shade(look.cloth, -0.3), A: look.acc, a: U.shade(look.acc, -0.3), X: '#ffffff',
-    G: '#f5c542', R: '#e43b44', Y: '#ffe66d', K: look.hat || '#3a2a5a', k: U.shade(look.hat || '#3a2a5a', -0.4),
+    G: '#f5c542', R: '#e43b44', Y: '#ffe66d', K: look.hat || '#3a2a5a', k: U.shade(look.hat || '#3a2a5a', -0.4), N: look.collar || '#2a3a6a',
   };
   const c = mkCanvas(32, 32);
   const x = c.getContext('2d');
@@ -1501,6 +1510,7 @@ function portrait(look) {
   const back = HAIR_BACK[style === 'twin' || style === 'pony' ? 'bob' : style];
   paint(x, back, pal, 0, 0, false, 32);
   paint(x, PORT_BASE, pal, 0, 0, false, 32);
+  if (look.outfit && OUTFITS[look.outfit]) paint(x, OUTFITS[look.outfit], pal, 0, 27);
   paint(x, HAIR_FRONT, pal, 0, 0, false, 32);
   if (look.accType && ACC[look.accType]) {
     const a = ACC[look.accType];

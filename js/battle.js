@@ -195,7 +195,7 @@ const Battle = {
   refresh() {
     const P = this.P;
     // パーティ
-    this.partyEl.innerHTML = `<div class="cbp-ports">${[0, 1, 2, 3].map(i => { const c = this.party[i]; return c ? `<span class="cbp-pc"><img src="${portraitURL(CHARS[c.id].look)}">${RELICS[c.id] ? `<img class="cbp-rl" src="${relicIconURL(c.id)}" title="${U.esc(RELICS[c.id].n)}">` : ''}</span>` : '<i></i>'; }).join('')}</div>
+    this.partyEl.innerHTML = `<div class="cbp-ports">${[0, 1, 2, 3].map(i => { const c = this.party[i]; return c ? `<span class="cbp-pc"><img src="${portraitURL(charLook(c.id))}">${RELICS[c.id] ? `<img class="cbp-rl" src="${relicIconURL(c.id)}" title="${U.esc(RELICS[c.id].n)}">` : ''}</span>` : '<i></i>'; }).join('')}</div>
       <div class="cbp-main"><div class="cbp-hp${P.hp < P.max * 0.3 ? ' low' : ''}"><i style="width:${100 * P.hp / P.max}%"></i><span>HP ${P.hp} / ${P.max}</span></div><div class="cbp-st">${P.block ? `<span class="blk">ブロック${P.block}</span>` : ''}${this.stChips(P.st)}</div></div>${this.ultIds.length ? `<div class="cbp-ult${this.ult >= ULT_MAX ? ' full' : ''}"><i style="height:${100 * this.ult / ULT_MAX}%"></i><span>${this.ult >= ULT_MAX ? '奥義!' : '奥義<br>' + this.ult + '/' + ULT_MAX}</span></div>` : ''}`;
     const ub = this.partyEl.querySelector('.cbp-ult');
     if (ub) ub.onclick = ev => { ev.stopPropagation(); if (this.canAct()) this.openUlt(); };
@@ -451,7 +451,7 @@ const Battle = {
     if (this.ultPick < 0) return;
     this.ultEl.innerHTML = '<div class="up-t">奥義を使うキャラを選ぶ</div>' + this.ultIds.map((id, i) => {
       const cid = 'ult_' + id;
-      return `<div class="up-c${i === this.ultPick ? ' sel' : ''}" data-i="${i}"><img src="${portraitURL(CHARS[id].look)}"><div><small>${U.esc(CHARS[id].n)}</small><b>${U.esc(CARDS[cid].n)}</b><br><span>${U.esc(cardDesc(cid))}</span></div></div>`;
+      return `<div class="up-c${i === this.ultPick ? ' sel' : ''}" data-i="${i}"><img src="${portraitURL(charLook(id))}"><div><small>${U.esc(CHARS[id].n)}</small><b>${U.esc(CARDS[cid].n)}</b><br><span>${U.esc(cardDesc(cid))}</span></div></div>`;
     }).join('') + '<div class="up-x">やめる</div>';
     this.ultEl.querySelectorAll('.up-c').forEach(d => d.onclick = ev => { ev.stopPropagation(); const i = +d.dataset.i; if (this.ultPick === i) this.useUlt(this.ultIds[i]); else { this.ultPick = i; Sound.play('cursor'); this.drawUltPick(); } });
     this.ultEl.querySelector('.up-x').onclick = ev => { ev.stopPropagation(); this.ultPick = -1; Sound.play('cancel'); this.drawUltPick(); };
@@ -494,7 +494,7 @@ const Battle = {
     const c = CARDS[cid];
     const owner = c.owner && CHARS[c.owner];
     this.cutEl.className = 'cutin' + (big ? ' ult' : '');
-    this.cutEl.innerHTML = owner ? `<img src="${portraitURL(owner.look)}"><div class="ci-t"><small>${U.esc(owner.n)}</small><b>${U.esc(c.n)}</b></div>` : `<div class="ci-t solo"><b>${U.esc(c.n)}</b></div>`;
+    this.cutEl.innerHTML = owner ? `<img src="${portraitURL(charLook(c.owner))}"><div class="ci-t"><small>${U.esc(owner.n)}</small><b>${U.esc(c.n)}</b></div>` : `<div class="ci-t solo"><b>${U.esc(c.n)}</b></div>`;
     this.cutEl.style.setProperty('--cc', owner ? ELEM[owner.elem].c : '#c8d0ff');
     void this.cutEl.offsetWidth;
     this.cutEl.classList.add('show', c.type === 'a' ? 'atk' : 'skl');
@@ -822,7 +822,7 @@ const Battle = {
     if (stones) html += `<div class="rrow st"><span>星晶石</span><b>+${stones}</b></div>`;
     if (drops.length) html += `<div class="rrow"><span>アイテム</span><b>${drops.map(d => U.esc(ITEMS[d].n)).join('、')}</b></div>`;
     html += `<div class="rrow"><span>残りHP</span><b>${this.P.hp}/${this.P.max}</b></div>`;
-    for (const m of lvMsgs) html += `<div class="rlv"><img src="${portraitURL(CHARS[m.c.id].look)}"><div><b>${U.esc(CHARS[m.c.id].n)}</b> は レベル${m.lv} になった!<br><small>カードの威力が上がった</small></div></div>`;
+    for (const m of lvMsgs) html += `<div class="rlv"><img src="${portraitURL(charLook(m.c.id))}"><div><b>${U.esc(CHARS[m.c.id].n)}</b> は レベル${m.lv} になった!<br><small>カードの威力が上がった</small></div></div>`;
     box.innerHTML = html;
     this.layer.el.appendChild(box);
     if (lvMsgs.length) setTimeout(() => Sound.play('levelup'), 700);

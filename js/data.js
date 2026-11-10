@@ -455,7 +455,7 @@ function equipPool(rar) { return Object.keys(EQUIPS).filter(k => EQUIPS[k].rar =
 // 見た目だけが変わる。衣装ガチャか、絆レベル最大のごほうびで手に入る。
 // look の上書き: cloth(服の色) outfit(上半身の形: swim/yukata/dress/uniform/maid/gala) collar(セーラー襟の色)
 const SKIN_THEMES = {
-  uniform: { n: '制服', rar: 4, look: c => ({ outfit: 'uniform', cloth: '#f4f4fa', collar: U.shade(ELEM[c.elem].c, -0.45) }) },
+  uniform: { n: '制服', rar: 4, look: c => ({ outfit: 'uniform', cloth: '#f4f4fa', collar: { fire: '#8a2030', water: '#203a7a', wind: '#205a40', earth: '#5a3a20', light: '#2a3a6a', dark: '#3a2050' }[c.elem] || '#2a3a6a' }) },
   yukata: { n: '浴衣', rar: 4, look: c => ({ outfit: 'yukata', cloth: U.shade(ELEM[c.elem].c, -0.15) }) },
   swim: { n: '水着', rar: 4, look: c => ({ outfit: 'swim', cloth: U.shade(ELEM[c.elem].c, 0.05) }) },
   maid: { n: 'メイド服', rar: 4, look: () => ({ outfit: 'maid', cloth: '#2a2a3e' }) },
@@ -474,6 +474,7 @@ Object.assign(SKIN_THEMES, {
   bikini: { n: 'ビキニ', rar: 5, gacha: false, lover: true, look: c => ({ outfit: 'bikini', cloth: U.shade(ELEM[c.elem].c, 0.1) }) },
   slitdress: { n: '夜会のドレス', rar: 5, gacha: false, lover: true, look: () => ({ outfit: 'slitdress', cloth: '#8a1a3a' }) },
 });
+for (const id in CHARS) CHARS[id].look.cid = id; // 全身絵でキャラごとの普段着・体型を選ぶため
 const SKINS = {};
 for (const id in CHARS) for (const t in SKIN_THEMES) {
   const th = SKIN_THEMES[t];

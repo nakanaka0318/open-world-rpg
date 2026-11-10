@@ -22,6 +22,8 @@ const SP = process.env.SP || '.';
   await p.evaluate(() => { while (UI.stack.length) UI.pop(UI.stack[UI.stack.length - 1]); G.skins['yumeno@swim'] = 1; G.skins['yumeno@dress'] = 1; G.skins['yumeno@uniform'] = 1; Menu.status('yumeno'); });
   await p.waitForTimeout(400);
   await p.evaluate(() => { document.querySelector('[data-sk="yumeno@uniform"]').click(); });
+  await p.waitForTimeout(200);
+  await p.evaluate(() => { document.querySelector('[data-sk="yumeno@uniform"]').click(); });
   await p.waitForTimeout(300);
   await p.evaluate(() => { const el = document.querySelector('.skin-grid'); el.scrollIntoView(); });
   await p.screenshot({ path: SP + '/S_status.png' });

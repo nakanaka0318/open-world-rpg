@@ -1,0 +1,5 @@
+<!doctype html><html><body style="background:#3a3a5a;margin:0"><canvas id="c" width="1800" height="1000"></canvas>
+<script src="../js/util.js"></script><script src="../js/sprites.js"></script><script src="../js/fullbody.js"></script><script src="../js/data.js"></script>
+<script>buildSprites();const c=document.getElementById('c').getContext('2d');c.imageSmoothingEnabled=false;
+const ids=Object.keys(CHARS);ids.forEach((id,i)=>c.drawImage(fullBody(CHARS[id].look),(i%18)*100,Math.floor(i/18)*270,128*0.75*1.0,256*0.75*1.0));
+</script></body></html>

@@ -1,0 +1,6 @@
+<!doctype html><html><body style="background:#3a3a5a;margin:0"><canvas id="c" width="1800" height="800"></canvas>
+<script src="../js/util.js"></script><script src="../js/sprites.js"></script><script src="../js/fullbody.js"></script><script src="../js/data.js"></script>
+<script>buildSprites();const c=document.getElementById('c').getContext('2d');c.imageSmoothingEnabled=false;
+const ids=(location.hash.slice(1)||'seres').split(',');const th=['','uniform','yukata','swim','maid','dress','bond','bunny','bikini','slitdress'];
+ids.forEach((id,r)=>th.forEach((t,i)=>{const lk=t?(SKINS[id+'@'+t]?skinLook(id+'@'+t):null):CHARS[id].look;if(lk)c.drawImage(fullBody(lk),i*180,r*400,128,256);}));
+</script></body></html>

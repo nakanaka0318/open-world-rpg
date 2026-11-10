@@ -457,7 +457,7 @@ function equipPool(rar) { return Object.keys(EQUIPS).filter(k => EQUIPS[k].rar =
 const SKIN_THEMES = {
   uniform: { n: '制服', rar: 4, look: c => ({ outfit: 'uniform', cloth: '#f4f4fa', collar: U.shade(ELEM[c.elem].c, -0.45) }) },
   yukata: { n: '浴衣', rar: 4, look: c => ({ outfit: 'yukata', cloth: U.shade(ELEM[c.elem].c, -0.15) }) },
-  swim: { n: '水着', rar: 4, look: c => ({ outfit: 'swim', cloth: U.shade(c.look.cloth, 0.15) }) },
+  swim: { n: '水着', rar: 4, look: c => ({ outfit: 'swim', cloth: U.shade(ELEM[c.elem].c, 0.05) }) },
   maid: { n: 'メイド服', rar: 4, look: () => ({ outfit: 'maid', cloth: '#2a2a3e' }) },
   dress: { n: 'ドレス', rar: 5, look: c => ({ outfit: 'dress', cloth: U.shade(c.look.cloth, 0.1) }) },
   bond: { n: '絆のドレス', rar: 5, gacha: false, look: () => ({ outfit: 'gala', cloth: '#f4f0ff' }) },

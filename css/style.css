@@ -549,3 +549,14 @@ body.in-battle .tower-layer { display: none; }
 .bond i u { display: block; height: 100%; background: linear-gradient(#ffb8e0, #ff5aa0); text-decoration: none; }
 .bond small { color: #ffd94a; font-weight: bold; }
 .bond.lover b { color: #ff5aa0; text-shadow: 0 0 6px #ff8ac0; }
+/* 全身プレビュー */
+.fb-wrap { display: flex; gap: .8em; align-items: center; margin: .4em 0; padding: .4em; border-radius: 10px; background: radial-gradient(ellipse at 30% 60%, #4a4a9a, #141238 75%); border: 2px solid #5a5aa8; }
+.fb-img { width: 128px; height: 256px; image-rendering: pixelated; flex: 0 0 auto; filter: drop-shadow(0 4px 0 rgba(0,0,0,.35)); }
+.fb-info { display: flex; flex-direction: column; gap: .4em; min-width: 0; }
+.fb-info b { font-size: 1.2em; color: #ffe66d; }
+.fb-info small { color: #c8c8e8; }
+.fb-lock { color: #ff9a9a; font-size: .85em; } .fb-on { color: #7fe87a; font-size: .85em; }
+.fb-wear { align-self: flex-start; }
+@media (min-width: 700px) { .fb-img { width: 192px; height: 384px; } }
+.rv-img.rv-fb { width: auto; aspect-ratio: auto; height: 62vh; max-height: 520px; image-rendering: pixelated; }
+@media (orientation: portrait) { .rv-img.rv-fb { width: auto; height: 46vh; } }

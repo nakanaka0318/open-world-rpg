@@ -320,7 +320,7 @@ const Gacha = {
       const box = U.el('div', 'sm-reveal r' + r.rar);
       if (r.kind === 'skin') {
         const s = SKINS[r.id], cd = CHARS[s.char];
-        box.innerHTML = `<div class="rv-rays"></div><img class="rv-img" src="${portraitURL(skinLook(r.id))}"><div class="rv-txt"><div class="rv-st">${'★'.repeat(r.rar)}</div><div class="rv-n">${U.esc(cd.n)}</div><div class="rv-t">衣装「${U.esc(s.n)}」</div><div class="rv-p">メニューのキャラ詳細で着替えられます</div>${r.res.isNew ? '<div class="rv-new">NEW!</div>' : `<div class="rv-new sub">${U.esc(r.res.text)}</div>`}</div>`;
+        box.innerHTML = `<div class="rv-rays"></div><img class="rv-img rv-fb" src="${fullBodyURL(skinLook(r.id))}"><div class="rv-txt"><div class="rv-st">${'★'.repeat(r.rar)}</div><div class="rv-n">${U.esc(cd.n)}</div><div class="rv-t">衣装「${U.esc(s.n)}」</div><div class="rv-p">メニューのキャラ詳細で着替えられます</div>${r.res.isNew ? '<div class="rv-new">NEW!</div>' : `<div class="rv-new sub">${U.esc(r.res.text)}</div>`}</div>`;
         parent.appendChild(box);
         Sound.play('star5');
         let done = false;

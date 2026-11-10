@@ -49,6 +49,10 @@ const UNIQUE_CARDS = {
   rapidhat: [['トランプ投げ', 'a', 1, 'd5 y1'], ['シルクハットの仕掛け', 's', 1, 'y3'], ['タネも仕掛けも', 's', 0, 'k1 c1'], ['うさぎ急便', 's', 1, 'c2 y1'], ['イリュージョン・フィナーレ', 'a', 2, 'o5']],
   viola: [['血の刃', 'a', 1, 'x4 d13'], ['真紅の大鎌', 'a', 2, 'x10 D17'], ['推理:弱点看破', 's', 0, 'v3 c1'], ['吸血', 'a', 1, 'r7'], ['終幕の宣告', 'a', 2, 'x6 u14 !L']],
   aurora: [['極光の詠唱', 'a', 2, 'D8 !R !G'], ['オーロラカーテン', 's', 1, 'b9 !R'], ['星屑の矢', 'a', 1, 'd7'], ['魔力集中', 's', 1, 'j1 c1'], ['極光天輪', 'a', 3, 'd20 !R !G']],
+  luka: [['カトラス', 'a', 1, 'd9'], ['一斉砲撃', 'a', 2, 'D10x2'], ['突撃ラッパ', 's', 1, 's2 c1'], ['面舵いっぱい', 's', 1, 'b9 c1'], ['主砲発射', 'a', 3, 'D26 !E']],
+  yumeno: [['コマンド入力', 's', 0, 'k1 c1'], ['コンボ技', 'a', 1, 'o3'], ['ハメ技', 'a', 1, 'd5 w1 v1'], ['セーブポイント', 's', 1, 'b10 h5'], ['徹夜プレイ', 's', 0, 'x5 e2 c1 !E']],
+  fuuri: [['竜爪連撃', 'a', 1, 'd3x3'], ['疾風の羽ばたき', 'a', 1, 'D5'], ['竜の加速', 's', 0, 'c1 e1 !E'], ['翼の守り', 's', 1, 'b7'], ['竜の吐息', 'a', 2, 'D8 w1']],
+  mokomo: [['ふわふわ雲', 's', 1, 'b10'], ['雲隠れ', 's', 1, 'b6 W1'], ['雷雲', 'a', 1, 'd6 v1'], ['雨雲', 's', 1, 'P3'], ['もくもく防壁', 's', 2, 'b16 t2']],
   chloe: [['ひっかき', 'a', 1, 'd3x2'], ['シャドウ', 'a', 1, 'd6'], ['しのび足', 's', 1, 'b6'], ['カース', 's', 1, 'w1 v1'], ['猫の気まぐれ', 's', 0, 'c1 e1 !E']],
 };
 
@@ -78,8 +82,28 @@ const COMMON_CARDS = {
   c_dragon: ['竜の血', 's', 1, 's3 !E', 5],
   c_thousand: ['千本突き', 'a', 2, 'd3x6', 5],
   c_aegis: ['無敵の盾', 's', 2, 'b24', 5],
+  c_jab: ['ジャブ', 'a', 0, 'd4', 3],
+  c_guardup: ['身構え', 's', 0, 'b4 !E', 3],
+  c_ember: ['火の粉', 'a', 1, 'D3 v1', 3],
+  c_chain: ['連携攻撃', 'a', 1, 'o2', 4],
+  c_vampire: ['吸血の牙', 'a', 1, 'r7', 4],
+  c_ward: ['守りの結界', 's', 1, 'b8 f1 !E', 4],
+  c_storm: ['雷鳴', 'a', 2, 'D9 W1', 4],
+  c_lastresort: ['背水の一撃', 'a', 1, 'd10 !L', 4],
+  c_meteor: ['メテオ', 'a', 3, 'D24', 5],
+  c_combo: ['乱舞', 'a', 1, 'o4 !E', 5],
+  c_sanctuary: ['聖域', 's', 2, 'b14 g5 !E', 5],
 };
 const STARTER_DECK = ['c_strike', 'c_defend', 'c_quick', 'c_bandage', 'c_focus'];
+// ★5の奥義 (パーティ共有ゲージが満タンになると、★5の中から選んで放つ)
+const ULTIMATES = {
+  seres: ['聖騎士の審判', 'a', 0, 'D18 b20'], noa: ['終焉の夜', 'a', 0, 'D16 P8 W2'], homura: ['紅蓮・鳳凰天翔', 'a', 0, 'D14x2 s2'],
+  sylphy: ['精霊王の嵐', 'a', 0, 'D7x4'], stella: ['星詠みの奇跡', 's', 0, 'h40 s3 b15'], marina: ['海神の大合唱', 'a', 0, 'D16 h20'],
+  terra: ['竜王覚醒', 'a', 0, 'd45 s3'], kanae: ['最高のご奉仕', 'a', 0, 'z20 e2'], lumia: ['全身全霊', 'a', 0, 'o10 s2'],
+  misuzu: ['陽だまりの抱擁', 's', 0, 'b40 h20 g6'], rapidhat: ['ショウタイム', 's', 0, 'y5 k2 e1'], viola: ['真紅の夜会', 'a', 0, 'x10 u40'],
+  aurora: ['極光オーロラ・ノヴァ', 'a', 0, 'D30'], luka: ['全砲門開放', 'a', 0, 'D12x3'], yumeno: ['ノーミスクリア', 'a', 0, 'o8 c2 e1'],
+};
+const ULT_MAX = 12;
 // 星界の塔でしか手に入らない武器カード (共通カード枠に入れられる。ガチャには出ない)
 Object.assign(COMMON_CARDS, {
   w_skysword: ['星空の大剣', 'a', 2, 'D20', 5],
@@ -130,6 +154,11 @@ function parseFx(str) {
     const [n, type, cost, fx] = TRICK_CARDS[id];
     const p = parseFx(fx);
     CARDS[id] = { id, n, type, cost, ops: p.ops, flags: p.flags, owner: 'rapidhat', rar: 5, token: true };
+  }
+  for (const id in ULTIMATES) {
+    const [n, type, cost, fx] = ULTIMATES[id];
+    const p = parseFx(fx);
+    CARDS['ult_' + id] = { id: 'ult_' + id, n, type, cost, ops: p.ops, flags: p.flags, owner: id, rar: 5, ult: true };
   }
   CARDS.blank = { id: 'blank', n: '空白のカード', type: 's', cost: -1, ops: [], flags: {}, owner: null, rar: 1, blank: true };
 })();
@@ -210,6 +239,11 @@ function cardArtURL(cid) {
   return (CARD_ICON[cid] = iconCanvas(kind, col).toDataURL());
 }
 // カードの見た目 (HTML)
+function ultHTML(id) {
+  const cid = 'ult_' + id;
+  if (!CARDS[cid]) return '';
+  return `<div class="st-sec">奥義 <small class="dim">(カードを使うとパーティ共有の奥義ゲージがたまる。満タンで★5の奥義を1つ放てる)</small></div><div class="sc-note"><b>${U.esc(CARDS[cid].n)}</b> ${U.esc(cardDesc(cid))}</div>`;
+}
 function cardFaceHTML(cid, opts = {}) {
   const c = CARDS[cid];
   const L = cardLevel(cid);

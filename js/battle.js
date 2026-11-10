@@ -78,6 +78,9 @@ const Battle = {
     this.P = { hp: Math.max(1, hp), max: maxhp, block: 0, st: {}, gained: 0 };
     this.relics = this.party.filter(c => RELICS[c.id]).map(c => ({ id: c.id, L: c.lb || 0, r: RELICS[c.id] })).concat(opts.extraRelics || []);
     this.atkCount = 0;
+    // 奥義 (パーティの★5が使える。ゲージはパーティで共有)
+    this.ultIds = this.party.filter(c => CARDS['ult_' + c.id]).map(c => c.id);
+    this.ult = Math.min(ULT_MAX, opts.ultStart || 0); this.ultPick = -1;
     // デッキ
     const deck = [];
     if (opts.deck) deck.push(...opts.deck);
@@ -140,7 +143,8 @@ const Battle = {
     btns.append(this.energyEl, this.drawBtn, this.discBtn, this.itemBtn, this.endBtn);
     this.panel.append(this.partyEl, this.infoEl, this.handEl, btns);
     this.cutEl = U.el('div', 'cutin');
-    el.append(top, this.enEl, this.popEl, this.panel, this.cutEl);
+    this.ultEl = U.el('div', 'ult-pick hidden');
+    el.append(top, this.enEl, this.popEl, this.panel, this.ultEl, this.cutEl);
     // 敵のオーバーレイ
     this.enemies.forEach((e, i) => {
       const o = U.el('div', 'cb-en');
@@ -153,6 +157,14 @@ const Battle = {
       el, handle: k => {
         if (this.onAny && (k === 'a' || k === 'b')) { this.onAny(); return; }
         if (!this.canAct()) { if (k === 'menu') this.toggleAuto(); return; }
+        if (this.ultPick >= 0) {
+          const n = this.ultIds.length;
+          if (k === 'left' || k === 'up') { this.ultPick = (this.ultPick + n - 1) % n; Sound.play('cursor'); this.drawUltPick(); }
+          else if (k === 'right' || k === 'down') { this.ultPick = (this.ultPick + 1) % n; Sound.play('cursor'); this.drawUltPick(); }
+          else if (k === 'a') this.useUlt(this.ultIds[this.ultPick]);
+          else if (k === 'b' || k === 'menu') { this.ultPick = -1; Sound.play('cancel'); this.drawUltPick(); }
+          return;
+        }
         if (k === 'menu') { this.endTurn(); return; }
         if (this.targeting) {
           const al = this.aliveIdx();
@@ -162,7 +174,7 @@ const Battle = {
           return;
         }
         if (k === 'left' || k === 'right') { if (!this.hand.length) return; this.sel = this.sel < 0 ? 0 : (this.sel + (k === 'left' ? this.hand.length - 1 : 1)) % this.hand.length; Sound.play('cursor'); this.refresh(); }
-        else if (k === 'up') { if (this.sel < 0 && this.hand.length) { this.sel = 0; this.refresh(); } }
+        else if (k === 'up') { if (this.ult >= ULT_MAX && this.ultIds.length) this.openUlt(); else if (this.sel < 0 && this.hand.length) { this.sel = 0; this.refresh(); } }
         else if (k === 'a') { if (this.sel < 0) { if (this.hand.length) { this.sel = 0; this.refresh(); } } else this.tapCard(this.sel); }
         else if (k === 'b' || k === 'down') { this.sel = -1; this.targeting = false; this.refresh(); }
       },
@@ -184,7 +196,10 @@ const Battle = {
     const P = this.P;
     // パーティ
     this.partyEl.innerHTML = `<div class="cbp-ports">${[0, 1, 2, 3].map(i => { const c = this.party[i]; return c ? `<span class="cbp-pc"><img src="${portraitURL(CHARS[c.id].look)}">${RELICS[c.id] ? `<img class="cbp-rl" src="${relicIconURL(c.id)}" title="${U.esc(RELICS[c.id].n)}">` : ''}</span>` : '<i></i>'; }).join('')}</div>
-      <div class="cbp-main"><div class="cbp-hp${P.hp < P.max * 0.3 ? ' low' : ''}"><i style="width:${100 * P.hp / P.max}%"></i><span>HP ${P.hp} / ${P.max}</span></div><div class="cbp-st">${P.block ? `<span class="blk">ブロック${P.block}</span>` : ''}${this.stChips(P.st)}</div></div>`;
+      <div class="cbp-main"><div class="cbp-hp${P.hp < P.max * 0.3 ? ' low' : ''}"><i style="width:${100 * P.hp / P.max}%"></i><span>HP ${P.hp} / ${P.max}</span></div><div class="cbp-st">${P.block ? `<span class="blk">ブロック${P.block}</span>` : ''}${this.stChips(P.st)}</div></div>${this.ultIds.length ? `<div class="cbp-ult${this.ult >= ULT_MAX ? ' full' : ''}"><i style="height:${100 * this.ult / ULT_MAX}%"></i><span>${this.ult >= ULT_MAX ? '奥義!' : '奥義<br>' + this.ult + '/' + ULT_MAX}</span></div>` : ''}`;
+    const ub = this.partyEl.querySelector('.cbp-ult');
+    if (ub) ub.onclick = ev => { ev.stopPropagation(); if (this.canAct()) this.openUlt(); };
+    this.drawUltPick();
     // 敵
     const s = Game.scale;
     this.enemies.forEach((e, i) => {
@@ -415,21 +430,77 @@ const Battle = {
     await this.cutin(h.cid);
     if (c.flags.serve) { this.addSt(this.P, 'serve', 1); this.popParty('奉仕+1', 'buff'); }
     if (c.type === 'a') { this.atkCount++; for (const x of this.relics) if (x.r.attack) x.r.attack(this, x.L, this.atkCount); }
+    if (!c.token) this.gainUlt(1 + (cardCost(h.cid) >= 2 ? 1 : 0));
     await this.applyCard(h.cid, tj, h);
     this.busy = false;
     if (await this.checkEnd()) return;
     this.refresh();
   },
-  async cutin(cid) {
+  gainUlt(n) {
+    if (!this.ultIds.length || this.ult >= ULT_MAX) return;
+    this.ult = Math.min(ULT_MAX, this.ult + n);
+    if (this.ult >= ULT_MAX) { Sound.play('magic'); this.popParty('奥義ゲージMAX!', 'mp'); }
+  },
+  openUlt() {
+    if (this.ult < ULT_MAX || !this.ultIds.length) { Sound.play('buzz'); UI.toast(`カードを使うと奥義ゲージがたまる(${this.ult}/${ULT_MAX})`, 1200); return; }
+    this.ultPick = 0; this.sel = -1; this.targeting = false; Sound.play('ok'); this.refresh();
+  },
+  drawUltPick() {
+    if (!this.ultEl) return;
+    this.ultEl.classList.toggle('hidden', this.ultPick < 0);
+    if (this.ultPick < 0) return;
+    this.ultEl.innerHTML = '<div class="up-t">奥義を使うキャラを選ぶ</div>' + this.ultIds.map((id, i) => {
+      const cid = 'ult_' + id;
+      return `<div class="up-c${i === this.ultPick ? ' sel' : ''}" data-i="${i}"><img src="${portraitURL(CHARS[id].look)}"><div><small>${U.esc(CHARS[id].n)}</small><b>${U.esc(CARDS[cid].n)}</b><br><span>${U.esc(cardDesc(cid))}</span></div></div>`;
+    }).join('') + '<div class="up-x">やめる</div>';
+    this.ultEl.querySelectorAll('.up-c').forEach(d => d.onclick = ev => { ev.stopPropagation(); const i = +d.dataset.i; if (this.ultPick === i) this.useUlt(this.ultIds[i]); else { this.ultPick = i; Sound.play('cursor'); this.drawUltPick(); } });
+    this.ultEl.querySelector('.up-x').onclick = ev => { ev.stopPropagation(); this.ultPick = -1; Sound.play('cancel'); this.drawUltPick(); };
+    this.ultEl.onclick = ev => ev.stopPropagation();
+  },
+  async useUlt(id) {
+    if (this.busy || this.ult < ULT_MAX) return;
+    const cid = 'ult_' + id;
+    this.busy = true; this.ult = 0; this.ultPick = -1;
+    this.combo = (this.combo || 0) + 1;
+    this.refresh();
+    const al = this.aliveIdx();
+    const tj = al.includes(this.tgt) ? this.tgt : al.sort((a, b) => this.enemies[a].hp - this.enemies[b].hp)[0];
+    await this.cutin(cid, true);
+    if (CARDS[cid].type === 'a') { this.atkCount++; for (const x of this.relics) if (x.r.attack) x.r.attack(this, x.L, this.atkCount); }
+    await this.applyCard(cid, tj);
+    this.busy = false;
+    if (await this.checkEnd()) return;
+    this.refresh();
+  },
+  bestUlt() {
+    const P = this.P, alive = this.enemies.filter(e => e.alive);
+    let best = null, bs = -1;
+    for (const id of this.ultIds) {
+      let sc = 0;
+      for (const o of cardOps('ult_' + id)) {
+        if ('dru'.includes(o.k)) sc += o.n * o.hits;
+        if (o.k === 'D') sc += o.n * o.hits * alive.length;
+        if (o.k === 'o') sc += o.n * ((this.combo || 0) + 1);
+        if (o.k === 'z') sc += o.n + (P.st.serve || 0) * o.per;
+        if (o.k === 'h' || o.k === 'b') sc += o.n * (P.hp < P.max * 0.45 ? 2 : 0.5);
+        if (o.k === 'x' && P.hp < P.max * 0.3) sc -= 999;
+        if ('sceky'.includes(o.k)) sc += o.n * 6;
+      }
+      if (sc > bs) { bs = sc; best = id; }
+    }
+    return best;
+  },
+  async cutin(cid, big) {
     const c = CARDS[cid];
     const owner = c.owner && CHARS[c.owner];
-    this.cutEl.className = 'cutin';
+    this.cutEl.className = 'cutin' + (big ? ' ult' : '');
     this.cutEl.innerHTML = owner ? `<img src="${portraitURL(owner.look)}"><div class="ci-t"><small>${U.esc(owner.n)}</small><b>${U.esc(c.n)}</b></div>` : `<div class="ci-t solo"><b>${U.esc(c.n)}</b></div>`;
     this.cutEl.style.setProperty('--cc', owner ? ELEM[owner.elem].c : '#c8d0ff');
     void this.cutEl.offsetWidth;
     this.cutEl.classList.add('show', c.type === 'a' ? 'atk' : 'skl');
-    this.msg(`${owner ? `<b>${U.esc(owner.n)}</b> の ` : ''}<span class="skn">${U.esc(c.n)}</span>!`);
-    await this.wait(owner ? 520 : 300);
+    this.msg(`${owner ? `<b>${U.esc(owner.n)}</b> の ${big ? '奥義 ' : ''}` : ''}<span class="skn">${U.esc(c.n)}</span>!`);
+    if (big) { Sound.play('crit'); this.fx.push({ type: 'screen', color: ELEM[owner.elem].c, t: 0, dur: 0.5 }); }
+    await this.wait(big ? 1100 : owner ? 520 : 300);
   },
   async applyCard(cid, tj, h) {
     const c = CARDS[cid], ops = cardOps(cid), P = this.P;
@@ -595,6 +666,7 @@ const Battle = {
       await this.wait(250);
       for (let guard = 0; guard < 25 && this.auto && !this.done; guard++) {
         if (this.busy) { await this.wait(100); continue; }
+        if (this.ult >= ULT_MAX && this.ultIds.length) { await this.useUlt(this.bestUlt()); await this.wait(120); continue; }
         const pick = this.autoPick();
         if (!pick) { finished = true; break; }
         this.sel = pick.i; this.refresh();

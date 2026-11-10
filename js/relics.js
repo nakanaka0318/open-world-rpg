@@ -64,6 +64,17 @@ const RELICS = {
     desc: L => `チャージ1段階ごとの威力上昇 +50% → +${70 + 6 * L}%`,
     bonus: { charge: L => (20 + 6 * L) / 100 },
   },
+  luka: {
+    n: '船長の羅針盤', icon: 'ring',
+    desc: L => `毎ターン開始時、敵全体に${3 + L}ダメージ`,
+    turn: (B, L) => { for (const e of B.enemies) if (e.alive) B.hitEnemy(e, 3 + L); },
+  },
+  yumeno: {
+    n: '攻略本', icon: 'staff',
+    desc: L => `戦闘開始時、カードを${2 + Math.floor(L / 2)}枚多く引き、次のカードのコスト0`,
+    draw: L => 2 + Math.floor(L / 2),
+    start: (B) => { B.addSt(B.P, 'free', 1); },
+  },
   misuzu: {
     n: '陽だまりの髪飾り', icon: 'tiara',
     desc: L => `戦闘開始時、再生${3 + L}`,

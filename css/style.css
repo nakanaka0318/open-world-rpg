@@ -513,3 +513,23 @@ body.touch.in-battle #pad { visibility: hidden; }
 body.in-battle .tower-layer { display: none; }
 .cb-top .btools { position: static; flex: 0 0 auto; }
 .cb-msg { min-width: 0; }
+/* 奥義ゲージ */
+.cbp-ult { position: relative; flex: 0 0 auto; width: 2.6em; height: 2.3em; border-radius: 6px; border: 2px solid #7a6ad8; background: #0b0d24; overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; text-align: center; }
+.cbp-ult i { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(#c8a0ff, #6a4ad8); transition: height .3s; }
+.cbp-ult span { position: relative; font-size: .58em; line-height: 1.15; font-weight: bold; text-shadow: 1px 1px 0 #000; }
+.cbp-ult.full { border-color: #ffd94a; animation: ultglow 1s infinite alternate; }
+.cbp-ult.full i { background: linear-gradient(#fff3a0, #ffb04a); }
+.cbp-ult.full span { font-size: .72em; color: #fff; }
+@keyframes ultglow { from { box-shadow: 0 0 4px #ffd94a; } to { box-shadow: 0 0 14px #ffd94a, 0 0 4px #fff inset; } }
+.ult-pick { position: absolute; left: 50%; top: 8%; transform: translateX(-50%); width: min(94%, 26em); max-height: 70%; overflow-y: auto; z-index: 5; background: rgba(14, 10, 40, .96); border: 2px solid #ffd94a; border-radius: 10px; padding: .4em; display: flex; flex-direction: column; gap: .3em; }
+.ult-pick.hidden { display: none; }
+.up-t { text-align: center; color: #ffd94a; font-weight: bold; font-size: .9em; }
+.up-c { display: flex; gap: .5em; align-items: center; padding: .3em; border: 2px solid #3a3a6a; border-radius: 8px; background: #1a1848; cursor: pointer; }
+.up-c.sel { border-color: #ffd94a; background: #2e2660; }
+.up-c img { width: 2.6em; height: 2.6em; border-radius: 6px; background: radial-gradient(circle at 50% 35%, #8a6ad8, #2a1a58); }
+.up-c small { color: #c8b8ff; margin-right: .4em; } .up-c b { color: #ffe66d; } .up-c span { font-size: .78em; }
+.up-x { text-align: center; padding: .3em; border: 2px solid #5a5a7a; border-radius: 8px; cursor: pointer; font-size: .85em; }
+.cutin.ult { height: 7.4em; top: 24%; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--cc) 70%, #000) 12%, color-mix(in srgb, var(--cc) 70%, #000) 88%, transparent); border-top: 2px solid #ffd94a; border-bottom: 2px solid #ffd94a; }
+.cutin.ult.show { animation: cutin 1.15s ease-out forwards; }
+.cutin.ult .ci-t b { font-size: 1.9em; color: #ffe66d; }
+.cutin.ult .ci-t small::after { content: ' 奥義'; color: #ffd94a; }

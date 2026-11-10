@@ -181,7 +181,7 @@ const Menu = {
       L.body.innerHTML = `<div class="st-top"><img class="st-port" src="${portraitURL(d.look)}"><div class="st-info"><div class="rar r${d.rar}">${'★'.repeat(d.rar)}${own ? ` <span class="lb">${own.lb}凸</span>` : ' <small class="dim">(未所持)</small>'}</div><div class="st-n">${U.esc(d.n)}</div><div class="st-t">${U.esc(d.title)}</div><div class="st-e"><span style="background:${ELEM[d.elem].c}">${ELEM[d.elem].n}</span> ${U.esc(d.role)}</div><div>${own ? 'Lv ' + own.lv + '(所持中)' : 'Lv1・無凸の性能'}</div></div></div>
       <div class="st-grid">${['hp', 'atk', 'def', 'mag', 'spd'].map(k => `<div><span>${STAT_N[k]}</span><b>${s[k]}</b></div>`).join('')}</div>
       <div class="sc-note">凸の強さ: ${d.rar === 3 ? '3凸で標準、5凸で大幅強化' : d.rar === 4 ? '1凸で標準、5凸で大幅強化' : '凸するほど強化(5凸でコスト2以上のカードが-1)'}${d.gacha || d.limited ? '' : '(ガチャ対象外)'} ／ 現在の相当倍率: カード×${lbCardMul(E).toFixed(2)}</div>
-      ${RELICS[id] ? `<div class="st-sec">レリック</div>${relicHTML(id)}` : ''}
+      ${RELICS[id] ? `<div class="st-sec">レリック</div>${relicHTML(id)}` : ''}${ultHTML(id)}
       <div class="st-sec">固有カード</div>
       <div class="deck-grid">${charCards(id).map(cid => cardFaceHTML(cid)).join('')}</div>
       ${charCards(id).map(cid => `<div class="sc-note"><b>${U.esc(CARDS[cid].n)}</b> ⚡${cardCost(cid)} ${U.esc(cardDesc(cid))}</div>`).join('')}
@@ -195,7 +195,7 @@ const Menu = {
       L.onClosed = res;
       L.body.innerHTML = `<div class="st-top"><img class="st-port" src="${portraitURL(d.look)}"><div class="st-info"><div class="rar r${d.rar}">${'★'.repeat(d.rar)}${c.lb ? ` <span class="lb">${c.lb}凸</span>` : ''}</div><div class="st-n">${U.esc(d.n)}</div><div class="st-t">${U.esc(d.title)}</div><div class="st-e"><span style="background:${ELEM[d.elem].c}">${ELEM[d.elem].n}</span> ${U.esc(d.role)}</div><div>Lv ${c.lv}　EXP ${c.exp}/${expNext(c.lv)}</div></div></div>
       <div class="st-grid">${['hp', 'atk', 'def', 'mag', 'spd'].map(k => `<div><span>${STAT_N[k]}</span><b>${k === 'hp' ? Math.max(0, c.hp) + '/' : ''}${s[k]}</b></div>`).join('')}</div>
-      ${RELICS[id] ? `<div class="st-sec">レリック <small class="dim">(パーティにいると戦闘中に発動。凸で強化)</small></div>${relicHTML(id)}` : ''}
+      ${RELICS[id] ? `<div class="st-sec">レリック <small class="dim">(パーティにいると戦闘中に発動。凸で強化)</small></div>${relicHTML(id)}` : ''}${ultHTML(id)}
       <div class="st-sec">固有カード <small class="dim">(凸で強化。5凸でコスト2以上が-1)</small></div>
       <div class="deck-grid">${charCards(id).map(cid => cardFaceHTML(cid)).join('')}</div>
       <div class="st-prof">${U.esc(d.profile)}</div>`;

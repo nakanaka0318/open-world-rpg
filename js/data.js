@@ -206,6 +206,34 @@ const CHARS = {
     profile: '教会のちびっこシスター。背伸びしたいお年頃。',
   },
   // ---- 追加キャラ ----
+  luka: {
+    n: 'ルカ', title: '空飛ぶ船の船長', rar: 5, elem: 'fire', role: '船長', gacha: true,
+    base: { hp: 62, mp: 18, atk: 20, def: 12, mag: 12, spd: 13 }, grow: { hp: 11, mp: 2.2, atk: 3.6, def: 2.0, mag: 1.8, spd: 1.6 },
+    skills: [[1, 'slash']],
+    look: { hair: '#e8893a', eye: '#3a7ad8', cloth: '#a8303a', acc: '#f5c542', accType: 'tricorn', style: 'pony', hat: '#2a1a1a' },
+    profile: '飛空艇「スターゲイザー号」の若き船長。宝の地図と大砲が大好き。',
+  },
+  yumeno: {
+    n: 'ユメノ', title: '眠れぬ夜のゲーマー', rar: 5, elem: 'dark', role: 'ゲーマー', gacha: true,
+    base: { hp: 42, mp: 30, atk: 14, def: 8, mag: 18, spd: 16 }, grow: { hp: 7, mp: 3.6, atk: 2.4, def: 1.3, mag: 3.2, spd: 2.0 },
+    skills: [[1, 'shadow']],
+    look: { hair: '#f4f2f8', eye: '#8ac0ff', cloth: '#d8d0f0', acc: '#7a6ad8', accType: 'headphones', style: 'long' },
+    profile: '体が弱くて外に出られなかった少女。ゲームで鍛えた指さばきは誰にも負けない。',
+  },
+  fuuri: {
+    n: 'フウリ', title: '風の竜の子', rar: 4, elem: 'wind', role: '竜人', gacha: true,
+    base: { hp: 50, mp: 14, atk: 16, def: 9, mag: 9, spd: 18 }, grow: { hp: 9, mp: 1.8, atk: 3.0, def: 1.5, mag: 1.4, spd: 2.3 },
+    skills: [[1, 'double']],
+    look: { hair: '#7fd67a', eye: '#f5c542', cloth: '#3a8a6a', acc: '#e8e0d0', accType: 'horns', style: 'bob' },
+    profile: '空の大陸から落ちてきた竜の女の子。小さな翼で一生懸命に飛ぶ。',
+  },
+  mokomo: {
+    n: 'モコモ', title: 'ふわふわ雲の精霊', rar: 4, elem: 'water', role: '雲の精霊', gacha: true,
+    base: { hp: 60, mp: 20, atk: 9, def: 15, mag: 13, spd: 9 }, grow: { hp: 12, mp: 2.6, atk: 1.3, def: 2.6, mag: 2.2, spd: 1.2 },
+    skills: [[1, 'heal']],
+    look: { hair: '#bfe0ff', eye: '#5aa0e8', cloth: '#9fd4ff', acc: '#ffffff', accType: 'cloud', style: 'twin' },
+    profile: 'いつも眠そうな雲の精霊。怒ると雷を落とす。',
+  },
   rapidhat: {
     n: 'ラピッドハット', title: 'うさぎ連れの手品師', rar: 5, elem: 'wind', role: '手品師', gacha: true,
     base: { hp: 54, mp: 20, atk: 17, def: 10, mag: 14, spd: 17 }, grow: { hp: 10, mp: 2.6, atk: 3.1, def: 1.7, mag: 2.2, spd: 2.1 },
@@ -415,7 +443,7 @@ const AREAS = {
 
 // ---------- ガチャ ----------
 const GACHA_COST = { single: 50, ten: 500 };
-const PICKUP_ROT = ['seres', 'noa', 'homura', 'sylphy', 'marina', 'terra', 'kanae', 'lumia', 'misuzu', 'rapidhat', 'viola', 'aurora'];
+const PICKUP_ROT = ['seres', 'noa', 'homura', 'sylphy', 'marina', 'terra', 'kanae', 'lumia', 'misuzu', 'rapidhat', 'viola', 'aurora', 'luka', 'yumeno'];
 function charPool(rar, opts = {}) {
   return Object.keys(CHARS).filter(k => CHARS[k].rar === rar && (CHARS[k].gacha || (opts.limited && k === 'stella')));
 }

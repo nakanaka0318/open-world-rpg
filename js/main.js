@@ -193,7 +193,7 @@ const _bStart = Battle.start.bind(Battle);
 Battle.start = async function (ids, opts) {
   Game.hud();
   const r = await _bStart(ids, opts);
-  if (r === 'lose') { await Game.gameOver(); return r; }
+  if (r === 'lose' && !(opts && opts.arena)) { await Game.gameOver(); return r; }
   Game.scene = 'field';
   Game.hud();
   Field.updateLoc(true);

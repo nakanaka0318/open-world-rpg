@@ -169,6 +169,25 @@ const Menu = {
       },
     });
   },
+  // 未所持でも見られる性能プレビュー (ガチャの提供一覧から)
+  charPreview(id) {
+    return new Promise(res => {
+      const d = CHARS[id], own = G.roster[id];
+      const c = own || mkChar(id, 1);
+      const s = charStats(c);
+      const L = this.screen(d.n + ' の性能', { cls: 'status' });
+      L.onClosed = res;
+      const E = effLB(id, c.lb || 0);
+      L.body.innerHTML = `<div class="st-top"><img class="st-port" src="${portraitURL(d.look)}"><div class="st-info"><div class="rar r${d.rar}">${'★'.repeat(d.rar)}${own ? ` <span class="lb">${own.lb}凸</span>` : ' <small class="dim">(未所持)</small>'}</div><div class="st-n">${U.esc(d.n)}</div><div class="st-t">${U.esc(d.title)}</div><div class="st-e"><span style="background:${ELEM[d.elem].c}">${ELEM[d.elem].n}</span> ${U.esc(d.role)}</div><div>${own ? 'Lv ' + own.lv + '(所持中)' : 'Lv1・無凸の性能'}</div></div></div>
+      <div class="st-grid">${['hp', 'atk', 'def', 'mag', 'spd'].map(k => `<div><span>${STAT_N[k]}</span><b>${s[k]}</b></div>`).join('')}</div>
+      <div class="sc-note">凸の強さ: ${d.rar === 3 ? '3凸で標準、5凸で大幅強化' : d.rar === 4 ? '1凸で標準、5凸で大幅強化' : '凸するほど強化(5凸でコスト2以上のカードが-1)'}${d.gacha || d.limited ? '' : '(ガチャ対象外)'} ／ 現在の相当倍率: カード×${lbCardMul(E).toFixed(2)}</div>
+      ${RELICS[id] ? `<div class="st-sec">レリック</div>${relicHTML(id)}` : ''}
+      <div class="st-sec">固有カード</div>
+      <div class="deck-grid">${charCards(id).map(cid => cardFaceHTML(cid)).join('')}</div>
+      ${charCards(id).map(cid => `<div class="sc-note"><b>${U.esc(CARDS[cid].n)}</b> ⚡${cardCost(cid)} ${U.esc(cardDesc(cid))}</div>`).join('')}
+      <div class="st-prof">${U.esc(d.profile)}</div>`;
+    });
+  },
   status(id) {
     return new Promise(res => {
       const c = G.roster[id], d = CHARS[id], s = charStats(c);

@@ -37,6 +37,15 @@ const HOUSE_BP = {
     '#p...p#',
     '#w#D#w#',
   ],
+  arena: [
+    '#########',
+    '#^.....^#',
+    '#.......#',
+    '#...N...#',
+    '#^.....^#',
+    '#.......#',
+    '##w#D#w##',
+  ],
   shrine: [
     '#######',
     '#^.Y.^#',
@@ -326,6 +335,7 @@ const EXTRA_HOUSES = [
   { id: 'snowhut', name: '狩人の小屋', bp: 'house', x: 192, y: 92, roof: 'blue', npcs: ['snow_hunter'], ground: 'snow', from: 'F.e' },
   { id: 'deserthut', name: '旅商人のテント', bp: 'house2', x: 174, y: 350, roof: 'sand', npcs: ['desert_nomad'], ground: 'sandg', from: 'S.e' },
   { id: 'smithy', name: '鍛冶屋の工房', bp: 'house', x: 294, y: 264, roof: 'red', npcs: ['volc_smith'], ground: 'grass', from: 'L.e' },
+  { id: 'arena', name: '英雄の闘技場', bp: 'arena', x: 246, y: 247, roof: 'purple', npcs: ['arena_master'], ground: 'grass', from: 'L.e' },
   { id: 'seahut', name: '灯台守の家', bp: 'house2', x: 351, y: 302, roof: 'blue', npcs: ['lighthouse'], ground: 'grass', from: 'L.e' },
 ];
 

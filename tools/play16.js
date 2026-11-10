@@ -1,0 +1,23 @@
+const { chromium, devices } = require('playwright');
+const SP = process.env.SP;
+(async () => {
+  const b = await chromium.launch();
+  const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage();
+  p.on('pageerror', e => console.log('PAGEERR', e.message, (e.stack || '').split('\n').slice(0, 3).join(' | ')));
+  await p.goto('file://' + process.cwd() + '/index.html');
+  await p.waitForFunction(() => typeof Game !== 'undefined' && Game.scene === 'title' && UI.stack.length > 0);
+  await p.evaluate(() => { UI.pop(UI.stack[0]); buildWorld(); newGame(); Field.init(); Game.scene = 'field'; Game.hud(); G.bosses.shrine = 1; Field.busy = true; Gacha.pool(getBanners(G).find(b => b.id === 'pickup')); });
+  await p.waitForTimeout(500);
+  await p.screenshot({ path: SP + '/U_pool.png' });
+  await p.locator('[data-ch="viola"]').click(); await p.waitForTimeout(400);
+  await p.screenshot({ path: SP + '/U_preview.png' });
+  await p.evaluate(() => { for (const l of UI.stack.slice()) UI.pop(l); Field.busy = false; const n = Field.npcs.find(n => n.id === 'arena_master'); Field.teleport(n.x, n.y + 1, 'u'); });
+  await p.keyboard.press('KeyZ'); await p.waitForTimeout(500);
+  await p.keyboard.press('KeyZ'); await p.waitForTimeout(400);
+  await p.screenshot({ path: SP + '/U_arena.png' });
+  await p.keyboard.press('KeyZ'); await p.waitForTimeout(400);
+  await p.keyboard.press('ArrowDown'); await p.keyboard.press('KeyZ'); await p.waitForTimeout(2500);
+  await p.screenshot({ path: SP + '/U_rematch.png' });
+  console.log(await p.evaluate(() => Battle.active ? Battle.enemies.map(e => e.n + ' hp' + e.max + ' mul' + e.mul).join() : 'no battle'));
+  await b.close();
+})();

@@ -129,14 +129,16 @@ function cardNeedsTarget(c) { return c.ops.some(o => 'dvwpzqoru'.includes(o.k));
 function cardLevel(cid) {
   const c = CARDS[cid];
   if (!c || c.blank) return 0;
-  if (c.owner) return G && G.roster[c.owner] ? G.roster[c.owner].lb : 0;
+  if (c.owner) return G && G.roster && G.roster[c.owner] ? G.roster[c.owner].lb : 0;
   return G && G.cards && G.cards[cid] ? G.cards[cid].r : 0;
 }
-function cardCost(cid, L = cardLevel(cid)) { const c = CARDS[cid]; if (c.cost >= 2 && L >= 5) return c.cost - 1; return c.cost; }
+// 固有カードの相当凸数 (レア度で換算)
+function cardEffLevel(cid) { const c = CARDS[cid]; if (c && c.owner && !c.token) return effLB(c.owner, cardLevel(cid)); if (c && c.token) return effLB('rapidhat', cardLevel(cid)); return cardLevel(cid); }
+function cardCost(cid) { const c = CARDS[cid]; if (c.cost >= 2 && c.owner && cardEffLevel(cid) >= 5) return c.cost - 1; return c.cost; }
 function powMult(v) { return 0.4 + v / 22; }
 function cardPower(cid) {
   const c = CARDS[cid];
-  if (c.owner && G && G.roster[c.owner]) { const s = charStats(G.roster[c.owner]); const b = CHARS[c.owner].base; return { p: b.atk >= b.mag ? s.atk : s.mag, def: s.def, mag: s.mag }; }
+  if (c.owner && CHARS[c.owner]) { const s = charStats((G && G.roster[c.owner]) || mkChar(c.owner, 1)); const b = CHARS[c.owner].base; return { p: b.atk >= b.mag ? s.atk : s.mag, def: s.def, mag: s.mag }; }
   const pc = G ? partyChars() : [];
   if (!pc.length) return { p: 14, def: 10, mag: 10 };
   const avg = k => pc.reduce((a, ch) => a + charStats(ch)[k], 0) / pc.length;
@@ -145,8 +147,8 @@ function cardPower(cid) {
 // 実際の数値を計算した効果
 function cardOps(cid) {
   const c = CARDS[cid];
-  const L = cardLevel(cid), pw = cardPower(cid);
-  const up = (1 + 0.25 * L) * (c.flags.with && G && G.party.includes(c.flags.with) ? 1.5 : 1);
+  const L = cardEffLevel(cid), pw = cardPower(cid);
+  const up = (c.owner ? lbCardMul(L) : 1 + 0.25 * L) * (c.flags.with && G && G.party.includes(c.flags.with) ? 1.5 : 1);
   const st = (L >= 3 ? 1 : 0) + (L >= 5 ? 1 : 0);
   return c.ops.map(o => {
     let n = o.n;

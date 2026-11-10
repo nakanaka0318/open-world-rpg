@@ -117,6 +117,10 @@ const NPCS = {
       await UI.say('夜の海に星が映ると、とってもきれいなの。', { name: this.name, look: this.look });
     },
   },
+  arena_master: {
+    name: '闘技場の主レイラ', look: NL('#e8b83a', '#a8303a', 'pony', 'tiara', '#f5c542', '#e8a020'),
+    async talk() { await Story.arena(this); },
+  },
   hermit: {
     name: '森の隠者', look: 'elder',
     async talk() {
@@ -200,6 +204,30 @@ const Story = {
       await UI.fade('#fff', 300, 100, 300, () => {
         for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) if (Field.walkable(s.x + dx, s.y + dy)) { Field.teleport(s.x + dx, s.y + dy, 'u'); break; }
       });
+    }
+  },
+  // 英雄の闘技場: 倒したボスと再戦 (通常・強化・極)
+  async arena(npc) {
+    const bosses = DUNGEONS.filter(d => G.bosses[d.id]).map(d => ({ id: d.id, enemy: d.boss.enemy, area: d.area, name: d.name, lv: d.lv }));
+    if (!bosses.length) { await UI.say(['ようこそ、英雄の闘技場へ!', 'ここでは一度倒したボスと、もう一度戦えるの。\n強化版を倒せば、星晶石のご褒美もあるわよ。', 'まずはどこかのボスを倒してきてね!'], { name: npc.name, look: npc.look }); return; }
+    await UI.say('ようこそ、英雄の闘技場へ!\n戦う前に、みんなの傷は治しておくわね。', { name: npc.name, look: npc.look });
+    healAll();
+    G.rematch = G.rematch || {};
+    for (; ;) {
+      const bi = await UI.ask('どのボスと戦う?', bosses.map(b => `${ENEMIES[b.enemy].n} (${b.name}) ${REMATCH_TIERS.slice(1).map(t => G.rematch[b.enemy + ':' + t.id] ? '★' : '☆').join('')}`).concat(['やめる']), { name: npc.name, look: npc.look });
+      if (bi < 0 || bi >= bosses.length) break;
+      const b = bosses[bi];
+      const ti = await UI.ask(`${ENEMIES[b.enemy].n}\nどの強さで戦う?(推奨Lv${b.lv})`, REMATCH_TIERS.map(t => `${t.n}${t.mul > 1 ? ` (強さ×${t.mul})` : ''}${t.reward ? (G.rematch[b.enemy + ':' + t.id] ? ' 撃破済み' : ` 初回 星晶石${t.reward}`) : ''}`), { name: npc.name, look: npc.look });
+      if (ti < 0) continue;
+      const t = REMATCH_TIERS[ti];
+      const r = await Battle.start([b.enemy], { bg: AREAS[b.area] ? AREAS[b.area].bg : 'castle', boss: true, mul: t.mul, tag: t.mul > 1 ? `【${t.n}】` : '', rematch: true, arena: true });
+      healAll();
+      if (r === 'win') {
+        const k = b.enemy + ':' + t.id;
+        if (t.reward && !G.rematch[k]) { G.rematch[k] = 1; G.stones += t.reward; Sound.play('star5'); Game.hud(); await UI.say(`見事!初めての${t.n}撃破ボーナス\n星晶石×${t.reward} を受け取った!`, { name: npc.name, look: npc.look }); }
+        else await UI.say('いい戦いだったわ!', { name: npc.name, look: npc.look });
+      } else if (r === 'lose') await UI.say('惜しかったわね…医務室で手当てしておいたわ。\n(闘技場で負けても冒険には影響しません)', { name: npc.name, look: npc.look });
+      Game.autoSave();
     }
   },
   async riddle(d) {

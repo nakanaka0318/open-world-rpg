@@ -454,6 +454,41 @@ function getBanners(state) {
   });
 }
 
+// ---------- 難易度 ----------
+// 敵の強さの倍率 (HPと攻撃力の両方にかかる)。推奨レベルは変えずに敵だけ強くする。
+const DIFFICULTY = { mob: 1.2, boss: 1.5, sub: 1.8, last: 2.0 };
+const SUB_BOSSES = ['ancient', 'serpent', 'crygolem'];
+const LAST_BOSS = 'demon';
+function enemyMul(id) {
+  const d = ENEMIES[id];
+  if (!d.boss) return DIFFICULTY.mob;
+  if (id === LAST_BOSS) return DIFFICULTY.last;
+  if (SUB_BOSSES.includes(id)) return DIFFICULTY.sub;
+  return DIFFICULTY.boss;
+}
+// 闘技場での再戦の段階: 倍率は上の通常倍率にさらに掛かる
+const REMATCH_TIERS = [
+  { id: 'normal', n: '通常', mul: 1, reward: 0 },
+  { id: 'hard', n: '強化', mul: 1.6, reward: 300 },
+  { id: 'extreme', n: '極', mul: 2.6, reward: 800 },
+];
+
+// ---------- 凸の強さ (レア度ごと) ----------
+// 「相当凸数」E に変換して計算する。★5はそのまま。
+// ★3: 3凸で今までの無凸、5凸で今までの3凸 / ★4: 1凸で今までの無凸、5凸で今までの4凸
+// 主人公アリア(ガチャに出ない)は常に無凸相当。
+function effLB(charId, lb) {
+  const d = CHARS[charId];
+  if (!d) return lb || 0;
+  if (!d.gacha && !d.limited) return 0;
+  lb = lb || 0;
+  if (d.rar === 3) return 1.5 * (lb - 3);
+  if (d.rar === 4) return lb - 1;
+  return lb;
+}
+function lbStatMul(E) { return E >= 0 ? 1 + 0.08 * E : Math.pow(1.08, E); }
+function lbCardMul(E) { return E >= 0 ? 1 + 0.25 * E : Math.pow(1.25, E); }
+
 // ---------- 経験値 ----------
 function expNext(lv) { return Math.round(8 * Math.pow(lv, 1.72) + 10); }
 const LV_CAP = 60;

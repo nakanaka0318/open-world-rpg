@@ -170,11 +170,12 @@ const Gacha = {
           const up = b.pickup === k || (b.elem && b.kind === 'char' && CHARS[k].elem === b.elem && r >= 4);
           const d = b.kind === 'char' ? CHARS[k] : EQUIPS[k];
           const img = b.kind === 'char' ? portraitURL(d.look) : equipIconURL(k);
-          html += `<div class="pool-c ${has ? '' : 'no'} ${up ? 'up' : ''}">${up ? '<span class="pu">UP</span>' : ''}<img src="${img}"><div>${has ? U.esc(d.n) : '???'}</div>${b.kind === 'char' ? `<div style="color:${ELEM[d.elem].c}">${ELEM[d.elem].n}</div>` : ''}</div>`;
+          html += `<div class="pool-c tap ${has ? '' : 'no'} ${up ? 'up' : ''}" data-ch="${k}">${up ? '<span class="pu">UP</span>' : ''}<img src="${img}"><div>${U.esc(d.n)}</div>${b.kind === 'char' ? `<div style="color:${ELEM[d.elem].c}">${ELEM[d.elem].n}</div>` : ''}</div>`;
         }
         html += '</div>';
       }
-      L.body.innerHTML = html;
+      L.body.innerHTML = '<div class="sc-note">キャラをタップすると性能(ステータス・固有カード・レリック)が見られます</div>' + html;
+      L.body.querySelectorAll('[data-ch]').forEach(el => el.onclick = e => { e.stopPropagation(); Sound.play('ok'); Menu.charPreview(el.dataset.ch); });
     });
   },
   history() {

@@ -32,12 +32,13 @@ function enemyIntent(e) {
   let r = Math.random() * tot, k = pool[0][0];
   for (const [kk, w] of pool) { r -= w; if (r <= 0) { k = kk; break; } }
   e.last = k;
-  const A = d.atk * 1.15, M = d.mag * 1.05, sk = SKILLS[k] || { n: '' };
+  const m = e.mul || 1;
+  const A = d.atk * 1.15 * m, M = d.mag * 1.05 * m, sk = SKILLS[k] || { n: '' };
   const I = { k, n: k === 'attack' ? 'こうげき' : k === 'e_guard' ? 'かまえる' : sk.n };
   switch (k) {
     case 'attack': I.dmg = A; break;
     case 'e_bite': I.dmg = A * 1.25; break;
-    case 'e_poison': I.dmg = A * 0.7; I.poison = Math.max(2, Math.round(d.atk / 7)); break;
+    case 'e_poison': I.dmg = A * 0.7; I.poison = Math.max(2, Math.round(d.atk * m / 7)); break;
     case 'e_fire': case 'e_ice': case 'e_wind': case 'e_dark': I.dmg = M; break;
     case 'e_firebreath': case 'e_icebreath': I.dmg = M * 1.15; I.vuln = 1; break;
     case 'e_leaf': case 'e_darkwave': I.dmg = M * 1.15; I.weak = 1; break;
@@ -46,8 +47,8 @@ function enemyIntent(e) {
     case 'e_smash': I.dmg = A * 1.6; break;
     case 'e_drain': I.dmg = A * 0.9; I.drain = true; break;
     case 'e_heal': I.heal = Math.round(e.max * 0.15); break;
-    case 'e_charge': I.str = Math.max(2, Math.round(d.atk * 0.1)); break;
-    case 'e_guard': I.block = Math.round(d.def * 0.7); break;
+    case 'e_charge': I.str = Math.max(2, Math.round(d.atk * 0.1 * m)); break;
+    case 'e_guard': I.block = Math.round(d.def * 0.7 * m); break;
     default: I.dmg = A;
   }
   if (I.dmg) I.dmg = Math.max(1, Math.round(I.dmg));
@@ -66,8 +67,9 @@ const Battle = {
     this.enemies = enemyIds.map(id => {
       const d = ENEMIES[id];
       seen[id] = (seen[id] || 0) + 1;
-      const hp = d.chp || d.hp;
-      return { id, d, n: d.n + (counts[id] > 1 ? 'ABCD'[seen[id] - 1] : ''), hp, max: hp, block: 0, st: {}, alive: true, flash: 0, shake: 0, fade: 1, lunge: 0, boss: !!d.boss, x: 0, y: 0, w: 32, h: 32 };
+      const mul = (opts.mul || 1) * enemyMul(id);
+      const hp = Math.round((d.chp || d.hp) * mul);
+      return { id, d, mul, n: d.n + (opts.tag ? opts.tag : '') + (counts[id] > 1 ? 'ABCD'[seen[id] - 1] : ''), hp, max: hp, block: 0, st: {}, alive: true, flash: 0, shake: 0, fade: 1, lunge: 0, boss: !!d.boss, x: 0, y: 0, w: 32, h: 32 };
     });
     // パーティ (共有HP)
     this.party = partyChars();
@@ -712,7 +714,8 @@ const Battle = {
     let exp = 0, gold = 0, stones = 0;
     const drops = [];
     for (const e of this.enemies) {
-      exp += e.d.exp; gold += e.d.gold;
+      const rw = this.opts.rematch ? (this.opts.mul || 1) : 1;
+      exp += Math.round(e.d.exp * rw); gold += Math.round(e.d.gold * rw);
       if (!e.boss && Math.random() < 0.06) stones += 10;
       for (const [id, p] of e.d.drop || []) if (Math.random() < p) drops.push(id);
     }

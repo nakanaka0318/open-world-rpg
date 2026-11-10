@@ -11,7 +11,7 @@ function mkChar(id, lv = 1) {
 }
 function charStats(c) {
   const d = CHARS[c.id];
-  const mul = 1 + 0.08 * (c.lb || 0);
+  const mul = lbStatMul(effLB(c.id, c.lb));
   const o = {};
   for (const k of ['hp', 'mp', 'atk', 'def', 'mag', 'spd']) o[k] = Math.floor((d.base[k] + d.grow[k] * (c.lv - 1)) * mul);
   o.elem = 'none';

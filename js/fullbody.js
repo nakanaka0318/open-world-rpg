@@ -506,6 +506,19 @@ const FB_OUTFITS = {
     FBP.sleeve(g, B, WHITE, 50, 53);
     fbFill(g, FBM.ell(39, 54, 2, 2), WHITE);
   },
+  rbunny(g, B, K) {
+    // 逆バニー風: 黒い長手袋とサイハイ。胴体は首までの白いボディスーツで覆う
+    const C = K.L.cloth || '#1e1a2a', W2 = '#f4f2fa';
+    fbFill(g, FBM.or(B.neck, FBM.and(B.torso, FBM.band(22, 58)), FBM.and(B.leg, FBM.band(55, 61))), W2);
+    fbFill(g, FBM.and(B.leg, FBM.band(63, 128)), C);
+    FBP.shoes(g, B, BLACK);
+    fbFill(g, FBM.or(B.arm, B.hand), C);
+    fbFill(g, FBM.and(B.arm, FBM.band(28, 31)), '#3a3448');
+    FBP.bow(g, 32, 28.5, '#e43b44');
+    for (const y of [36, 41, 46]) fbDot(g, 32, y, GOLD);
+    fbFill(g, FBM.and(B.leg, FBM.band(62, 64)), WHITE);
+    fbFill(g, FBM.ell(39, 54, 2, 2), WHITE);
+  },
   bikini(g, B, K) {
     const C = K.L.cloth, P = U.shade(K.A, 0.25), inT = m => FBM.and(B.torso, m);
     const noArm = FBM.not(FBM.or(B.arm, B.hand));

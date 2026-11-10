@@ -145,6 +145,8 @@ function loadGame() {
     G.gacha = Object.assign({ beginnerDone: false, total: 0, history: [] }, o.gacha);
     if (!o.cards) { G.cards = Object.fromEntries(STARTER_DECK.map(k => [k, { r: 0 }])); G.deck = STARTER_DECK.slice(); }
     for (const k in G.roster) { const c = G.roster[k]; c.st = c.st || {}; c.eq = c.eq || { w: null, a: null, x: null }; }
+    // 恋人の衣装が後から増えたときも受け取れるように
+    for (const k in G.roster) if (G.roster[k].bond && G.roster[k].bond.lv >= 11) for (const s of skinsOf(k)) if (SKINS[s].lover) G.skins[s] = 1;
     return true;
   } catch (e) { console.error(e); return false; }
 }

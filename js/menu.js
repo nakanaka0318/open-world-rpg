@@ -209,6 +209,7 @@ const Menu = {
       <div class="skin-grid"><div class="skin-c${!c.skin ? ' on' : ''}" data-sk=""><img src="${portraitURL(d.look)}"><div>いつもの服</div></div>${skinsOf(id).map(k => `<div class="skin-c${c.skin === k ? ' on' : ''}${G.skins[k] ? '' : ' no'}" data-sk="${k}"><img src="${portraitURL(skinLook(k))}"><div>${G.skins[k] ? U.esc(SKINS[k].n) : '？？？'}</div></div>`).join('')}</div>
       <div class="st-prof">${U.esc(d.profile)}</div>`;
       const rerender = () => { const y = L.body.scrollTop; render(); L.body.scrollTop = y; };
+      if (!secretOn()) { L.body.querySelectorAll('.skin-grid, .fb-wrap').forEach(e => e.remove()); L.body.querySelectorAll('.st-sec').forEach(e => { if (/^(絆|衣装)/.test(e.textContent)) e.remove(); }); L.body.querySelectorAll('.bond').forEach(e => e.closest('.sc-note') && e.closest('.sc-note').remove()); }
       L.body.querySelectorAll('[data-sk]').forEach(el => el.onclick = e => {
         e.stopPropagation();
         const k = el.dataset.sk;
@@ -413,6 +414,7 @@ const Menu = {
           { label: `タッチパッド: <b>${document.body.classList.contains('touch') ? '表示' : '非表示'}</b>` },
           { label: 'タイトルへもどる' },
           { label: '<span class="dim">デバッグ:</span> 星晶石 +10000' },
+          { label: 'パスワード' },
         ];
         if (L.menu) L.menu.set(items, true);
         else { L.menu = new ListMenu({ items, onSelect: sel, onCancel: () => L.close() }); L.body.appendChild(L.menu.el); L.body.appendChild(U.el('div', 'sc-note', '操作: 移動=矢印/WASD　決定=Z/Enter　キャンセル/ダッシュ=X/Shift　メニュー=C<br>セーブは各地のクリスタルで行えます。')); }
@@ -421,6 +423,13 @@ const Menu = {
         if (i === 0) Sound.setMusic(!Sound.music);
         if (i === 1) Sound.setSfx(!Sound.enabled);
         if (i === 2) { document.body.classList.toggle('touch'); Input.touch = document.body.classList.contains('touch'); Game.resize(); }
+        if (i === 5) {
+          L.menu.locked = true;
+          const v = await new Promise(r => { const el = U.el('div', 'layer ask-layer'); const w = UI.win('dlg'); w.innerHTML = 'パスワードを入力<br><input class="pw-in" maxlength="16" autocomplete="off">'; el.appendChild(w); const inp = w.querySelector('input'); const lay = { el, handle: k => { if (k === 'b') { UI.pop(lay); r(null); } } }; inp.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') { UI.pop(lay); r(inp.value); } if (e.key === 'Escape') { UI.pop(lay); r(null); } }; UI.push(lay); setTimeout(() => inp.focus(), 50); });
+          L.menu.locked = false;
+          if (v === 'aaaa' && !G.flags.secret) { G.flags.secret = 1; Sound.play('star5'); Game.autoSave(true); UI.toast('秘密の要素が解放された…!'); }
+          else if (v !== null) { Sound.play('buzz'); UI.toast('何も起こらなかった'); }
+        }
         if (i === 4) { G.stones += 10000; Sound.play('star5'); Game.hud(); Game.autoSave(true); UI.toast('デバッグ: 星晶石 +10000'); }
         if (i === 3) {
           L.menu.locked = true;

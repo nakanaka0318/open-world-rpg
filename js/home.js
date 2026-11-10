@@ -40,6 +40,12 @@ function furnURL(id) { return FURN_URL[id] || (FURN_URL[id] = furnCanvas(id).toD
 const HOME_GIRLS = 4;   // 遊びに来る仲間の最大人数
 const TALK_CD = 90;     // 同じ仲間と話して絆が上がる間隔 (プレイ時間の秒)
 
+// 隠す項目を除いた選択肢を出し、元の番号を返す
+async function askHide(title, opts, hide) {
+  const shown = secretOn() ? opts : opts.filter(o => !hide.includes(o));
+  const c = await UI.ask(title, shown);
+  return c < 0 ? -1 : opts.indexOf(shown[c]);
+}
 const Home = {
   furn: [], girls: [], carrying: null,
   st() { return WORLD.structs.find(s => s.id === 'myhome'); },
@@ -99,7 +105,7 @@ const Home = {
   // ---------- 本棚のメニュー ----------
   async menu() {
     for (;;) {
-      const c = await UI.ask(`マイホーム  所持金 ${G.gold}G`, ['仲間と話す', '家具を置く', '家具を買う', 'プレゼントを買う', '置いた家具を全部しまう', 'やめる']);
+      const c = await askHide(`マイホーム  所持金 ${G.gold}G`, ['仲間と話す', '家具を置く', '家具を買う', 'プレゼントを買う', '置いた家具を全部しまう', 'やめる'], ['プレゼントを買う']);
       if (c === 0) { await this.callGirl(); continue; }
       if (c === 1) { if (await this.choosePlace()) return; }
       else if (c === 2) await this.shop('furn');
@@ -115,9 +121,9 @@ const Home = {
     let chosen = null;
     await Menu.tabList({
       title: '話す仲間を選ぶ',
-      tabs: [{ n: 'すべて' }, { n: 'エピソードあり', f: k => Bond.pendingEp(k) >= 0 }, { n: 'パーティ', f: k => G.party.includes(k) }],
+      tabs: secretOn() ? [{ n: 'すべて' }, { n: 'エピソードあり', f: k => Bond.pendingEp(k) >= 0 }, { n: 'パーティ', f: k => G.party.includes(k) }] : [{ n: 'すべて' }, { n: 'パーティ', f: k => G.party.includes(k) }],
       items: () => Object.keys(G.roster),
-      label: k => `<img class="ico" src="${portraitURL(charLook(k))}"> ${U.esc(CHARS[k].n)} ${Bond.hearts(k)}${Bond.pendingEp(k) >= 0 ? ' <span class="tag lead">エピソード</span>' : ''}${typeof canConfess === 'function' && canConfess(k) ? ' <span class="tag lead">指輪OK</span>' : ''}`,
+      label: k => !secretOn() ? `<img class="ico" src="${portraitURL(charLook(k))}"> ${U.esc(CHARS[k].n)}` : `<img class="ico" src="${portraitURL(charLook(k))}"> ${U.esc(CHARS[k].n)} ${Bond.hearts(k)}${Bond.pendingEp(k) >= 0 ? ' <span class="tag lead">エピソード</span>' : ''}${typeof canConfess === 'function' && canConfess(k) ? ' <span class="tag lead">指輪OK</span>' : ''}`,
       onSelect: async (k, ctx) => { chosen = k; ctx.close(); },
     });
     if (chosen) await this.talk(chosen);
@@ -198,13 +204,13 @@ const Home = {
     const c = G.roster[id];
     if (!c) return;
     const opt = { name: CHARS[id].n, look: charLook(id) };
-    if (Bond.pendingEp(id) >= 0) { await Bond.playEp(id); return; }
+    if (secretOn() && Bond.pendingEp(id) >= 0) { await Bond.playEp(id); return; }
     const b = bondOf(id);
     const tier = BOND_TALK[b.lv >= 7 ? 2 : b.lv >= 4 ? 1 : 0];
     await UI.say(isLover(id) ? U.pick(ROMANCE[id].talk) : U.pick(tier).replace('{n}', CHARS[id].n), opt);
     for (;;) {
       const lover = isLover(id);
-      const ch = await UI.ask(`${CHARS[id].n}  ${lover ? '♥恋人' : bondOf(id).lv >= BOND_MAX ? '♥絆Lv MAX' : `♥絆Lv${bondOf(id).lv}`}`, ['おしゃべりする', 'プレゼントをあげる', 'パーティに誘う', lover ? 'デートに誘う' : 'またね'].concat(lover ? ['またね'] : []));
+      const ch = await askHide(secretOn() ? `${CHARS[id].n}  ${lover ? '♥恋人' : bondOf(id).lv >= BOND_MAX ? '♥絆Lv MAX' : `♥絆Lv${bondOf(id).lv}`}` : CHARS[id].n, ['おしゃべりする', 'プレゼントをあげる', 'パーティに誘う', lover ? 'デートに誘う' : 'またね'].concat(lover ? ['またね'] : []), ['プレゼントをあげる', 'デートに誘う']);
       if (ch === 3 && lover) { await Bond.date(id); continue; }
       if (ch === 0) {
         const now = G.playtime;
@@ -214,7 +220,7 @@ const Home = {
         await UI.say(U.pick([`${CHARS[id].title}のお仕事の話、聞いてくれる?`, 'この前の冒険、楽しかったね!', 'ここ、いい家だね。', 'あなたと話すの、好きだな。', 'おなかすいたね。']), opt);
         Sound.play('heal');
         Bond.gain(id, 6);
-        if (Bond.pendingEp(id) >= 0) await Bond.playEp(id);
+        if (secretOn() && Bond.pendingEp(id) >= 0) await Bond.playEp(id);
       } else if (ch === 1) {
         const gs = Object.keys(GIFTS).filter(k => G.gifts[k] > 0);
         if (!gs.length) { await UI.say('プレゼントを持っていない。\n本棚の「プレゼントを買う」で買える。'); continue; }

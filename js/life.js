@@ -92,7 +92,7 @@ const ACHIEVEMENTS = [
   { id: 'cookall', n: '天才シェフ', desc: '料理をすべての種類作る', cond: () => Object.keys(RECIPES).every(k => (G.cooked || {})[k]), stones: 1000 },
   { id: 'chars10', n: '仲間がいっぱい', desc: '仲間を10人集める', cond: () => Object.keys(G.roster).length >= 10, stones: 200 },
   { id: 'charsall', n: '星の絆', desc: 'ガチャの仲間を全員集める', cond: () => Object.keys(CHARS).filter(k => CHARS[k].gacha || CHARS[k].limited).every(k => G.roster[k]), stones: 2000 },
-  { id: 'bond10', n: '心をかよわせて', desc: 'だれかの絆レベルを10にする', cond: () => Object.values(G.roster).some(c => c.bond && c.bond.lv >= 10), stones: 300 },
+  { id: 'bond10', n: '心をかよわせて', desc: 'だれかの絆レベルを10にする', cond: () => secretOn() && Object.values(G.roster).some(c => c.bond && c.bond.lv >= 10), stones: 300, secret: true },
   { id: 'gacha100', n: '召喚マニア', desc: 'ガチャを100回引く', cond: () => G.gacha.total >= 100, stones: 500 },
   { id: 'crystal4', n: '封印を解く者', desc: '封印の水晶を4つ集める', cond: () => G.crystals.length >= 4, stones: 300 },
   { id: 'clear1', n: '星晶の勇者', desc: '魔王ノクスを倒す', cond: () => !!G.flags.cleared, stones: 500 },
@@ -348,7 +348,7 @@ const Life = {
     for (const k in FISH) all.push({ t: 'fish', k });
     for (const k in RECIPES) all.push({ t: 'dish', k });
     for (const k in CHARS) all.push({ t: 'char', k });
-    for (const a of ACHIEVEMENTS) all.push({ t: 'ach', k: a.id, a });
+    for (const a of ACHIEVEMENTS) if (!a.secret || secretOn()) all.push({ t: 'ach', k: a.id, a });
     const prog = t => {
       const xs = all.filter(x => x.t === t);
       const got = xs.filter(x => t === 'mon' ? (G.seen || {})[x.k] : t === 'fish' ? (G.fishLog || {})[x.k] : t === 'dish' ? (G.cooked || {})[x.k] : t === 'char' ? G.roster[x.k] : (G.ach || {})[x.k]).length;

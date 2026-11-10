@@ -79,6 +79,7 @@ const Bond = {
   gain(id, n, quiet) {
     const c = G.roster[id];
     if (!c) return;
+    if (!secretOn()) quiet = true;
     c.bond = c.bond || { lv: 1, exp: 0, ep: 0 };
     const b = c.bond;
     if (b.lv >= BOND_MAX) return;

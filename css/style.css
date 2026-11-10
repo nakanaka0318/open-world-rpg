@@ -569,3 +569,4 @@ body.in-battle .tower-layer { display: none; }
 .fish-zone { position: absolute; top: 0; bottom: 0; background: linear-gradient(#9ef07a, #3e8948); }
 .fish-mk { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: #ffe66d; box-shadow: 0 0 6px #ffe66d; }
 .fish-layer.hit .fish-box { border-color: #7fe87a; } .fish-layer.miss .fish-box { border-color: #ff6a6a; }
+.pw-in { width: 100%; margin-top: .4em; font: inherit; padding: .3em; background: #0b0d24; color: #fff; border: 2px solid #c8d0ff; border-radius: 6px; }

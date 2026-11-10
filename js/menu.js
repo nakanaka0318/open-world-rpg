@@ -385,6 +385,7 @@ const Menu = {
           { label: `効果音: <b>${Sound.enabled ? 'ON' : 'OFF'}</b>` },
           { label: `タッチパッド: <b>${document.body.classList.contains('touch') ? '表示' : '非表示'}</b>` },
           { label: 'タイトルへもどる' },
+          { label: '<span class="dim">デバッグ:</span> 星晶石 +10000' },
         ];
         if (L.menu) L.menu.set(items, true);
         else { L.menu = new ListMenu({ items, onSelect: sel, onCancel: () => L.close() }); L.body.appendChild(L.menu.el); L.body.appendChild(U.el('div', 'sc-note', '操作: 移動=矢印/WASD　決定=Z/Enter　キャンセル/ダッシュ=X/Shift　メニュー=C<br>セーブは各地のクリスタルで行えます。')); }
@@ -393,6 +394,7 @@ const Menu = {
         if (i === 0) Sound.setMusic(!Sound.music);
         if (i === 1) Sound.setSfx(!Sound.enabled);
         if (i === 2) { document.body.classList.toggle('touch'); Input.touch = document.body.classList.contains('touch'); Game.resize(); }
+        if (i === 4) { G.stones += 10000; Sound.play('star5'); Game.hud(); Game.autoSave(true); UI.toast('デバッグ: 星晶石 +10000'); }
         if (i === 3) {
           L.menu.locked = true;
           const c = await UI.ask('タイトルへもどりますか?\n(セーブしていない進行は失われます)', ['もどる', 'やめる']);

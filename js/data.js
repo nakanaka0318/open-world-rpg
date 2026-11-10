@@ -454,6 +454,10 @@ function getBanners(state) {
   });
 }
 
+// エリアの目安レベル。パーティの平均レベルがこれより FLEE_GAP 以上高いと、敵が逃げるようになる
+const AREA_LV = { meadow: 2, forest: 6, desert: 10, snow: 13, volcano: 16, island: 13, crystal: 24, shrine: 6, ruins: 10, icecave: 13, volccave: 16, castle: 22, subruin: 9, subsea: 15, subcrys: 25 };
+const FLEE_GAP = 8;
+
 // ---------- 難易度 ----------
 // 敵の強さの倍率 (HPと攻撃力の両方にかかる)。推奨レベルは変えずに敵だけ強くする。
 const DIFFICULTY = { mob: 1.2, boss: 1.5, sub: 1.8, last: 2.0 };

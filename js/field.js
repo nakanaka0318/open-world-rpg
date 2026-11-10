@@ -65,7 +65,7 @@ const Field = {
   },
 
   reveal() {
-    const r = 6, px = this.p.x, py = this.p.y;
+    const r = 12, px = this.p.x, py = this.p.y;
     for (let y = py - r; y <= py + r; y++) for (let x = px - r; x <= px + r; x++) {
       if (x < 0 || y < 0 || x >= MW || y >= MH) continue;
       if ((x - px) * (x - px) + (y - py) * (y - py) <= r * r + 2) G.explored[this.key(x, y)] = 1;
@@ -245,15 +245,27 @@ const Field = {
     // 接触判定
     const ex = U.lerp(e.fx, e.x, e.t), ey = U.lerp(e.fy, e.y, e.t);
     const px = U.lerp(p.fx, p.x, p.t), py = U.lerp(p.fy, p.y, p.t);
-    if (Math.abs(ex - px) < 0.7 && Math.abs(ey - py) < 0.7 && this.invuln <= 0 && this.regionAt(e.x, e.y) === this.curRegion) { this.encounter(e); return; }
+    const scared = this.isScared(e);
+    e.scared = scared;
+    if (!scared && Math.abs(ex - px) < 0.7 && Math.abs(ey - py) < 0.7 && this.invuln <= 0 && this.regionAt(e.x, e.y) === this.curRegion) { this.encounter(e); return; }
     if (e.t < 1) return;
     e.timer -= dt;
     if (e.timer > 0) return;
     const sameRegion = this.curRegion === e.region;
-    e.chase = sameRegion && dist <= 5 && this.invuln <= 0;
-    e.timer = e.chase ? 0.05 : 0.6 + Math.random() * 1.4;
+    e.chase = !scared && sameRegion && dist <= 5 && this.invuln <= 0;
+    const flee = scared && sameRegion && dist <= 5;
+    e.timer = e.chase ? 0.05 : flee ? 0.18 : 0.6 + Math.random() * 1.4;
     let d;
-    if (e.chase) {
+    if (flee) {
+      // 強すぎる相手からは逃げる
+      const dx = e.x - p.x, dy = e.y - p.y;
+      const opts = [];
+      if (dx) opts.push(dx > 0 ? 'r' : 'l'); else opts.push(Math.random() < 0.5 ? 'r' : 'l');
+      if (dy) opts.push(dy > 0 ? 'd' : 'u'); else opts.push(Math.random() < 0.5 ? 'd' : 'u');
+      if (Math.abs(dy) > Math.abs(dx)) opts.reverse();
+      d = opts.find(o => this.enemyCanStep(e, ...DV[o]) && !(e.x + DV[o][0] === p.x && e.y + DV[o][1] === p.y));
+      if (!d) return;
+    } else if (e.chase) {
       const dx = p.x - e.x, dy = p.y - e.y;
       const opts = [];
       if (dx) opts.push(dx > 0 ? 'r' : 'l');
@@ -269,10 +281,17 @@ const Field = {
     if (!d) return;
     const [dx, dy] = DV[d];
     e.dir = d;
-    if (!e.chase && (Math.abs(e.x + dx - e.sx) > 4 || Math.abs(e.y + dy - e.sy) > 4)) return;
-    if (e.x + dx === p.x && e.y + dy === p.y) { if (this.invuln <= 0 && sameRegion) { e.fx = e.x; e.fy = e.y; e.t = 0.5; this.encounter(e); } return; }
+    if (!e.chase && !flee && (Math.abs(e.x + dx - e.sx) > 4 || Math.abs(e.y + dy - e.sy) > 4)) return;
+    if (flee && (Math.abs(e.x + dx - e.sx) > 8 || Math.abs(e.y + dy - e.sy) > 8)) return;
+    if (e.x + dx === p.x && e.y + dy === p.y) { if (this.invuln <= 0 && sameRegion && !scared) { e.fx = e.x; e.fy = e.y; e.t = 0.5; this.encounter(e); } return; }
     if (!this.enemyCanStep(e, dx, dy)) return;
     e.fx = e.x; e.fy = e.y; this.moveObj(e, e.x + dx, e.y + dy); e.t = 0;
+  },
+  isScared(e) {
+    const pc = partyChars();
+    if (!pc.length) return false;
+    const avg = pc.reduce((a, c) => a + c.lv, 0) / pc.length;
+    return avg >= (AREA_LV[e.area] || 1) + FLEE_GAP;
   },
   enemyCanStep(e, dx, dy) {
     const nx = e.x + dx, ny = e.y + dy;
@@ -500,10 +519,12 @@ const Field = {
         this.shadow(ctx, sx, sy);
         ctx.save();
         if (o.stun > 0) ctx.globalAlpha = 0.5;
+        else if (o.scared) ctx.globalAlpha = 0.7;
         if (o.dir === 'r') { ctx.translate(sx + 16, 0); ctx.scale(-1, 1); ctx.drawImage(s, 0, sy - 2 + hop, 16, 16); }
         else ctx.drawImage(s, sx, sy - 2 + hop, 16, 16);
         ctx.restore();
         if (o.chase) { ctx.fillStyle = '#ff3b3b'; ctx.fillRect(sx + 7, sy - 9, 2, 4); ctx.fillRect(sx + 7, sy - 4, 2, 1); }
+        else if (o.scared) { ctx.fillStyle = '#7fd0ff'; ctx.fillRect(sx + 12, sy - 6, 2, 3); ctx.fillRect(sx + 11, sy - 4, 4, 2); }
         break;
       }
       case 'boss': {

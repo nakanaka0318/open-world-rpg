@@ -548,3 +548,4 @@ body.in-battle .tower-layer { display: none; }
 .bond i { display: inline-block; width: 6em; height: .6em; background: #2a1a3a; border: 1px solid #000; border-radius: 4px; overflow: hidden; }
 .bond i u { display: block; height: 100%; background: linear-gradient(#ffb8e0, #ff5aa0); text-decoration: none; }
 .bond small { color: #ffd94a; font-weight: bold; }
+.bond.lover b { color: #ff5aa0; text-shadow: 0 0 6px #ff8ac0; }

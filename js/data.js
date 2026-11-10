@@ -462,10 +462,23 @@ const SKIN_THEMES = {
   dress: { n: 'ドレス', rar: 5, look: c => ({ outfit: 'dress', cloth: U.shade(c.look.cloth, 0.1) }) },
   bond: { n: '絆のドレス', rar: 5, gacha: false, look: () => ({ outfit: 'gala', cloth: '#f4f0ff' }) },
 };
+// 恋愛(絆Lv11)と大人向けの衣装は、年齢を設定した大人のキャラだけ。
+// ここにないキャラ(子どもや年齢不詳のキャラ)には出ません。
+const ADULT_AGE = {
+  seres: 24, noa: 22, homura: 20, stella: 20, shizuku: 21, yuki: 21, kagura: 20, luka: 22, yumeno: 20,
+  viola: 23, aurora: 26, kanae: 23, misuzu: 25, marina: 21, terra: 22, akane: 20, tsubaki: 21, rapidhat: 24,
+};
+// 大人向けの衣装 (絆Lv11 = 恋人になると手に入る)
+Object.assign(SKIN_THEMES, {
+  bunny: { n: 'バニースーツ', rar: 5, gacha: false, lover: true, look: () => ({ outfit: 'bunny', cloth: '#1e1a2a', accType: 'bunny' }) },
+  bikini: { n: 'ビキニ', rar: 5, gacha: false, lover: true, look: c => ({ outfit: 'bikini', cloth: U.shade(ELEM[c.elem].c, 0.1) }) },
+  slitdress: { n: '夜会のドレス', rar: 5, gacha: false, lover: true, look: () => ({ outfit: 'slitdress', cloth: '#8a1a3a' }) },
+});
 const SKINS = {};
 for (const id in CHARS) for (const t in SKIN_THEMES) {
   const th = SKIN_THEMES[t];
-  SKINS[id + '@' + t] = { id: id + '@' + t, char: id, theme: t, n: th.n, rar: th.rar, gacha: th.gacha !== false, look: th.look(CHARS[id]) };
+  if (th.lover && !ADULT_AGE[id]) continue;
+  SKINS[id + '@' + t] = { id: id + '@' + t, char: id, theme: t, n: th.n, rar: th.rar, gacha: th.gacha !== false, lover: !!th.lover, look: th.look(CHARS[id]) };
 }
 function skinLook(sid) { const s = SKINS[sid]; return Object.assign({}, CHARS[s.char].look, s.look); }
 // 今の衣装を反映した見た目

@@ -133,8 +133,8 @@ const Home = {
       items: () => keys,
       label: k => isF
         ? `<img class="ico" src="${furnURL(k)}"> ${U.esc(FURNITURE[k].n)} <b class="gold">${FURNITURE[k].price}G</b> <small class="dim">所持${this.data().owned[k] || 0}</small>`
-        : `${U.esc(GIFTS[k].n)} <b class="gold">${GIFTS[k].price}G</b> <small class="dim">所持${G.gifts[k] || 0} ／ 絆+${GIFTS[k].pt}</small>`,
-      note: k => isF ? '' : '好きな仲間にあげると2倍。' + Object.keys(GIFT_FAV).filter(id => GIFT_FAV[id] === k && G.roster[id]).map(id => CHARS[id].n).join('・') + (Object.keys(GIFT_FAV).some(id => GIFT_FAV[id] === k && G.roster[id]) ? 'が好きらしい' : ''),
+        : `${U.esc(GIFTS[k].n)} <b class="gold">${GIFTS[k].price}G</b> <small class="dim">所持${G.gifts[k] || 0} ／ ${GIFTS[k].ring ? '恋人になる' : '絆+' + GIFTS[k].pt}</small>`,
+      note: k => isF ? '' : GIFTS[k].ring ? '絆Lv10でエピソードを全部見た大人の仲間に渡すと、告白イベントで恋人(絆Lv11)になれる' : '好きな仲間にあげると2倍。' + Object.keys(GIFT_FAV).filter(id => GIFT_FAV[id] === k && G.roster[id]).map(id => CHARS[id].n).join('・') + (Object.keys(GIFT_FAV).some(id => GIFT_FAV[id] === k && G.roster[id]) ? 'が好きらしい' : ''),
       onSelect: async (k, ctx) => {
         const price = (isF ? FURNITURE : GIFTS)[k].price;
         if (G.gold < price) { Sound.play('buzz'); UI.toast('お金が足りない'); return; }
@@ -187,13 +187,16 @@ const Home = {
     if (Bond.pendingEp(id) >= 0) { await Bond.playEp(id); return; }
     const b = bondOf(id);
     const tier = BOND_TALK[b.lv >= 7 ? 2 : b.lv >= 4 ? 1 : 0];
-    await UI.say(U.pick(tier).replace('{n}', CHARS[id].n), opt);
+    await UI.say(isLover(id) ? U.pick(ROMANCE[id].talk) : U.pick(tier).replace('{n}', CHARS[id].n), opt);
     for (;;) {
-      const ch = await UI.ask(`${CHARS[id].n}  ${b.lv >= BOND_MAX ? '♥絆Lv MAX' : `♥絆Lv${bondOf(id).lv}`}`, ['おしゃべりする', 'プレゼントをあげる', 'パーティに誘う', 'またね']);
+      const lover = isLover(id);
+      const ch = await UI.ask(`${CHARS[id].n}  ${lover ? '♥恋人' : bondOf(id).lv >= BOND_MAX ? '♥絆Lv MAX' : `♥絆Lv${bondOf(id).lv}`}`, ['おしゃべりする', 'プレゼントをあげる', 'パーティに誘う', lover ? 'デートに誘う' : 'またね'].concat(lover ? ['またね'] : []));
+      if (ch === 3 && lover) { await Bond.date(id); continue; }
       if (ch === 0) {
         const now = G.playtime;
         if (c.talkT && now - c.talkT < TALK_CD) { await UI.say(U.pick(['さっきもお話ししたね。ふふ。', 'またあとでね。', 'ちょっと休憩中〜。']), opt); continue; }
         c.talkT = now;
+        if (lover) { await UI.say(U.pick(ROMANCE[id].talk), opt); Sound.play('heal'); continue; }
         await UI.say(U.pick([`${CHARS[id].title}のお仕事の話、聞いてくれる?`, 'この前の冒険、楽しかったね!', 'ここ、いい家だね。', 'あなたと話すの、好きだな。', 'おなかすいたね。']), opt);
         Sound.play('heal');
         Bond.gain(id, 6);
@@ -204,6 +207,11 @@ const Home = {
         const gi = await UI.ask('どれをあげる?', gs.map(k => `${GIFTS[k].n} ×${G.gifts[k]}`).concat(['やめる']));
         if (gi < 0 || gi >= gs.length) continue;
         const k = gs[gi];
+        if (GIFTS[k].ring) {
+          if (canConfess(id)) { G.gifts[k]--; await Bond.confess(id); return; }
+          await UI.say(lover ? 'もう、ちゃんと受け取ってるよ。…ずっと大事にしてる。' : 'きれいな指輪…!でも、これはとっても大切なものだから、\n今はまだ受け取れないよ。', opt);
+          continue;
+        }
         G.gifts[k]--;
         const fav = GIFT_FAV[id] === k;
         await UI.say(fav ? `わあっ、${GIFTS[k].n}!大好きなの!\nありがとう!` : `${GIFTS[k].n}?ありがとう、大事にするね。`, opt);

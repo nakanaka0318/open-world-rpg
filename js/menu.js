@@ -206,7 +206,7 @@ const Menu = {
       L.body.querySelectorAll('[data-sk]').forEach(el => el.onclick = e => {
         e.stopPropagation();
         const k = el.dataset.sk;
-        if (k && !G.skins[k]) { Sound.play('buzz'); UI.toast(SKINS[k].gacha ? '衣装ガチャで手に入る' : '絆レベルを最大にすると手に入る'); return; }
+        if (k && !G.skins[k]) { Sound.play('buzz'); UI.toast(SKINS[k].gacha ? '衣装ガチャで手に入る' : SKINS[k].lover ? '恋人(絆Lv11)になると手に入る' : '絆レベルを最大にすると手に入る'); return; }
         c.skin = k || null; Sound.play('ok');
         const y = L.body.scrollTop; render(); L.body.scrollTop = y;
         Game.autoSave && Game.autoSave(true);

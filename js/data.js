@@ -590,6 +590,7 @@ const BANNER_DEFS = [
   { id: 'limited', n: '【限定】星詠みの姫君', sub: '水晶の加護により解放!限定★5 ステラ登場', kind: 'char', rates: [3, 12, 85], pickup: 'stella', limited: true, color: '#ffe66d', show: g => g.crystals.length >= 2 },
   { id: 'elem', n: () => ELEM[weeklyElem()].n + '属性フェス', sub: () => '今週は' + ELEM[weeklyElem()].n + '属性のキャラが出やすい!(該当★4・★5の出現率UP)', kind: 'char', rates: [3, 12, 85], elem: () => weeklyElem(), color: () => ELEM[weeklyElem()].c, show: g => g.crystals.length >= 1, feature: () => charPool(5).find(k => CHARS[k].elem === weeklyElem()) || 'seres' },
   { id: 'skin', n: '衣装ガチャ', sub: '仲間の衣装(見た目だけ変わる)が手に入る。仲間にしたキャラの衣装だけが出ます。重複は星晶石50個に', kind: 'skin', rates: [12, 88, 0], color: '#ff9fd0', show: () => secretOn() },
+  { id: 'star5', n: '★5確定召喚', sub: '1回で★5の仲間が必ず出る!(2500個・単発のみ)', kind: 'char', rates: [100, 0, 0], singleCost: 2500, onlySingle: true, color: '#ffd94a' },
   { id: 'card', n: 'カード召喚', sub: 'デッキに入れる共通カードが手に入る。同じカードが出ると+1強化', kind: 'card', rates: [4, 16, 80], color: '#c8d0e0' },
 ];
 // ピックアップ: 選んだキャラは他の★5の8倍の重みで抽選

@@ -101,10 +101,11 @@ const Gacha = {
         }
         body.appendChild(U.el('div', 'g-rate', b.kind === 'skin' ? `提供割合 ★5(ドレス) ${b.rates[0]}% ／ ★4 ${b.rates[1]}%<br>衣装は見た目だけ変わります。メニューのキャラ詳細で着替えられます` : `提供割合 ★5 ${b.rates[0]}% ／ ★4 ${b.rates[1]}% ／ ★3 ${b.rates[2]}%<br>10連は ★4以上 1枠確定!`));
         const btns = U.el('div', 'g-btns');
-        const one = U.el('div', 'g-btn single' + (focus === 0 ? ' cur' : ''), `単発召喚<br><span class="gem">◆</span>${GACHA_COST.single}`);
+        const one = U.el('div', 'g-btn single' + (focus === 0 ? ' cur' : ''), `単発召喚<br><span class="gem">◆</span>${b.singleCost || GACHA_COST.single}`);
         const ten = U.el('div', 'g-btn ten' + (focus === 1 ? ' cur' : ''), `10連召喚<br><span class="gem">◆</span>${b.tenCost || GACHA_COST.ten}`);
         if (b.onlyTen) one.classList.add('dis');
-        if (G.stones < GACHA_COST.single || b.onlyTen) one.classList.add('dis');
+        if (G.stones < (b.singleCost || GACHA_COST.single) || b.onlyTen) one.classList.add('dis');
+        if (b.onlySingle) ten.classList.add('dis');
         if (G.stones < (b.tenCost || GACHA_COST.ten)) ten.classList.add('dis');
         one.onclick = e => { e.stopPropagation(); focus = 0; go(1); };
         ten.onclick = e => { e.stopPropagation(); focus = 1; go(10); };
@@ -121,8 +122,9 @@ const Gacha = {
       const showPool = (b) => this.pool(b);
       const go = async (n) => {
         const b = banners[bi];
-        const cost = n === 10 ? (b.tenCost || GACHA_COST.ten) : GACHA_COST.single;
+        const cost = n === 10 ? (b.tenCost || GACHA_COST.ten) : (b.singleCost || GACHA_COST.single);
         if (n === 1 && b.onlyTen) { Sound.play('buzz'); return; }
+        if (n === 10 && b.onlySingle) { Sound.play('buzz'); return; }
         if (G.stones < cost) { Sound.play('buzz'); UI.toast('星晶石が足りない!<br>宝箱・パズル・ボス討伐で集めよう', 2000); return; }
         Sound.play('ok');
         const c = await UI.ask(`星晶石 ${cost} 個を使って\n${n === 10 ? '10連' : '単発'}召喚しますか?\n(所持: ${G.stones})`, ['召喚する!', 'やめる']);
@@ -143,7 +145,7 @@ const Gacha = {
           if (k === 'b' || k === 'menu') { Sound.play('cancel'); done(); }
           else if (k === 'left' || k === 'up') { bi = (bi + banners.length - 1) % banners.length; Sound.play('cursor'); render(); }
           else if (k === 'right' || k === 'down') { bi = (bi + 1) % banners.length; Sound.play('cursor'); render(); }
-          else if (k === 'a') { go(banners[bi].onlyTen ? 10 : 10); }
+          else if (k === 'a') { go(banners[bi].onlySingle ? 1 : 10); }
         },
       };
       UI.push(layer);

@@ -46,6 +46,8 @@ const Field = {
     this.noEnemy = new Uint8Array(MW * MH);
     for (const s of W.structs) if (s.kind !== 'dungeon') for (let y = s.y - 2; y < s.y + s.h + 2; y++) for (let x = s.x - 2; x < s.x + s.w + 2; x++) if (x >= 0 && y >= 0 && x < MW && y < MH) this.noEnemy[this.key(x, y)] = 1;
     this.curRegion = this.regionAt(this.p.x, this.p.y);
+    Home.furn = []; Home.girls = []; Home.carrying = null;
+    Home.refresh();
     this.reveal();
     this.updateLoc(true);
   },
@@ -144,7 +146,7 @@ const Field = {
     if (TILE_DEFS[t].solid) { if (t === T.SEAL && !this.sealHinted) { this.sealHinted = true; this.interactTile(nx, ny, t); } return; }
     p.fx = p.x; p.fy = p.y; p.x = nx; p.y = ny; p.t = 0; p.moving = true; p.steps++;
     const nr = this.regionAt(nx, ny);
-    if (nr !== this.curRegion) { this.curRegion = nr; }
+    if (nr !== this.curRegion) { this.curRegion = nr; if (nr && nr === Home.region()) Home.onEnter(); }
   },
   push(b, dx, dy) {
     const tx = b.x + dx, ty = b.y + dy;
@@ -234,7 +236,7 @@ const Field = {
     n.dir = d;
     const h = n.home;
     if (h && (nx <= h.x || ny <= h.y || nx >= h.x + h.w - 1 || ny >= h.y + h.h - 1)) return;
-    if (!this.walkable(nx, ny) || this.regionAt(nx, ny) !== 0 || (nx === this.p.x && ny === this.p.y)) return;
+    if (!this.walkable(nx, ny) || this.regionAt(nx, ny) !== (n.room || 0) || (nx === this.p.x && ny === this.p.y)) return;
     const tt = this.tile(nx, ny);
     if (tt === T.DOOR) return;
     n.fx = n.x; n.fy = n.y; this.moveObj(n, nx, ny); n.t = 0;
@@ -353,6 +355,7 @@ const Field = {
     if (!o && TILE_DEFS[t].counter) { const o2 = this.objAt(fx + dx, fy + dy); if (o2 && o2.type === 'npc') o = o2; }
     this.busy = true;
     try {
+      if (Home.carrying && Home.inside(fx, fy) && !(o && o.type === 'npc')) { await Home.place(fx, fy); return; }
       if (o) await this.interactObj(o);
       else if (!(await this.interactTile(fx, fy, t))) await this.search();
     } finally { this.busy = false; }
@@ -376,6 +379,8 @@ const Field = {
       await Story.saveCrystal(o);
     } else if (o.type === 'boss') {
       this.busy = false; await this.bossTalk(o); this.busy = true;
+    } else if (o.type === 'furn') {
+      await Home.furnTalk(o);
     } else if (o.type === 'boulder') {
       await UI.say('大きな岩だ。押せば動きそうだ。');
     } else if (o.type === 'enemy') {
@@ -392,6 +397,7 @@ const Field = {
     if (t === T.WELL) { await UI.say('井戸をのぞきこんだ。\n水面に自分の顔がうつっている。'); return true; }
     if (t === T.GATE) { await UI.say('鉄格子が道をふさいでいる。\nどこかに仕掛けがあるようだ。'); return true; }
     if (t === T.HOLE) { await UI.say('深い穴だ。落ちたら戻れそうにない…\n何かで埋められないだろうか。'); return true; }
+    if ((t === T.SHELF || t === T.BED) && Home.inside(x, y)) { this.busy = false; if (t === T.SHELF) await Home.menu(); else await Home.rest(); this.busy = true; return true; }
     if (t === T.SHELF) { await UI.say(U.pick(['古い冒険の本が並んでいる。', '「はじめての召喚術」という本がある。\n星晶石を捧げると仲間が現れるらしい。', '料理の本だ。おいしそう…', '「カードの心得」\n敵の頭上には次の行動が見える。\n攻撃が来るときはブロックで守るべし。'])); return true; }
     if (t === T.BED) { await UI.say('ふかふかのベッドだ。'); return true; }
     if (t === T.POT) { await UI.say('つぼの中は空っぽだ。'); return true; }
@@ -506,11 +512,13 @@ const Field = {
       const fr = o.moving ? (o.steps % 2 ? 1 : 2) : 0;
       this.shadow(ctx, sx, sy);
       ctx.drawImage(girlSprite(look, o.dir, o.moving && o.t < 0.6 ? fr : 0), sx, sy - 2);
+      if (Home.carrying) { ctx.globalAlpha = 0.85; ctx.drawImage(furnCanvas(Home.carrying), sx + 2, sy - 15, 12, 12); ctx.globalAlpha = 1; }
       return;
     }
     switch (o.type) {
       case 'chest': ctx.drawImage(G.chests[o.id] ? SPR.obj.chestOpen : SPR.obj.chest, sx, sy); break;
       case 'boulder': ctx.drawImage(SPR.obj.boulder, sx, sy); break;
+      case 'furn': ctx.drawImage(furnCanvas(o.f), sx, sy - 1); break;
       case 'portal': {
         const t = this.time;
         for (let i = 0; i < 14; i++) {

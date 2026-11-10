@@ -796,6 +796,7 @@ const Battle = {
       await new Promise(r => { this.onAny = () => { this.onAny = null; r(); }; setTimeout(() => { if (this.onAny) this.onAny(); }, this.auto ? 1200 : 2200); });
       return 'win';
     }
+    for (const c of this.party) Bond.gain(c.id, this.opts.boss ? 10 : 3);
     let exp = 0, gold = 0, stones = 0;
     const drops = [];
     for (const e of this.enemies) {

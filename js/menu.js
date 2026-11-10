@@ -199,6 +199,7 @@ const Menu = {
       ${RELICS[id] ? `<div class="st-sec">レリック <small class="dim">(パーティにいると戦闘中に発動。凸で強化)</small></div>${relicHTML(id)}` : ''}${ultHTML(id)}
       <div class="st-sec">固有カード <small class="dim">(凸で強化。5凸でコスト2以上が-1)</small></div>
       <div class="deck-grid">${charCards(id).map(cid => cardFaceHTML(cid)).join('')}</div>
+      ${Bond.html(id)}
       <div class="st-sec">衣装 <small class="dim">(タップで着替え。見た目だけ変わる。衣装ガチャで入手)</small></div>
       <div class="skin-grid"><div class="skin-c${!c.skin ? ' on' : ''}" data-sk=""><img src="${portraitURL(d.look)}"><div>いつもの服</div></div>${skinsOf(id).map(k => `<div class="skin-c${c.skin === k ? ' on' : ''}${G.skins[k] ? '' : ' no'}" data-sk="${k}"><img src="${portraitURL(skinLook(k))}"><div>${G.skins[k] ? U.esc(SKINS[k].n) : '？？？'}</div></div>`).join('')}</div>
       <div class="st-prof">${U.esc(d.profile)}</div>`;

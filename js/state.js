@@ -11,7 +11,7 @@ function mkChar(id, lv = 1) {
 }
 function charStats(c) {
   const d = CHARS[c.id];
-  const mul = lbStatMul(effLB(c.id, c.lb));
+  const mul = lbStatMul(effLB(c.id, c.lb)) * (1 + 0.02 * ((c.bond && c.bond.lv || 1) - 1));
   const o = {};
   for (const k of ['hp', 'mp', 'atk', 'def', 'mag', 'spd']) o[k] = Math.floor((d.base[k] + d.grow[k] * (c.lv - 1)) * mul);
   o.elem = 'none';
@@ -34,7 +34,7 @@ function newGame() {
     lastSave: null,
     explored: new Uint8Array(MW * MH),
     gacha: { beginnerDone: false, total: 0, history: [] },
-    login: '', playtime: 0, seal: false, seen: {}, skins: {},
+    login: '', playtime: 0, seal: false, seen: {}, skins: {}, home: { owned: {}, placed: [] }, gifts: {},
   };
   G.roster.aria = mkChar('aria', 1);
   const s = charStats(G.roster.aria); G.roster.aria.hp = s.hp; G.roster.aria.mp = s.mp;

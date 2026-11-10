@@ -190,7 +190,7 @@ function cardPower(cid) {
 function cardOps(cid) {
   const c = CARDS[cid];
   const L = cardEffLevel(cid), pw = cardPower(cid);
-  const up = (c.owner ? lbCardMul(L) : 1 + 0.25 * L) * (c.flags.with && G && G.party.includes(c.flags.with) ? 1.5 : 1);
+  const up = (c.owner ? lbCardMul(L) : 1 + 0.25 * L) * (c.flags.with && G && G.party.includes(c.flags.with) ? 1.5 : 1) * (c.ult && typeof bondUltMul === 'function' && G ? bondUltMul(c.owner) : 1);
   const st = (L >= 3 ? 1 : 0) + (L >= 5 ? 1 : 0);
   return c.ops.map(o => {
     let n = o.n;

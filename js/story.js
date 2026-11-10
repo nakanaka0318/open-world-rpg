@@ -57,6 +57,7 @@ const NPCS = {
     name: '見張りのエマ', look: NL('#5a3a2a', '#8a92a6', 'pony', 'band', '#e43b44'),
     async talk() {
       await UI.say(G.seal ? '封印が解けたのね…!気をつけて、アリア。' : ['北の湖に浮かぶのが 魔王城よ。', '橋には紫の封印がかかってて、誰も渡れないの。\n4つの水晶を集めれば…きっと!', '外の魔物は姿が見えるから、避けて進むこともできるわ。\nBボタン(X/Shift)を押しながら歩くと走れるよ。'], { name: this.name, look: this.look });
+      if (!G.flags.homeIntro) await UI.say('そうそう、村の南の門を出てすぐの空き家、\n村長さんがあなたたちに使ってほしいって!', { name: this.name, look: this.look });
     },
   },
   frost_shop: { name: '道具屋のスノウ', look: NL('#c8d8f0', '#3a6ed8', 'long', 'hairpin', '#7ac8f0', '#3a7ad8'), async talk() { await Story.shop('frostia', this); } },

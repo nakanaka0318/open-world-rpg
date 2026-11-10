@@ -542,3 +542,9 @@ body.in-battle .tower-layer { display: none; }
 .skin-c img { width: 100%; image-rendering: pixelated; border-radius: 6px; background: radial-gradient(circle at 50% 35%, #5a6ad8, #1a2058); }
 .skin-c.on { border-color: #ffd94a; background: #2e2660; }
 .skin-c.no { opacity: .35; filter: grayscale(.8); cursor: default; }
+/* 絆 */
+.bond { display: inline-flex; align-items: center; gap: .4em; }
+.bond b { color: #ff8ac0; }
+.bond i { display: inline-block; width: 6em; height: .6em; background: #2a1a3a; border: 1px solid #000; border-radius: 4px; overflow: hidden; }
+.bond i u { display: block; height: 100%; background: linear-gradient(#ffb8e0, #ff5aa0); text-decoration: none; }
+.bond small { color: #ffd94a; font-weight: bold; }

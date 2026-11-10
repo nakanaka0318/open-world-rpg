@@ -405,20 +405,39 @@ const FB_OUTFITS = {
     fbFill(g, B.hand, SKIN);
   },
   swim(g, B, K) {
-    const C = K.L.cloth, v = K.adult ? K.hash % 3 : 1 + K.hash % 2;
+    // 体の内側だけに描く (腕や手にはみ出さない)
+    const C = K.L.cloth, T = K.A, inT = m => FBM.and(B.torso, m);
+    const v = K.adult ? K.hash % 3 : 1 + K.hash % 2;
+    const straps = (y1) => { fbLine(g, 28, 27, 28, y1, C); fbLine(g, 36, 27, 36, y1, C); };
+    const dots = (m) => { if (K.hash % 2) for (let y = 34; y < 58; y += 4) for (let x = 25 + (y % 8 ? 2 : 0); x < 40; x += 4) if (m(x, y)) fbDot(g, x, y, WHITE); };
     if (v === 0) { // フリルのビキニ
-      fbFill(g, FBM.or(FBM.ell(29.4, 34.6, 2.8, 2.1), FBM.ell(34.6, 34.6, 2.8, 2.1)), C);
-      FBP.frill(g, 36, 26, 38, WHITE);
-      fbLine(g, 29, 32, 30, 26, C); fbLine(g, 35, 32, 34, 26, C);
-      fbFill(g, FBM.and(B.torso, FBM.band(53, 58)), C); FBP.frill(g, 57, 24, 40, WHITE);
-    } else if (v === 1) { // ワンピース水着 (フリルスカートつき)
-      fbFill(g, FBM.or(FBM.and(B.torso, FBM.band(31, 58)), FBM.sym([[32, 52], [26, 52], [23, 62], [32, 62]])), C);
-      fbLine(g, 29, 31, 30, 26, C); fbLine(g, 35, 31, 34, 26, C);
-      FBP.frill(g, 61, 22, 42, WHITE); FBP.bow(g, 32, 33, WHITE);
+      const top = inT(FBM.or(FBM.ell(29.3, 34.6, 3, 2.2), FBM.ell(34.7, 34.6, 3, 2.2)));
+      const bottom = FBM.sym([[32, 53], [B.hip + 0.2, 53], [B.hip + 1, 55], [30, 58.5], [32, 59]]);
+      fbFill(g, FBM.or(top, bottom), C);
+      straps(32);
+      for (let x = 26; x <= 38; x++) if (B.torso(x, 37)) fbDot(g, x, 37 + (x % 2), WHITE);
+      fbDot(g, Math.ceil(B.hip), 53, T); fbDot(g, Math.floor(64 - B.hip), 53, T);
+      dots(FBM.or(top, bottom));
+    } else if (v === 1) { // ワンピース水着 (年少はミニスカートつき)
+      const body = FBM.and(inT(FBM.band(31, 57)), FBM.not(FBM.ell(32, 30.5, 3.2, 2.2)));
+      const crotch = FBM.sym([[32, 52], [B.hip + 0.6, 52], [B.hip + 1.4, 54.5], [30.2, 58.5], [32, 59]]);
+      fbFill(g, FBM.or(body, crotch), C);
+      straps(31);
+      if (!K.adult) {
+        fbFill(g, FBM.sym([[32, 52], [B.hip - 0.2, 52], [B.hip - 1.6, 60], [32, 60]]), C);
+        for (let x = Math.ceil(B.hip - 1.6); x < 64 - (B.hip - 1.6); x++) fbDot(g, x, 60 + (x % 2), WHITE);
+      }
+      fbFill(g, inT(FBM.band(43.5, 45.5)), T);
+      FBP.bow(g, 32, 33.5, T, 0.8);
+      dots(body);
     } else { // スポーティ (タンクトップとショートパンツ)
-      fbFill(g, FBM.and(B.torso, FBM.band(30, 44)), C);
-      fbFill(g, FBM.or(FBM.and(B.torso, FBM.band(52, 58)), FBM.and(B.leg, FBM.band(55, 61))), U.shade(C, -0.3));
-      fbLine(g, 22, 54, 42, 54, WHITE);
+      const top = inT(FBM.band(30.5, 44));
+      fbFill(g, top, C);
+      straps(31);
+      const shorts = FBM.or(inT(FBM.band(51, 58)), FBM.and(B.leg, FBM.band(55, 62)));
+      fbFill(g, shorts, T);
+      for (let y = 52; y < 62; y++) for (const x of [25, 38]) if (shorts(x, y)) fbDot(g, x + (y > 56 ? (x < 32 ? 1 : -1) : 0), y, WHITE);
+      for (let x = 26; x <= 38; x++) if (B.torso(x, 43)) fbDot(g, x, 43, WHITE);
     }
   },
   maid(g, B, K) {

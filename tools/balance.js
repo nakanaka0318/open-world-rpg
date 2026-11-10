@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
         Battle.auto = true; Battle.fast = true;
         const origWait = Battle.wait; Battle.wait = () => Promise.resolve();
         const origCut = Battle.cutin; Battle.cutin = async () => { };
-        const pr = Battle.start(grp, { bg: 'meadow', boss: ENEMIES[grp[0]].boss });
+        const pr = Battle.start(grp, { bg: 'meadow', boss: ENEMIES[grp[0]].boss, arena: true });
         const t0 = Date.now();
         let res;
         await new Promise(ok => { const iv = setInterval(() => { if (Battle.onAny) Battle.onAny(); if (Battle.turn > 60) { Battle.P.hp = 0; Battle.checkEnd(); } }, 50); pr.then(x => { res = x; clearInterval(iv); ok(); }); });

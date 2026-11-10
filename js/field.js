@@ -22,6 +22,7 @@ const Field = {
     if (G.seal) W.tiles[this.key(W.seal.x, W.seal.y)] = T.BRIDGE;
     // オブジェクト
     this.objs = new Map();
+    this.portal = null;
     this.boulders = W.objs.boulders.map(b => {
       const s = G.boulders[b.id];
       const o = { type: 'boulder', id: b.id, x: s ? s[0] : b.sx, y: s ? s[1] : b.sy, sx: b.sx, sy: b.sy, struct: b.struct, gone: s === null };
@@ -30,6 +31,7 @@ const Field = {
     });
     for (const b of this.boulders) if (!b.gone) this.place(b);
     for (const c of W.objs.chests) this.place(Object.assign({ type: 'chest' }, c));
+    this.placePortal();
     this.shards = new Map();
     for (const s of W.objs.shards || []) if (!(G.shards && G.shards[s.id])) this.shards.set(this.key(s.x, s.y), s);
     for (const s of W.objs.saves) this.place(Object.assign({ type: 'save' }, s));
@@ -46,6 +48,15 @@ const Field = {
     this.curRegion = this.regionAt(this.p.x, this.p.y);
     this.reveal();
     this.updateLoc(true);
+  },
+  // 魔王撃破後、魔王城の前に星界の塔への門が現れる
+  placePortal() {
+    if (!G.flags.cleared || this.portal) return;
+    const e = WORLD.dunInfo.castle.entrance;
+    for (const [dx, dy] of [[2, 1], [-2, 1], [2, 2], [-2, 2], [1, 2], [-1, 2]]) {
+      const x = e.x + dx, y = e.y + dy;
+      if (!TILE_DEFS[this.tile(x, y)].solid && !this.objAt(x, y)) { this.portal = { type: 'portal', x, y }; this.place(this.portal); return; }
+    }
   },
   pickLead(area) { const a = AREAS[area]; const g = a.groups[Math.floor(Math.random() * a.groups.length)]; return g[0]; },
   setFloor(x, y, structId) {
@@ -359,6 +370,8 @@ const Field = {
       Game.hud();
       await UI.say(`宝箱を開けた!\n${txt} を手に入れた!`);
       Game.autoSave();
+    } else if (o.type === 'portal') {
+      this.busy = false; await Tower.open(); this.busy = true;
     } else if (o.type === 'save') {
       await Story.saveCrystal(o);
     } else if (o.type === 'boss') {
@@ -498,6 +511,17 @@ const Field = {
     switch (o.type) {
       case 'chest': ctx.drawImage(G.chests[o.id] ? SPR.obj.chestOpen : SPR.obj.chest, sx, sy); break;
       case 'boulder': ctx.drawImage(SPR.obj.boulder, sx, sy); break;
+      case 'portal': {
+        const t = this.time;
+        for (let i = 0; i < 14; i++) {
+          const a = i / 14 * Math.PI * 2 + t * 2;
+          ctx.fillStyle = ['#ffe66d', '#c27ff0', '#7fe8ff'][i % 3];
+          ctx.fillRect(Math.round(sx + 8 + Math.cos(a) * 7) - 1, Math.round(sy + 6 + Math.sin(a) * 8) - 1, 2, 2);
+        }
+        ctx.fillStyle = 'rgba(200,160,255,0.5)'; ctx.fillRect(sx + 5, sy + 1, 6, 11);
+        ctx.fillStyle = '#fff'; ctx.fillRect(sx + 7, sy + 4 + Math.round(Math.sin(t * 4) * 2), 2, 2);
+        break;
+      }
       case 'save': {
         const b = Math.round(Math.sin(this.time * 3) * 2);
         ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(sx + 4, sy + 13, 8, 2);

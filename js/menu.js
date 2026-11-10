@@ -368,9 +368,9 @@ const Menu = {
       const cr = Object.keys(CRYSTAL_INFO).map(k => `<div class="cr ${G.crystals.includes(k) ? 'got' : ''}"><div class="crg" style="--cc:${CRYSTAL_INFO[k].c}"></div><div><b>${CRYSTAL_INFO[k].n}</b><br><small>${CRYSTAL_INFO[k].where}</small></div></div>`).join('');
       const dl = WORLD.structs.filter(s => s.kind === 'dungeon').map(s => `<div class="dl ${G.bosses[s.id] ? 'done' : ''}"><span>${U.esc(s.name)}</span><span>推奨Lv${s.lv}</span><b>${G.bosses[s.id] ? '攻略済み' : '未攻略'}</b></div>`).join('');
       L.body.innerHTML = `<div class="st-sec">封印の水晶 ${G.crystals.length}/4</div><div class="crs">${cr}</div>
-      <div class="sc-note obj">${U.esc(Story.objective())}</div>
+      <div class="sc-note obj">${U.esc(Story.objective())}</div>${G.flags.cleared ? `<div class="sc-note">星界の塔 最高到達 ${(G.tower && G.tower.best) || 0}階${Tower.title() ? ' ／ 称号「' + U.esc(Tower.title()) + '」' : ''}</div>` : ''}
       <div class="st-sec">ダンジョン</div>${dl}
-      <div class="st-sec">データ</div><div class="st-grid"><div><span>プレイ時間</span><b>${fmtTime(G.playtime)}</b></div><div><span>宝箱</span><b>${opened}/${total}</b></div><div><span>仲間</span><b>${Object.keys(G.roster).length}/${Object.keys(CHARS).length}</b></div><div><span>召喚回数</span><b>${G.gacha.total}</b></div><div><span>カード</span><b>${Object.keys(G.cards || {}).length}/${Object.keys(COMMON_CARDS).length}</b></div><div><span>隠し宝</span><b>${Object.keys(G.hidden).length}/${WORLD.objs.hidden.length}</b></div></div>`;
+      <div class="st-sec">データ</div><div class="st-grid"><div><span>プレイ時間</span><b>${fmtTime(G.playtime)}</b></div><div><span>宝箱</span><b>${opened}/${total}</b></div><div><span>仲間</span><b>${Object.keys(G.roster).length}/${Object.keys(CHARS).length}</b></div><div><span>召喚回数</span><b>${G.gacha.total}</b></div><div><span>星界の塔</span><b>最高${(G.tower && G.tower.best) || 0}階</b></div><div><span>カード</span><b>${Object.keys(G.cards || {}).length}/${Object.keys(COMMON_CARDS).length}</b></div><div><span>隠し宝</span><b>${Object.keys(G.hidden).length}/${WORLD.objs.hidden.length}</b></div></div>`;
     });
   },
 

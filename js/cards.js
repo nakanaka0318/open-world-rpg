@@ -80,6 +80,18 @@ const COMMON_CARDS = {
   c_aegis: ['無敵の盾', 's', 2, 'b24', 5],
 };
 const STARTER_DECK = ['c_strike', 'c_defend', 'c_quick', 'c_bandage', 'c_focus'];
+// 星界の塔でしか手に入らない武器カード (共通カード枠に入れられる。ガチャには出ない)
+Object.assign(COMMON_CARDS, {
+  w_skysword: ['星空の大剣', 'a', 2, 'D20', 5],
+  w_lance: ['極光の槍', 'a', 1, 'd14 v2', 5],
+  w_bow: ['天弓アストラ', 'a', 1, 'd6x3', 5],
+  w_aegis: ['星盾アイギス', 's', 1, 'b18', 5],
+  w_scythe: ['宵月の大鎌', 'a', 2, 'x5 D26', 5],
+  w_staff: ['星詠みの神杖', 's', 0, 'e1 c2 !E', 5],
+  w_ring: ['永劫の指輪', 's', 1, 'g6 b8', 5],
+  w_blade: ['流星の双剣', 'a', 0, 'd5x2', 5],
+});
+const TOWER_WEAPONS = ['w_skysword', 'w_lance', 'w_bow', 'w_aegis', 'w_scythe', 'w_staff', 'w_ring', 'w_blade'];
 // トリックカード (ラピッドハットが戦闘中に生み出す。コスト0・廃棄)
 const TRICK_CARDS = { tk_dove: ['鳩の群れ', 'a', 0, 'd4 !E'], tk_ace: ['エースのカード', 'a', 0, 'd3 c1 !E'], tk_hat: ['帽子の盾', 's', 0, 'b5 !E'] };
 
@@ -122,15 +134,16 @@ function parseFx(str) {
   CARDS.blank = { id: 'blank', n: '空白のカード', type: 's', cost: -1, ops: [], flags: {}, owner: null, rar: 1, blank: true };
 })();
 function charCards(charId) { return [0, 1, 2, 3, 4].map(i => charId + '_' + i).filter(id => CARDS[id]); }
-function cardPool(rar) { return Object.keys(COMMON_CARDS).filter(k => COMMON_CARDS[k][4] === rar); }
+function cardPool(rar) { return Object.keys(COMMON_CARDS).filter(k => COMMON_CARDS[k][4] === rar && !TOWER_WEAPONS.includes(k)); }
 function cardNeedsTarget(c) { return c.ops.some(o => 'dvwpzqoru'.includes(o.k)); }
 
 // 強化段階 (固有=凸数, 共通=精錬)
 function cardLevel(cid) {
   const c = CARDS[cid];
   if (!c || c.blank) return 0;
-  if (c.owner) return G && G.roster && G.roster[c.owner] ? G.roster[c.owner].lb : 0;
-  return G && G.cards && G.cards[cid] ? G.cards[cid].r : 0;
+  const bonus = (typeof Tower !== 'undefined' && Tower.bonus) ? Tower.bonus(cid) : 0;
+  if (c.owner) return (G && G.roster && G.roster[c.owner] ? G.roster[c.owner].lb : 0) + bonus;
+  return (G && G.cards && G.cards[cid] ? G.cards[cid].r : 0) + bonus;
 }
 // 固有カードの相当凸数 (レア度で換算)
 function cardEffLevel(cid) { const c = CARDS[cid]; if (c && c.owner && !c.token) return effLB(c.owner, cardLevel(cid)); if (c && c.token) return effLB('rapidhat', cardLevel(cid)); return cardLevel(cid); }
@@ -203,7 +216,7 @@ function cardFaceHTML(cid, opts = {}) {
   const cost = opts.free ? 0 : cardCost(cid, L);
   const owner = c.owner && CHARS[c.owner];
   const ops = opts.ops || cardOps(cid);
-  return `<div class="ccard ${c.type === 'a' ? 'atk' : 'skl'} r${c.rar}${c.blank ? ' blank' : ''}${opts.cls ? ' ' + opts.cls : ''}" data-cid="${cid}">
+  return `<div class="ccard ${c.type === 'a' ? 'atk' : 'skl'} r${c.rar}${TOWER_WEAPONS.includes(cid) ? ' tw' : ''}${c.blank ? ' blank' : ''}${opts.cls ? ' ' + opts.cls : ''}" data-cid="${cid}">
     <div class="cc-cost${opts.free ? ' free' : ''}">${cost < 0 ? '-' : cost}</div>${opts.charge ? `<div class="cc-charge">チャージ${opts.charge}</div>` : ''}
     <div class="cc-name">${U.esc(c.n)}${L ? `<b>+${L}</b>` : ''}</div>
     <div class="cc-art" ${owner ? `style="--oc:${ELEM[owner.elem].c}"` : ''}><img src="${cardArtURL(cid)}"></div>

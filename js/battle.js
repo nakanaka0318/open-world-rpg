@@ -67,22 +67,25 @@ const Battle = {
     this.enemies = enemyIds.map(id => {
       const d = ENEMIES[id];
       seen[id] = (seen[id] || 0) + 1;
-      const mul = (opts.mul || 1) * enemyMul(id);
+      const mul = opts.mulOf ? opts.mulOf(id) : (opts.mul || 1) * enemyMul(id);
       const hp = Math.round((d.chp || d.hp) * mul);
       return { id, d, mul, n: d.n + (opts.tag ? opts.tag : '') + (counts[id] > 1 ? 'ABCD'[seen[id] - 1] : ''), hp, max: hp, block: 0, st: {}, alive: true, flash: 0, shake: 0, fade: 1, lunge: 0, boss: !!d.boss, x: 0, y: 0, w: 32, h: 32 };
     });
     // パーティ (共有HP)
     this.party = partyChars();
-    const maxhp = this.party.reduce((a, c) => a + charStats(c).hp, 0);
-    const hp = this.party.reduce((a, c) => a + Math.max(0, c.hp), 0);
+    const maxhp = opts.pool ? opts.pool.max : this.party.reduce((a, c) => a + charStats(c).hp, 0);
+    const hp = opts.pool ? opts.pool.hp : this.party.reduce((a, c) => a + Math.max(0, c.hp), 0);
     this.P = { hp: Math.max(1, hp), max: maxhp, block: 0, st: {}, gained: 0 };
-    this.relics = this.party.filter(c => RELICS[c.id]).map(c => ({ id: c.id, L: c.lb || 0, r: RELICS[c.id] }));
+    this.relics = this.party.filter(c => RELICS[c.id]).map(c => ({ id: c.id, L: c.lb || 0, r: RELICS[c.id] })).concat(opts.extraRelics || []);
     this.atkCount = 0;
     // デッキ
     const deck = [];
-    for (let i = 0; i < 4; i++) { const c = this.party[i]; if (c) deck.push(...charCards(c.id)); else for (let k = 0; k < 5; k++) deck.push('blank'); }
-    deck.push(...(G.deck || STARTER_DECK).slice(0, 5));
-    while (deck.length < 25) deck.push('blank');
+    if (opts.deck) deck.push(...opts.deck);
+    else {
+      for (let i = 0; i < 4; i++) { const c = this.party[i]; if (c) deck.push(...charCards(c.id)); else for (let k = 0; k < 5; k++) deck.push('blank'); }
+      deck.push(...(G.deck || STARTER_DECK).slice(0, 5));
+      while (deck.length < 25) deck.push('blank');
+    }
     this.uid = 0;
     this.drawPile = this.shuffle(deck.map(cid => ({ u: this.uid++, cid })));
     this.hand = []; this.discard = []; this.exhaust = [];
@@ -112,7 +115,7 @@ const Battle = {
     const tools = U.el('div', 'btools');
     this.autoBtn = U.el('div', 'tbtn' + (this.auto ? ' on' : ''), 'AUTO');
     this.fastBtn = U.el('div', 'tbtn' + (this.fast ? ' on' : ''), '×2');
-    this.runBtn = U.el('div', 'tbtn' + (this.opts.boss ? ' dis' : ''), 'にげる');
+    this.runBtn = U.el('div', 'tbtn' + (this.opts.boss || this.opts.noEscape ? ' dis' : ''), 'にげる');
     this.autoBtn.onclick = e => { e.stopPropagation(); this.toggleAuto(); };
     this.fastBtn.onclick = e => { e.stopPropagation(); this.fast = !this.fast; this.fastBtn.classList.toggle('on', this.fast); Sound.play('cursor'); };
     this.runBtn.onclick = e => { e.stopPropagation(); this.tryEscape(); };
@@ -672,7 +675,7 @@ const Battle = {
     this.refresh();
   },
   async tryEscape() {
-    if (!this.canAct() || this.opts.boss) { if (this.opts.boss) UI.toast('ボスからは逃げられない!'); return; }
+    if (!this.canAct() || this.opts.boss || this.opts.noEscape) { if (this.opts.boss || this.opts.noEscape) UI.toast(this.opts.noEscape ? '塔の戦いからは逃げられない!' : 'ボスからは逃げられない!'); return; }
     this.busy = true;
     this.msg('逃げ出そうとした…');
     await this.wait(400);
@@ -696,6 +699,8 @@ const Battle = {
   },
   // 共有HPを各キャラへ戻す (最大HPの割合で分配)
   syncHp() {
+    this.finalHP = this.P.hp;
+    if (this.opts.pool) return;
     const ratio = U.clamp(this.P.hp / this.P.max, 0, 1);
     for (const c of this.party) { const s = charStats(c); c.hp = this.P.hp <= 0 ? 0 : Math.max(1, Math.round(s.hp * ratio)); c.st = {}; }
   },
@@ -710,6 +715,14 @@ const Battle = {
       this.msg('パーティは力尽きてしまった…');
       await this.wait(1600);
       return 'lose';
+    }
+    if (this.opts.noReward) {
+      Sound.jingle('win');
+      const box = U.el('div', 'win result');
+      box.innerHTML = `<div class="rt">VICTORY!</div><div class="rrow"><span>残りHP</span><b>${this.P.hp}/${this.P.max}</b></div>`;
+      this.layer.el.appendChild(box);
+      await new Promise(r => { this.onAny = () => { this.onAny = null; r(); }; setTimeout(() => { if (this.onAny) this.onAny(); }, this.auto ? 1200 : 2200); });
+      return 'win';
     }
     let exp = 0, gold = 0, stones = 0;
     const drops = [];

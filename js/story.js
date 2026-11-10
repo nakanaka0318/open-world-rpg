@@ -299,6 +299,8 @@ const Story = {
     const el = U.el('div', 'layer credits');
     el.innerHTML = `<div class="cr-in"><h1>星晶のクロニクル</h1><p>〜 THE END 〜</p><p>Thank you for playing!</p><p class="sm">クリア特典: 星晶石×1000<br>クリア後も冒険を続けられます。</p><div class="crp">${Object.keys(G.roster).map(k => `<img src="${portraitURL(CHARS[k].look)}">`).join('')}</div></div>`;
     await new Promise(r => { const l = { el, handle: k => { if (k === 'a') { UI.pop(l); r(); } } }; el.onclick = () => { UI.pop(l); r(); }; UI.push(l); });
+    Field.placePortal();
+    await UI.say('魔王城の前に、星の光を放つ門が現れた…!\n(星界の塔: 魔王撃破後のやり込みダンジョン)');
     Field.updateLoc(true);
   },
 };

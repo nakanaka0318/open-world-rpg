@@ -53,6 +53,14 @@ const UNIQUE_CARDS = {
   yumeno: [['コマンド入力', 's', 0, 'k1 c1'], ['コンボ技', 'a', 1, 'o3'], ['ハメ技', 'a', 1, 'd5 w1 v1'], ['セーブポイント', 's', 1, 'b10 h5'], ['徹夜プレイ', 's', 0, 'x5 e2 c1 !E']],
   fuuri: [['竜爪連撃', 'a', 1, 'd3x3'], ['疾風の羽ばたき', 'a', 1, 'D5'], ['竜の加速', 's', 0, 'c1 e1 !E'], ['翼の守り', 's', 1, 'b7'], ['竜の吐息', 'a', 2, 'D8 w1']],
   mokomo: [['ふわふわ雲', 's', 1, 'b10'], ['雲隠れ', 's', 1, 'b6 W1'], ['雷雲', 'a', 1, 'd6 v1'], ['雨雲', 's', 1, 'P3'], ['もくもく防壁', 's', 2, 'b16 t2']],
+  nagisa: [['連撃パンチ', 'a', 1, 'd3x3'], ['気合注入', 's', 1, 's2'], ['集中の呼吸', 's', 1, 'n1 c1'], ['ラッシュ', 'a', 2, 'd2x5'], ['七連・流星拳', 'a', 4, 'd4x7']],
+  shion: [['チェックメイト', 'a', 1, 'd6 k1 c1'], ['二重の策', 's', 0, 'l3 !E'], ['王手', 'a', 2, 'd14 !T'], ['捨て駒', 'a', 1, 'i3 d40'], ['布石', 's', 1, 'b8 c2']],
+  koharu: [['エール', 's', 1, 'c2 e2 !E'], ['全力応援', 's', 1, 's4 !E'], ['チアバリア', 's', 2, 'b12 k1'], ['アンコール', 's', 1, 'R1'], ['ハイタッチ', 's', 1, 'f2 b6']],
+  sumire: [['毒の試薬', 'a', 1, 'd4 p5'], ['揮発ガス', 's', 1, 'P4'], ['劇薬反応', 'a', 2, 'G2'], ['中和剤', 's', 1, 'b8 w1'], ['毒素濃縮', 'a', 1, 'd6 p3 !P']],
+  tsumugi: [['ぬいぐるみ召喚', 's', 1, 'F1'], ['くま軍団', 's', 2, 'F2 !E'], ['もふもふガード', 's', 1, 'b10 F1'], ['針仕事', 'a', 1, 'd7'], ['おねがい総攻撃', 'a', 1, 'd4 c1']],
+  rio: [['コイントス', 'a', 1, 'C1 d12'], ['ダブルアップ', 'a', 2, 'Y1 D8'], ['イカサマガード', 's', 1, 'b10 C1 d8'], ['オールイン', 'a', 3, 'Y1 d30 !E'], ['ラッキーチャンス', 's', 0, 'c2 e1 !E']],
+  kuroha: [['呪いの人形', 'a', 1, 'N4 Z1'], ['禁断の呪文', 'a', 2, 'N9 Z2'], ['祟り', 'a', 1, 'd6 N2'], ['結界', 's', 1, 'b10'], ['呪詛返し', 'a', 1, 'd4x2 N1']],
+  seira: [['ファンファーレ', 's', 1, 'A1 c1'], ['ロングトーン', 's', 2, 'T2 b10'], ['クレッシェンド', 's', 1, 's2 f2'], ['アンサンブル', 's', 0, 'e1 A1 !E'], ['スタッカート', 'a', 1, 'd6 b6']],
   chloe: [['ひっかき', 'a', 1, 'd3x2'], ['シャドウ', 'a', 1, 'd6'], ['しのび足', 's', 1, 'b6'], ['カース', 's', 1, 'w1 v1'], ['猫の気まぐれ', 's', 0, 'c1 e1 !E']],
 };
 
@@ -102,6 +110,8 @@ const ULTIMATES = {
   terra: ['竜王覚醒', 'a', 0, 'd45 s3'], kanae: ['最高のご奉仕', 'a', 0, 'z20 e2'], lumia: ['全身全霊', 'a', 0, 'o10 s2'],
   misuzu: ['陽だまりの抱擁', 's', 0, 'b40 h20 g6'], rapidhat: ['ショウタイム', 's', 0, 'y5 k2 e1'], viola: ['真紅の夜会', 'a', 0, 'x10 u40'],
   aurora: ['極光オーロラ・ノヴァ', 'a', 0, 'D30'], luka: ['全砲門開放', 'a', 0, 'D12x3'], yumeno: ['ノーミスクリア', 'a', 0, 'o8 c2 e1'],
+  nagisa: ['十二連・天翔乱舞', 'a', 0, 'd4x12'], shion: ['詰みの一手', 'a', 0, 'd10x2 k1 c2'], koharu: ['フレーフレー全開', 's', 0, 's3 f3 e2 c2'], sumire: ['禁断の調合', 'a', 0, 'P15 G2'],
+  tsumugi: ['ぬいぐるみパレード', 'a', 0, 'F3 D10'], rio: ['ジャックポット', 'a', 0, 'Y1 D24'], kuroha: ['終わらない呪い', 'a', 0, 'd20 N12'], seira: ['グランドフィナーレ', 's', 0, 's4 f4 T3 A2'],
 };
 const ULT_MAX = 12;
 // 星界の塔でしか手に入らない武器カード (共通カード枠に入れられる。ガチャには出ない)
@@ -131,6 +141,7 @@ function parseFx(str) {
     if (tk === '!L') { flags.low = true; continue; }
     if (tk === '!P') { flags.poisoned = true; continue; }
     if (tk === '!B') { flags.blocky = true; continue; }
+    if (tk === '!T') { flags.twice = true; continue; }
     if (tk.startsWith('!W:')) { flags.with = tk.slice(3); continue; }
     const m = /^([a-zA-Z])(\d+)(?:x(\d+))?$/.exec(tk);
     if (!m) continue;
@@ -164,7 +175,7 @@ function parseFx(str) {
 })();
 function charCards(charId) { return [0, 1, 2, 3, 4].map(i => charId + '_' + i).filter(id => CARDS[id]); }
 function cardPool(rar) { return Object.keys(COMMON_CARDS).filter(k => COMMON_CARDS[k][4] === rar && !TOWER_WEAPONS.includes(k)); }
-function cardNeedsTarget(c) { return c.ops.some(o => 'dvwpzqoru'.includes(o.k)); }
+function cardNeedsTarget(c) { return c.ops.some(o => 'dvwpzqoruGN'.includes(o.k)); }
 
 // 強化段階 (固有=凸数, 共通=精錬)
 function cardLevel(cid) {
@@ -198,14 +209,17 @@ function cardOps(cid) {
     else if (o.k === 'z') return { k: 'z', n: Math.round(o.n * up * powMult(pw.p)), per: Math.round(o.n * 0.75 * up * powMult(pw.p)), hits: 1 };
     else if (o.k === 'b') n = Math.round(o.n * up * powMult(pw.def * 1.3));
     else if (o.k === 'h' || o.k === 'g') n = Math.round(o.n * up * powMult(pw.mag * 1.2));
-    else if ('mqxjyk'.includes(o.k)) n = o.n;
-    else if ('pPt'.includes(o.k)) n = Math.round(o.n * up * (0.5 + powMult(pw.p) * 0.5));
+    else if ('mqxjyknliRGFCYATZ'.includes(o.k)) n = o.n;
+    else if ('pPtN'.includes(o.k)) n = Math.round(o.n * up * (0.5 + powMult(pw.p) * 0.5));
     else if ('sfvwVW'.includes(o.k)) n = o.n + st;
     return { k: o.k, n, hits: o.hits };
   });
 }
 const FX_TXT = {
-  z: (n, h, o) => `防御無視で${n}ダメージ+奉仕した回数×${o.per}`, q: () => 'この戦闘で得たブロック+回復したHP分の防御無視ダメージ', m: n => `献身${n}ターン(与ダメージ1/2、回復とブロック2.5倍)`,
+  z: (n, h, o) => `防御無視で${n}ダメージ+奉仕した回数×${o.per}`, q: () => 'この戦闘で得たブロック+回復したHPの75%分の防御無視ダメージ',
+  n: n => `次に使うスキル${n > 1 ? n + '枚' : ''}を2回発動`, l: n => `${n}ターンの間、手札のアタックのコスト+1・2回発動`, i: n => `手札を${n}枚捨てる。捨てられたら次の効果`,
+  R: () => '廃棄されたこのキャラのカード1枚を山札に戻す', G: n => `対象の毒×${n}ダメージ`, F: n => `使い魔を${n}体召喚(毎ターン攻撃)`, C: () => 'コイン: 表ならダメージ2倍、裏なら半分',
+  Y: () => 'サイコロ: 出た目÷2倍のダメージ', N: n => `呪い${n}(毎ターン呪いの数だけダメージ)`, Z: n => `自分に脆弱${n}`, A: n => `次のアタック${n > 1 ? n + '回' : ''}が敵全体に当たる`, T: n => `${n}ターン、ブロックが次のターンに残る`, m: n => `献身${n}ターン(与ダメージ1/2、回復とブロック2.5倍)`,
   y: n => `トリックカードを${n}枚加える`, k: n => `次に使う${n > 1 ? n + '枚の' : ''}カードのコスト0`, o: n => `このターン使ったカード枚数×${n}ダメージ`,
   x: n => `最大HPの${n}%を失う`, r: n => `${n}ダメージ、与えた半分を回復`, u: n => `${n}ダメージ(HPが減っているほど最大3倍)`, j: n => `手札のチャージ+${n}`,
   d: (n, h) => `${n}ダメージ${h > 1 ? '×' + h : ''}`, D: (n, h) => `敵全体に${n}ダメージ${h > 1 ? '×' + h : ''}`,
@@ -222,6 +236,7 @@ function cardDesc(cid, ops) {
   if (c.flags.low) t.push('HP半分以下で威力2倍');
   if (c.flags.poisoned) t.push('対象が毒なら威力2倍');
   if (c.flags.blocky) t.push('ブロック20以上で威力2倍');
+  if (c.flags.twice) t.push('このターン2回目の発動から威力3倍');
   if (c.flags.with && CHARS[c.flags.with]) t.push(`${CHARS[c.flags.with].n}がいると1.5倍${G && G.party.includes(c.flags.with) ? '(発動中)' : ''}`);
   if (c.flags.grow) t.push('チャージ(手札に残すたび威力UP)');
   if (c.flags.exhaust) t.push('廃棄');

@@ -206,6 +206,62 @@ const CHARS = {
     profile: '教会のちびっこシスター。背伸びしたいお年頃。',
   },
   // ---- 追加キャラ ----
+  nagisa: {
+    n: 'ナギサ', title: '拳法部の熱血部長', rar: 5, elem: 'fire', role: '拳法家', gacha: true,
+    base: { hp: 58, mp: 14, atk: 21, def: 11, mag: 8, spd: 17 }, grow: { hp: 10, mp: 1.6, atk: 3.8, def: 1.8, mag: 1.2, spd: 2.2 },
+    skills: [[1, 'slash']],
+    look: { hair: '#e8483a', eye: '#f5a142', cloth: '#f4f4fa', acc: '#ffffff', accType: 'band', style: 'pony', outfit: 'uniform', collar: '#8a2030' },
+    profile: '学園の拳法部の部長。目にもとまらぬ連打で、気合が入るほど拳が重くなる。',
+  },
+  shion: {
+    n: 'シオン', title: '盤上の生徒会長', rar: 5, elem: 'water', role: '策士', gacha: true,
+    base: { hp: 48, mp: 24, atk: 18, def: 10, mag: 16, spd: 15 }, grow: { hp: 8, mp: 3, atk: 3.4, def: 1.6, mag: 2.6, spd: 2 },
+    skills: [[1, 'slash']],
+    look: { hair: '#3a3a5a', eye: '#8a6ad8', cloth: '#f4f4fa', acc: '#c8a0ff', accType: 'hairpin', style: 'long', outfit: 'uniform', collar: '#203a7a' },
+    profile: 'チェス部も兼ねる生徒会長。何手も先を読み、捨て駒すら勝ち筋に変える。',
+  },
+  koharu: {
+    n: 'コハル', title: '元気いっぱいのチア', rar: 5, elem: 'light', role: '応援団', gacha: true,
+    base: { hp: 52, mp: 26, atk: 12, def: 12, mag: 16, spd: 16 }, grow: { hp: 9, mp: 3.2, atk: 2, def: 2, mag: 2.8, spd: 2 },
+    skills: [[1, 'heal']],
+    look: { hair: '#ffc870', eye: '#5aa0e8', cloth: '#f4f4fa', acc: '#ff6a9a', accType: 'ribbon', style: 'twin', outfit: 'uniform', collar: '#2a3a6a' },
+    profile: 'チア部のエース。ポンポンをふると、みんなの力がぐんぐんわいてくる。',
+  },
+  sumire: {
+    n: 'スミレ', title: '科学部の毒薬博士', rar: 5, elem: 'earth', role: '薬師', gacha: true,
+    base: { hp: 46, mp: 28, atk: 12, def: 10, mag: 20, spd: 14 }, grow: { hp: 8, mp: 3.4, atk: 2, def: 1.6, mag: 3.6, spd: 1.8 },
+    skills: [[1, 'shadow']],
+    look: { hair: '#8a5ad8', eye: '#5ad87a', cloth: '#f4f4fa', acc: '#7fe8a0', accType: 'flower', style: 'bob', outfit: 'uniform', collar: '#5a3a20' },
+    profile: '白衣の似合う科学部員。調合した毒はどんどん濃くなって、最後に一気に効いてくる。',
+  },
+  tsumugi: {
+    n: 'ツムギ', title: '手芸部のぬいぐるみ使い', rar: 5, elem: 'wind', role: '召喚士', gacha: true,
+    base: { hp: 50, mp: 26, atk: 12, def: 12, mag: 18, spd: 13 }, grow: { hp: 9, mp: 3.2, atk: 2, def: 2, mag: 3.2, spd: 1.6 },
+    skills: [[1, 'heal']],
+    look: { hair: '#f7a1c8', eye: '#c8884a', cloth: '#f4f4fa', acc: '#c8884a', accType: 'cat', style: 'twin', outfit: 'uniform', collar: '#205a40' },
+    profile: '手芸部の部員。手作りのぬいぐるみに命を吹きこみ、いっしょに戦ってもらう。',
+  },
+  rio: {
+    n: 'リオ', title: 'ラッキーガール', rar: 5, elem: 'water', role: 'ギャンブラー', gacha: true,
+    base: { hp: 50, mp: 20, atk: 19, def: 10, mag: 12, spd: 18 }, grow: { hp: 9, mp: 2.4, atk: 3.6, def: 1.6, mag: 1.8, spd: 2.2 },
+    skills: [[1, 'slash']],
+    look: { hair: '#f5c542', eye: '#e43b44', cloth: '#f4f4fa', acc: '#e43b44', accType: 'star', style: 'bob', outfit: 'uniform', collar: '#203a7a' },
+    profile: 'ボードゲーム部の勝負師。コインとサイコロで運命をひっくり返すのが大好き。',
+  },
+  kuroha: {
+    n: 'クロハ', title: 'オカルト研究会の呪い姫', rar: 5, elem: 'dark', role: '呪術師', gacha: true,
+    base: { hp: 48, mp: 28, atk: 14, def: 10, mag: 20, spd: 14 }, grow: { hp: 8, mp: 3.4, atk: 2.2, def: 1.6, mag: 3.6, spd: 1.8 },
+    skills: [[1, 'shadow']],
+    look: { hair: '#2a2240', eye: '#e43b44', cloth: '#f4f4fa', acc: '#6a3a8a', accType: 'horns', style: 'long', outfit: 'uniform', collar: '#3a2050' },
+    profile: 'オカルト研究会の会長。自分も呪いをかぶる代わりに、敵には重い呪いを刻む。',
+  },
+  seira: {
+    n: 'セイラ', title: '吹奏楽部の指揮者', rar: 5, elem: 'light', role: '指揮者', gacha: true,
+    base: { hp: 52, mp: 26, atk: 15, def: 12, mag: 16, spd: 15 }, grow: { hp: 9, mp: 3.2, atk: 2.6, def: 2, mag: 2.8, spd: 1.8 },
+    skills: [[1, 'heal']],
+    look: { hair: '#f4f0ff', eye: '#3a7ad8', cloth: '#f4f4fa', acc: '#f5c542', accType: 'tiara', style: 'long', outfit: 'uniform', collar: '#2a3a6a' },
+    profile: '吹奏楽部の指揮者。タクトのひとふりで、みんなの技に特別な響きを与える。',
+  },
   luka: {
     n: 'ルカ', title: '空飛ぶ船の船長', rar: 5, elem: 'fire', role: '船長', gacha: true,
     base: { hp: 62, mp: 18, atk: 20, def: 12, mag: 12, spd: 13 }, grow: { hp: 11, mp: 2.2, atk: 3.6, def: 2.0, mag: 1.8, spd: 1.6 },
@@ -471,7 +527,7 @@ const AREAS = {
 
 // ---------- ガチャ ----------
 const GACHA_COST = { single: 50, ten: 500 };
-const PICKUP_ROT = ['seres', 'noa', 'homura', 'sylphy', 'marina', 'terra', 'kanae', 'lumia', 'misuzu', 'rapidhat', 'viola', 'aurora', 'luka', 'yumeno'];
+const PICKUP_ROT = ['seres', 'noa', 'homura', 'sylphy', 'marina', 'terra', 'kanae', 'lumia', 'misuzu', 'rapidhat', 'viola', 'aurora', 'luka', 'yumeno', 'nagisa', 'shion', 'koharu', 'sumire', 'tsumugi', 'rio', 'kuroha', 'seira'];
 function charPool(rar, opts = {}) {
   return Object.keys(CHARS).filter(k => CHARS[k].rar === rar && (CHARS[k].gacha || (opts.limited && k === 'stella')));
 }

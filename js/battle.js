@@ -18,8 +18,8 @@ const BG_DEF = {
   sky: { sky: ['#4a9ae8', '#e8f6ff'], ground: ['#b8e4a0', '#90c478'], hill: '#f4f8ff' },
   skyd: { sky: ['#8ab8e8', '#f4f6ff'], ground: ['#eef0f8', '#c8cce0'], hill: '#e8c860' },
 };
-const ST_N = { str: '筋力', dex: '敏捷', vuln: '脆弱', weak: '脱力', poison: '毒', regen: '再生', thorns: 'トゲ', devote: '献身', serve: '奉仕' };
-const ST_GOOD = { str: 1, dex: 1, regen: 1, thorns: 1, devote: 1, serve: 1 };
+const ST_N = { str: '筋力', dex: '敏捷', vuln: '脆弱', weak: '脱力', poison: '毒', regen: '再生', thorns: 'トゲ', devote: '献身', serve: '奉仕', dblS: 'スキル二重', twin: '二重発動', fam: '使い魔', curse: '呪い', echo: '全体化', barricade: '持続' };
+const ST_GOOD = { str: 1, dex: 1, regen: 1, thorns: 1, devote: 1, serve: 1, dblS: 1, twin: 1, fam: 1, echo: 1, barricade: 1 };
 const HAND_MAX = 10, DRAW_N = 5, ENERGY_MAX = 3;
 
 // 敵の行動 → 予告
@@ -185,7 +185,7 @@ const Battle = {
     UI.push(this.layer);
     this.refresh();
   },
-  effCost(cid) { const c = cardCost(cid); return (c > 0 && this.P && this.P.st.free > 0) ? 0 : c; },
+  effCost(cid) { let c = cardCost(cid); const k = CARDS[cid]; if (this.P && this.P.st.twin > 0 && k.type === 'a' && !k.ult && !k.blank) c += 1; return (c > 0 && this.P && this.P.st.free > 0) ? 0 : c; },
   canAct() { return !this.busy && !this.auto && !this.onAny && this.active; },
   aliveIdx() { return this.enemies.map((e, i) => i).filter(i => this.enemies[i].alive); },
   toggleAuto() {
@@ -381,8 +381,13 @@ const Battle = {
     if (await this.checkEnd()) return;
     this.turn++;
     const P = this.P;
-    P.block = 0;
+    if (P.st.barricade > 0) P.st.barricade--; else P.block = 0;
+    this.playCount = {};
     if (P.st.poison) { const d = P.st.poison; P.hp = Math.max(0, P.hp - d); P.st.poison--; this.popParty(d, 'dmg poison'); if (await this.checkEnd()) return; }
+    if (P.st.fam > 0) {
+      for (let k = 0; k < P.st.fam; k++) { const al = this.enemies.filter(e => e.alive); if (!al.length) break; this.hitEnemy(U.pick(al), P.famDmg || 8); await this.wait(140); }
+      if (await this.checkEnd()) return;
+    }
     this.energy = ENERGY_MAX;
     this.combo = 0;
     let extra = 0;
@@ -435,6 +440,10 @@ const Battle = {
     if (c.type === 'a') { this.atkCount++; for (const x of this.relics) if (x.r.attack) x.r.attack(this, x.L, this.atkCount); }
     if (!c.token) this.gainUlt(1 + (cardCost(h.cid) >= 2 ? 1 : 0));
     await this.applyCard(h.cid, tj, h);
+    // 二重発動 (アタック) / 次のスキル2回
+    if (c.type === 'a' && this.P.st.twin > 0 && this.enemies.some(e => e.alive)) { this.popParty('二重発動!', 'buff'); await this.applyCard(h.cid, tj, h); }
+    if (c.type === 's' && this.P.st.dblS > 0 && !c.ops.some(o => o.k === 'n')) { this.P.st.dblS--; this.popParty('スキル二重!', 'buff'); await this.applyCard(h.cid, tj, h); }
+    if (c.type === 'a' && this.P.st.echo > 0) this.P.st.echo--;
     this.busy = false;
     if (await this.checkEnd()) return;
     this.refresh();
@@ -516,11 +525,27 @@ const Battle = {
     if (c.flags.poisoned) { const e = tgt(); if (e && e.st.poison) { mul *= 2; notes.push('毒の追撃!'); } }
     if (h && h.charge) { const per = 0.5 + this.relicBonus('charge'); mul *= 1 + per * h.charge; notes.push(`チャージ${h.charge}!`); }
     if (notes.length) this.popParty(notes.join(' '), 'buff');
+    this.playCount = this.playCount || {};
+    this.playCount[cid] = (this.playCount[cid] || 0) + 1;
+    if (c.flags.twice && this.playCount[cid] >= 2) { mul *= 3; this.popParty('2回目!威力3倍', 'buff'); }
+    let skip = false;
     const D = n => Math.round(n * mul);
     for (const o of ops) {
       if (!this.enemies.some(e => e.alive)) break;
       switch (o.k) {
-        case 'd': for (let k = 0; k < o.hits; k++) { const e = tgt(); if (!e) break; this.hitEnemy(e, D(o.n)); await this.wait(o.hits > 1 ? 170 : 260); } break;
+        case 'd': if (skip) break; for (let k = 0; k < o.hits; k++) { const e = tgt(); if (!e) break; if (P.st.echo > 0 && c.type === 'a') { for (const x of this.enemies.filter(z => z.alive)) this.hitEnemy(x, D(o.n)); } else this.hitEnemy(e, D(o.n)); await this.wait(o.hits > 1 ? 150 : 260); } break;
+        case 'n': this.addSt(P, 'dblS', o.n); this.popParty('次のスキル2回', 'buff'); Sound.play('buff'); break;
+        case 'l': this.addSt(P, 'twin', o.n); this.popParty('二重発動 ' + o.n + 'ターン', 'buff'); Sound.play('magic'); break;
+        case 'i': { let n = 0; while (n < o.n && this.hand.length) { this.discard.push(this.hand.splice(Math.floor(Math.random() * this.hand.length), 1)[0]); n++; } skip = n < o.n; this.popParty(skip ? '捨てる札が足りない…' : n + '枚捨てた!', skip ? 'dmg' : 'buff'); break; }
+        case 'R': { const ex = this.exhaust.filter(x => CARDS[x.cid].owner === c.owner && x.cid !== cid); if (ex.length) { const x = U.pick(ex); this.exhaust.splice(this.exhaust.indexOf(x), 1); this.drawPile.splice(Math.floor(Math.random() * (this.drawPile.length + 1)), 0, x); this.popParty(CARDS[x.cid].n + 'が山札に!', 'mp'); } else this.popParty('戻すカードがない', 'dmg'); Sound.play('magic'); break; }
+        case 'G': { const e = tgt(); if (e) { this.hitEnemy(e, D((e.st.poison || 0) * o.n)); await this.wait(300); } break; }
+        case 'F': this.summon(o.n, cid); break;
+        case 'C': { const head = Math.random() < 0.5 + this.relicBonus('luck'); mul *= head ? 2 : 0.5; this.popParty(head ? 'コイン: 表! 2倍' : 'コイン: 裏… 半分', head ? 'buff' : 'dmg'); Sound.play(head ? 'star4' : 'buzz'); await this.wait(250); break; }
+        case 'Y': { let r = 1 + Math.floor(Math.random() * 6); if (r <= 3 && Math.random() < this.relicBonus('luck') * 3) r = 1 + Math.floor(Math.random() * 6); mul *= r / 2; this.popParty('サイコロ: ' + r + '!', r >= 4 ? 'buff' : 'dmg'); Sound.play(r >= 5 ? 'star4' : 'cursor'); await this.wait(250); break; }
+        case 'N': { const e = tgt(); if (e) this.debuff(e, 'curse', o.n); break; }
+        case 'Z': this.addSt(P, 'vuln', o.n); this.popParty(ST_N.vuln + o.n, 'dmg'); break;
+        case 'A': this.addSt(P, 'echo', o.n); this.popParty('全体化', 'buff'); Sound.play('buff'); break;
+        case 'T': this.addSt(P, 'barricade', o.n); this.popParty('ブロック持続 ' + o.n, 'buff'); Sound.play('buff'); break;
         case 'o': { const e = tgt(); if (e) { this.pop(`${this.combo}コンボ!`, e.x + e.w / 2, e.y - 4, 'weak'); this.hitEnemy(e, D(o.n * this.combo)); await this.wait(300); } break; }
         case 'r': { const e = tgt(); if (e) { const before = e.hp; this.hitEnemy(e, D(o.n)); const v = Math.max(0, before - Math.max(0, e.hp)); this.relicHeal(Math.floor(v / 2)); await this.wait(260); } break; }
         case 'u': { const e = tgt(); if (e) { const miss = 1 - P.hp / P.max; this.hitEnemy(e, D(Math.round(o.n * (1 + 2 * miss)))); await this.wait(320); } break; }
@@ -528,12 +553,12 @@ const Battle = {
         case 'y': for (let k = 0; k < o.n; k++) this.addToHand(U.pick(Object.keys(TRICK_CARDS))); Sound.play('magic'); break;
         case 'k': this.addSt(P, 'free', o.n); this.popParty('次のカード コスト0', 'mp'); Sound.play('magic'); break;
         case 'j': for (const hh of this.hand) if (CARDS[hh.cid].flags.grow) hh.charge = (hh.charge || 0) + o.n; this.popParty('チャージ+' + o.n, 'mp'); Sound.play('magic'); break;
-        case 'D': for (let k = 0; k < o.hits; k++) { for (const e of this.enemies.filter(x => x.alive)) this.hitEnemy(e, D(o.n)); this.fx.push({ type: 'screen', color: '#fff', t: 0, dur: 0.25 }); await this.wait(280); } break;
+        case 'D': if (skip) break; for (let k = 0; k < o.hits; k++) { for (const e of this.enemies.filter(x => x.alive)) this.hitEnemy(e, D(o.n)); this.fx.push({ type: 'screen', color: '#fff', t: 0, dur: 0.25 }); await this.wait(280); } break;
         case 'b': { let n = o.n + (P.st.dex || 0); if (P.st.devote) n = Math.round(n * 2.5); P.block += n; P.gained += n; Sound.play('buff'); this.popParty('ブロック+' + n, 'buff'); break; }
         case 'h': { let n = o.n; if (P.st.devote) n = Math.round(n * 2.5); const v = Math.min(P.max - P.hp, n); P.hp += v; P.gained += v; Sound.play('heal'); this.popParty('+' + n, 'heal'); break; }
         case 'm': this.addSt(P, 'devote', o.n); this.popParty('献身' + o.n, 'buff'); Sound.play('buff'); break;
         case 'z': { const e = tgt(); if (e) { this.burnEnemy(e, o.n + (P.st.serve || 0) * o.per); await this.wait(300); } break; }
-        case 'q': { const e = tgt(); if (e) { this.burnEnemy(e, Math.max(1, P.gained)); await this.wait(350); } break; }
+        case 'q': { const e = tgt(); if (e) { this.burnEnemy(e, Math.max(1, Math.round(P.gained * 0.75))); await this.wait(350); } break; }
         case 'c': this.drawCards(o.n); Sound.play('cursor'); break;
         case 'e': this.energy += o.n; Sound.play('magic'); this.popParty('エナジー+' + o.n, 'mp'); break;
         case 's': this.addSt(P, 'str', o.n); this.popParty(ST_N.str + '+' + o.n, 'buff'); Sound.play('buff'); break;
@@ -551,6 +576,8 @@ const Battle = {
   addToHand(cid) { if (this.hand.length >= HAND_MAX) { this.discard.push({ u: this.uid++, cid }); return; } this.hand.push({ u: this.uid++, cid }); },
   relicBonus(kind) { let v = 0; for (const x of this.relics) if (x.r.bonus && x.r.bonus[kind]) v += x.r.bonus[kind](x.L, this); return v; },
   // レリック用
+  // 使い魔を召喚 (毎ターン開始時に敵を攻撃。強さはカードの持ち主の攻撃・魔力で決まる)
+  summon(n, cid) { const pw = cardPower(cid); this.P.famDmg = Math.max(this.P.famDmg || 0, Math.round(4 * powMult(Math.max(pw.p, pw.mag)))); this.addSt(this.P, 'fam', n); this.popParty('使い魔+' + n, 'buff'); Sound.play('magic'); },
   relicBlock(n) { this.P.block += n; this.P.gained += n; this.popParty('ブロック+' + n, 'buff'); },
   relicHeal(n) { const v = Math.min(this.P.max - this.P.hp, n); this.P.hp += v; this.P.gained += v; if (n > 0) this.popParty('+' + n, 'heal'); },
   relicSt(k, n) { this.addSt(this.P, k, n); this.popParty((ST_N[k] || k) + '+' + n, 'buff'); },
@@ -599,7 +626,7 @@ const Battle = {
     for (const h of this.hand) { const f = CARDS[h.cid].flags; if (f.retain) { if (f.grow) { h.charge = (h.charge || 0) + 1; } keep.push(h); } else this.discard.push(h); }
     this.hand = keep;
     if (P.st.regen) { const v = Math.min(P.max - P.hp, P.st.regen); P.hp += v; this.popParty('+' + P.st.regen, 'heal'); P.st.regen--; }
-    for (const k of ['weak', 'vuln', 'devote']) if (P.st[k]) P.st[k]--;
+    for (const k of ['weak', 'vuln', 'devote', 'twin']) if (P.st[k]) P.st[k]--;
     this.refresh();
     await this.wait(250);
     // 敵のターン
@@ -607,6 +634,7 @@ const Battle = {
       if (!e.alive) continue;
       e.block = 0;
       if (e.st.poison) { const d = e.st.poison; e.hp -= d; e.st.poison--; this.pop(d, e.x + e.w / 2, e.y + e.h / 3, 'dmg poison'); if (e.hp <= 0) { e.hp = 0; e.alive = false; Sound.play('die'); this.refresh(); continue; } }
+      if (e.st.curse) { const d = e.st.curse; e.hp -= d; this.pop(d, e.x + e.w / 2, e.y + e.h / 3, 'dmg poison'); if (e.hp <= 0) { e.hp = 0; e.alive = false; Sound.play('die'); this.refresh(); continue; } }
       await this.enemyAct(e);
       for (const k of ['weak', 'vuln']) if (e.st[k]) e.st[k]--;
       this.refresh();
@@ -712,6 +740,13 @@ const Battle = {
         if ('VW'.includes(o.k)) sc += o.n * 3 * alive.length;
         if (o.k === 'p') sc += o.n * 1.5;
         if (o.k === 'P') sc += o.n * 1.5 * alive.length;
+        if (o.k === 'G') sc += (target.st.poison || 0) * o.n * 3;
+        if (o.k === 'F') sc += o.n * 10;
+        if (o.k === 'N') sc += o.n * 3;
+        if ('nlAT'.includes(o.k)) sc += 6;
+        if (o.k === 'R') sc += this.exhaust.some(x => CARDS[x.cid].owner === c.owner) ? 6 : -20;
+        if (o.k === 'i') sc += this.hand.length - 1 >= o.n ? 0 : -999;
+        if (o.k === 'Z') sc -= o.n * 3;
       }
       const val = sc / Math.max(0.6, cost);
       if (sc > 0 && (!best || val > best.val)) best = { i, val, t: cardNeedsTarget(c) ? this.enemies.indexOf(target) : -1 };

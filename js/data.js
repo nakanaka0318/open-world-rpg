@@ -420,6 +420,14 @@ const ENEMIES = {
   serpent: { n: '海竜リヴァイア', spr: 'dragon', pal: { B: '#2ab0a0', A: '#1a7a8a', S: '#c8f8e8' }, elem: 'water', boss: true, hp: 1500, chp: 520, atk: 64, def: 40, mag: 60, spd: 18, exp: 1300, gold: 800, act: [['attack', 2], ['e_icebreath', 2], ['e_bite', 1], ['e_heal', 1]] },
   crygolem: { n: '結晶の巨像', spr: 'golem', pal: { B: '#9a8ad8', A: '#ffffff' }, elem: 'light', boss: true, hp: 3000, chp: 1000, atk: 96, def: 60, mag: 70, spd: 12, exp: 4000, gold: 2000, act: [['attack', 2], ['e_smash', 2], ['e_rock', 1], ['e_charge', 1]] },
   demon: { n: '魔王ノクス', spr: 'demon', pal: { S: '#a8b8d8', K: '#3a1a5a', A: '#e8e0d0', G: '#f5c542', E: '#ff3b3b' }, elem: 'dark', boss: true, hp: 3800, chp: 800, atk: 88, def: 54, mag: 90, spd: 22, exp: 5000, gold: 3000, act: [['attack', 2], ['e_dark', 2], ['e_darkwave', 2], ['e_drain', 1], ['e_charge', 1]] },
+  // ---- 夜にだけ出る魔物 ----
+  nightbat: { n: 'ナイトバット', spr: 'bat', pal: { B: '#2a2a5a', E: '#ffd94a' }, elem: 'dark', hp: 36, atk: 17, def: 6, mag: 10, spd: 16, exp: 16, gold: 12, act: [['attack', 2], ['e_drain', 1]], drop: [['potion', 0.2]] },
+  willow: { n: 'ウィルオウィスプ', spr: 'wisp', pal: { B: '#7ae8c8' }, elem: 'dark', hp: 70, atk: 24, def: 12, mag: 30, spd: 16, exp: 34, gold: 24, act: [['e_dark', 2], ['attack', 1]], drop: [['ether', 0.15]] },
+  moonghost: { n: 'ムーンゴースト', spr: 'ghost', pal: { B: '#f0e8a0', E: '#3a5ad8' }, elem: 'dark', hp: 130, atk: 38, def: 22, mag: 46, spd: 16, exp: 80, gold: 50, act: [['e_dark', 2], ['e_drain', 1]], drop: [['hipotion', 0.15]] },
+  moonjelly: { n: 'ムーンクラゲ', spr: 'slime', pal: { B: '#c8a8f0' }, elem: 'water', hp: 140, atk: 36, def: 26, mag: 40, spd: 12, exp: 76, gold: 48, act: [['attack', 2], ['e_poison', 1]], drop: [['antidote', 0.3]] },
+  ashwraith: { n: 'アッシュレイス', spr: 'ghost', pal: { B: '#6a5a5a', E: '#ff6a3a' }, elem: 'fire', hp: 170, atk: 52, def: 28, mag: 58, spd: 18, exp: 110, gold: 64, act: [['e_fire', 2], ['e_drain', 1]] },
+  starwraith: { n: 'スターレイス', spr: 'ghost', pal: { B: '#a8c8f8', E: '#ffffff' }, elem: 'light', hp: 280, atk: 84, def: 44, mag: 88, spd: 24, exp: 220, gold: 110, act: [['e_dark', 2], ['e_poison', 1]], drop: [['elixir', 0.05]] },
+  nightwyvern: { n: 'ナイトワイバーン', spr: 'dragon', pal: { B: '#3a3a7a', A: '#1a1a4a', S: '#c8c8f8' }, elem: 'dark', hp: 860, atk: 130, def: 72, mag: 110, spd: 28, exp: 640, gold: 320, act: [['attack', 2], ['e_bite', 1], ['e_darkwave', 1]], drop: [['elixir', 0.08]] },
   // ---- 第2章: 空の大陸 (推奨Lv40〜55) ----
   harpy: { n: 'ハーピー', spr: 'bat', pal: { B: '#e8a8c8', E: '#ffd94a' }, elem: 'wind', hp: 430, atk: 104, def: 50, mag: 70, spd: 30, exp: 330, gold: 150, act: [['attack', 2], ['e_wind', 2]], drop: [['hipotion', 0.15]] },
   cloudslime: { n: 'クラウドスライム', spr: 'slime', pal: { B: '#f4f8ff' }, elem: 'water', hp: 520, atk: 96, def: 66, mag: 80, spd: 16, exp: 320, gold: 160, act: [['attack', 2], ['e_icebreath', 1], ['e_heal', 1]], drop: [['ether', 0.15]] },
@@ -435,24 +443,26 @@ const ENEMIES = {
   skyking: { n: '天蓋の王ヴァルディス', spr: 'demon', pal: { S: '#f4f0ff', K: '#e8c860', A: '#ffffff', G: '#7ac8f0', E: '#ffd94a' }, elem: 'light', boss: true, hp: 12000, chp: 1200, atk: 106, def: 90, mag: 112, spd: 32, exp: 20000, gold: 10000, act: [['attack', 2], ['e_dark', 2], ['e_darkwave', 2], ['e_drain', 1], ['e_charge', 1], ['e_heal', 1]] },
 };
 
-// エリア別出現 (lv目安)
+// 夜にだけ出る魔物 (AREAS の night)
+const NIGHT_ENEMIES = ['nightbat', 'willow', 'moonghost', 'moonjelly', 'ashwraith', 'starwraith', 'nightwyvern'];
+// エリア別出現 (lv目安)。night は夜(19時〜5時)にだけ混ざる群れ
 const AREAS = {
-  meadow: { n: '草原', bg: 'meadow', groups: [['slime'], ['slime', 'slime'], ['bat'], ['slime', 'mush'], ['mush', 'bat']] },
-  forest: { n: '森', bg: 'forest', groups: [['wolf'], ['mush2', 'bee'], ['bee', 'bee'], ['wolf', 'mush2'], ['wolf', 'bee']] },
-  desert: { n: '砂漠', bg: 'desert', groups: [['scorp'], ['sandslime', 'scorp'], ['mummy'], ['sandslime', 'sandslime'], ['mummy', 'scorp']] },
-  snow: { n: '雪原', bg: 'snow', groups: [['snowwolf'], ['iceghost', 'iceslime'], ['snowwolf', 'iceghost'], ['iceslime', 'iceslime']] },
-  volcano: { n: '火山地帯', bg: 'volcano', groups: [['hellhound'], ['wisp', 'bombslime'], ['hellhound', 'wisp'], ['bombslime', 'bombslime']] },
+  meadow: { n: '草原', bg: 'meadow', groups: [['slime'], ['slime', 'slime'], ['bat'], ['slime', 'mush'], ['mush', 'bat']], night: [['nightbat'], ['nightbat', 'nightbat']] },
+  forest: { n: '森', bg: 'forest', groups: [['wolf'], ['mush2', 'bee'], ['bee', 'bee'], ['wolf', 'mush2'], ['wolf', 'bee']], night: [['willow'], ['willow', 'nightbat']] },
+  desert: { n: '砂漠', bg: 'desert', groups: [['scorp'], ['sandslime', 'scorp'], ['mummy'], ['sandslime', 'sandslime'], ['mummy', 'scorp']], night: [['moonghost'], ['moonghost', 'mummy']] },
+  snow: { n: '雪原', bg: 'snow', groups: [['snowwolf'], ['iceghost', 'iceslime'], ['snowwolf', 'iceghost'], ['iceslime', 'iceslime']], night: [['moonghost', 'iceghost']] },
+  volcano: { n: '火山地帯', bg: 'volcano', groups: [['hellhound'], ['wisp', 'bombslime'], ['hellhound', 'wisp'], ['bombslime', 'bombslime']], night: [['ashwraith'], ['ashwraith', 'wisp']] },
   shrine: { n: '風の神殿', bg: 'shrine', groups: [['wolf', 'bee'], ['mush2', 'mush2'], ['bee', 'bee', 'bee']] },
   ruins: { n: '砂の遺跡', bg: 'ruins', groups: [['mummy', 'mummy'], ['sandslime', 'mummy'], ['scorp', 'scorp']] },
   icecave: { n: '氷の洞窟', bg: 'ice', groups: [['iceghost', 'iceghost'], ['iceslime', 'snowwolf'], ['snowwolf', 'snowwolf']] },
   volccave: { n: '炎の火山', bg: 'lava', groups: [['wisp', 'wisp'], ['hellhound', 'bombslime'], ['bombslime', 'wisp', 'wisp']] },
-  island: { n: '南国の島々', bg: 'beach', groups: [['crab'], ['seaslime', 'parrot'], ['crab', 'seaslime'], ['parrot', 'parrot']] },
-  crystal: { n: '水晶の荒野', bg: 'crystal', groups: [['crywolf'], ['cryslime', 'crybat'], ['cryghost', 'crybat'], ['crywolf', 'cryghost']] },
+  island: { n: '南国の島々', bg: 'beach', groups: [['crab'], ['seaslime', 'parrot'], ['crab', 'seaslime'], ['parrot', 'parrot']], night: [['moonjelly'], ['moonjelly', 'moonjelly']] },
+  crystal: { n: '水晶の荒野', bg: 'crystal', groups: [['crywolf'], ['cryslime', 'crybat'], ['cryghost', 'crybat'], ['crywolf', 'cryghost']], night: [['starwraith'], ['starwraith', 'cryghost']] },
   subruin: { n: '忘れられた遺構', bg: 'shrine', groups: [['wolf', 'mush2'], ['bee', 'wolf']] },
   subsea: { n: '潮騒の洞窟', bg: 'ice', groups: [['crab', 'seaslime'], ['seaslime', 'seaslime', 'parrot']] },
   subcrys: { n: '結晶の迷宮', bg: 'crystal', groups: [['crywolf', 'cryslime'], ['cryghost', 'cryghost']] },
   castle: { n: '魔王城', bg: 'castle', groups: [['imp', 'imp'], ['dknight'], ['darkghost', 'imp'], ['dknight', 'darkghost']] },
-  sky: { n: '空の大陸', bg: 'sky', groups: [['harpy'], ['cloudslime', 'harpy'], ['thunderbird'], ['skywyvern'], ['harpy', 'thunderbird'], ['cloudslime', 'cloudslime']] },
+  sky: { n: '空の大陸', bg: 'sky', groups: [['harpy'], ['cloudslime', 'harpy'], ['thunderbird'], ['skywyvern'], ['harpy', 'thunderbird'], ['cloudslime', 'cloudslime']], night: [['nightwyvern'], ['nightwyvern', 'harpy']] },
   galetower: { n: '嵐の塔', bg: 'skyd', groups: [['stormwisp', 'harpy'], ['thunderbird', 'stormwisp'], ['skywyvern']] },
   thunderruin: { n: '雷の遺跡', bg: 'skyd', groups: [['thunderbird', 'thunderbird'], ['skyknight', 'stormwisp'], ['skygolem']] },
   starchapel: { n: '星の聖堂', bg: 'skyd', groups: [['angelimp', 'skyknight'], ['angelimp', 'angelimp', 'stormwisp'], ['skygolem', 'angelimp']] },

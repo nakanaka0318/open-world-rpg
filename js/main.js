@@ -89,7 +89,8 @@ const Game = {
     if (!G || this.scene !== 'field') { this.hudEl.classList.add('hidden'); return; }
     this.hudEl.classList.remove('hidden');
     const cr = Object.keys(CRYSTAL_INFO).map(k => `<i class="${G.crystals.includes(k) ? 'on' : ''}" style="--cc:${CRYSTAL_INFO[k].c}"></i>`).join('');
-    this.hudEl.innerHTML = `<div><div class="hud-loc">${U.esc(Field.locName || '')}</div><div class="hud-crys">${cr}</div></div><div class="hud-r"><div class="hud-st"><span class="gem">◆</span>${G.stones}</div><div class="hud-btn" data-a="gacha">ガチャ</div><div class="hud-btn m" data-a="menu">MENU</div></div>`;
+    const W = WEATHER[Life.weather()] || WEATHER.clear;
+    this.hudEl.innerHTML = `<div><div class="hud-loc">${U.esc(Field.locName || '')}</div><div class="hud-clock">${Life.isNight() ? '🌙' : '☀'} ${Life.clockText()} ${W.i}${W.n}</div><div class="hud-crys">${cr}</div></div><div class="hud-r"><div class="hud-st"><span class="gem">◆</span>${G.stones}</div><div class="hud-btn" data-a="gacha">ガチャ</div><div class="hud-btn m" data-a="menu">MENU</div></div>`;
     this.hudEl.querySelectorAll('.hud-btn').forEach(b => b.onclick = async e => {
       e.stopPropagation();
       if (Field.busy || UI.active() || this.scene !== 'field') return;

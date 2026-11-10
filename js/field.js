@@ -48,6 +48,7 @@ const Field = {
     this.curRegion = this.regionAt(this.p.x, this.p.y);
     Home.furn = []; Home.girls = []; Home.carrying = null;
     Home.refresh();
+    Life.initGather();
     // 飛空艇 (第2章)
     this.airship = null;
     this.flying = !!(G.flying && G.flags.airship);
@@ -108,7 +109,7 @@ const Field = {
     UI.toast('着陸した', 1000);
     Game.autoSave(true);
   },
-  pickLead(area) { const a = AREAS[area]; const g = a.groups[Math.floor(Math.random() * a.groups.length)]; return g[0]; },
+  pickLead(area) { const a = AREAS[area]; const gs = a.night && typeof Life !== 'undefined' && Life.isNight() && Math.random() < 0.5 ? a.night : a.groups; const g = gs[Math.floor(Math.random() * gs.length)]; return g[0]; },
   setFloor(x, y, structId) {
     const st = WORLD.structs.find(s => s.id === structId);
     WORLD.tiles[this.key(x, y)] = st ? st.floor : T.STONEF;
@@ -174,6 +175,7 @@ const Field = {
       if (d) this.tryMove(d);
     }
     // NPC・敵
+    Life.update();
     if (canAct) {
       for (const n of this.npcs) this.updateNPC(n, dt);
       if (!this.flying) for (const e of this.enemies) this.updateEnemy(e, dt);
@@ -374,7 +376,7 @@ const Field = {
     if (this.busy || Game.scene !== 'field') return;
     this.busy = true;
     const area = AREAS[e.area];
-    const grp = area.groups.find(g => g[0] === e.lead) || area.groups[0];
+    const grp = area.groups.concat(area.night || []).find(g => g[0] === e.lead) || area.groups[0];
     const res = await Battle.start(grp.slice(), { bg: area.bg, area: e.area });
     if (res === 'win') { e.alive = false; this.unplace(e); e.respawn = G.playtime + 75; }
     else if (res === 'escape') { this.invuln = 3; e.stun = 3; }
@@ -437,6 +439,8 @@ const Field = {
       this.busy = false; await this.bossTalk(o); this.busy = true;
     } else if (o.type === 'airship') {
       await this.board();
+    } else if (o.type === 'gather') {
+      await Life.gather(o);
     } else if (o.type === 'furn') {
       await Home.furnTalk(o);
     } else if (o.type === 'boulder') {
@@ -456,6 +460,7 @@ const Field = {
     if (t === T.GATE) { await UI.say('鉄格子が道をふさいでいる。\nどこかに仕掛けがあるようだ。'); return true; }
     if (t === T.HOLE) { await UI.say('深い穴だ。落ちたら戻れそうにない…\n何かで埋められないだろうか。'); return true; }
     if ((t === T.SHELF || t === T.BED) && Home.inside(x, y)) { this.busy = false; if (t === T.SHELF) await Home.menu(); else await Home.rest(); this.busy = true; return true; }
+    if ((t === T.WATER || t === T.OCEAN || t === T.CLOUD) && !this.flying) { this.busy = false; await Life.fish(x, y); this.busy = true; return true; }
     if (t === T.SHELF) { await UI.say(U.pick(['古い冒険の本が並んでいる。', '「はじめての召喚術」という本がある。\n星晶石を捧げると仲間が現れるらしい。', '料理の本だ。おいしそう…', '「カードの心得」\n敵の頭上には次の行動が見える。\n攻撃が来るときはブロックで守るべし。'])); return true; }
     if (t === T.BED) { await UI.say('ふかふかのベッドだ。'); return true; }
     if (t === T.POT) { await UI.say('つぼの中は空っぽだ。'); return true; }
@@ -535,6 +540,7 @@ const Field = {
     list.sort((a, b) => (a.y - (a.t < 1 ? 1 - a.t : 0) * 0) - b.y);
     for (const o of list) this.drawObj(ctx, o);
     // 暗闇
+    Life.drawOverlay(ctx);
     if (cr && curR.dark) this.drawDark(ctx);
   },
   drawTile(ctx, i, x, y, sx, sy, frame) {
@@ -586,6 +592,7 @@ const Field = {
       case 'chest': ctx.drawImage(G.chests[o.id] ? SPR.obj.chestOpen : SPR.obj.chest, sx, sy); break;
       case 'boulder': ctx.drawImage(SPR.obj.boulder, sx, sy); break;
       case 'furn': ctx.drawImage(furnCanvas(o.f), sx, sy - 1); break;
+      case 'gather': Life.drawGather(ctx, o, sx, sy); break;
       case 'airship': ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(sx - 4, sy + 12, 24, 3); ctx.drawImage(SPR.obj.airship, sx - 8, sy - 4); break;
       case 'portal': {
         const t = this.time;

@@ -187,7 +187,8 @@ const Home = {
     if ((await UI.ask('ベッドで休みますか?', ['休む', 'やめる'])) !== 0) return;
     Sound.play('heal');
     healAll();
-    await UI.say('ぐっすり眠った。\nパーティ全員のHPが全回復した!');
+    Life.sleepUntilMorning();
+    await UI.say('ぐっすり眠った。\nパーティ全員のHPが全回復した!\n(朝の7時になった)');
     Game.hud();
     Game.autoSave(true);
   },

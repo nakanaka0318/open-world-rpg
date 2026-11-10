@@ -391,6 +391,7 @@ const Battle = {
       for (const x of this.relics) { if (x.r.start) x.r.start(this, x.L); if (x.r.draw) extra += x.r.draw(x.L); }
       this.relicFlash();
     }
+    if (this.turn === 1 && !this.opts.deck) extra += Life.mealStart(this);
     for (const x of this.relics) if (x.r.turn) x.r.turn(this, x.L);
     this.drawCards(DRAW_N + extra);
     this.sel = -1; this.targeting = false; this.busy = false;
@@ -731,7 +732,7 @@ const Battle = {
   },
   async useItem() {
     if (!this.canAct()) return;
-    const ids = Object.keys(G.items).filter(k => G.items[k] > 0 && ITEMS[k] && ITEMS[k].type !== 'none');
+    const ids = Object.keys(G.items).filter(k => G.items[k] > 0 && ITEMS[k] && ITEMS[k].type !== 'none' && ITEMS[k].type !== 'buff');
     if (!ids.length) { UI.toast('どうぐを持っていない'); return; }
     this.busy = true;
     const r = await UI.ask('どうぐを使う(エナジー消費なし)', ids.map(k => `${ITEMS[k].n} ×${G.items[k]} ― ${ITEMS[k].bdesc || ITEMS[k].desc}`));
@@ -780,6 +781,7 @@ const Battle = {
   },
   async finish(res) {
     this.busy = true;
+    Life.onBattleEnd(this, res);
     this.sel = -1;
     if (res === 'win') for (const x of this.relics) if (x.r.win) x.r.win(this, x.L);
     this.syncHp();

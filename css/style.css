@@ -560,3 +560,12 @@ body.in-battle .tower-layer { display: none; }
 @media (min-width: 700px) { .fb-img { width: 192px; height: 384px; } }
 .rv-img.rv-fb { width: auto; aspect-ratio: auto; height: 62vh; max-height: 520px; image-rendering: pixelated; }
 @media (orientation: portrait) { .rv-img.rv-fb { width: auto; height: 46vh; } }
+/* 時計・釣り */
+.hud-clock { font-size: .7em; color: #e8f0ff; text-shadow: 1px 1px 0 #000; margin-top: 1px; }
+.fish-layer { display: flex; align-items: center; justify-content: center; background: rgba(0,0,30,.45); }
+.fish-box { width: min(90%, 24em); background: rgba(18,22,62,.96); border: 2px solid #c8d0ff; border-radius: 10px; padding: .8em; text-align: center; }
+.fish-t { margin-bottom: .6em; } .fish-t small { color: #c8c8e8; }
+.fish-bar { position: relative; height: 1.6em; background: #0b0d24; border: 2px solid #000; border-radius: 8px; overflow: hidden; }
+.fish-zone { position: absolute; top: 0; bottom: 0; background: linear-gradient(#9ef07a, #3e8948); }
+.fish-mk { position: absolute; top: -2px; bottom: -2px; width: 4px; margin-left: -2px; background: #ffe66d; box-shadow: 0 0 6px #ffe66d; }
+.fish-layer.hit .fish-box { border-color: #7fe87a; } .fish-layer.miss .fish-box { border-color: #ff6a6a; }

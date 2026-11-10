@@ -39,13 +39,15 @@ const Menu = {
       el.append(top, grid, foot);
       const render = () => {
         top.innerHTML = `<div class="mn-party">${partyChars().map(c => { const d = CHARS[c.id], s = charStats(c); return `<div class="mp-c"><img src="${portraitURL(charLook(c.id))}"><div class="mp-n">${U.esc(d.n)}</div><div class="mp-l">Lv${c.lv}</div><div class="bar hp"><i style="width:${100 * Math.max(0, c.hp) / s.hp}%"></i></div></div>`; }).join('')}</div>`;
-        foot.innerHTML = `<span class="gem">◆</span>星晶石 ${G.stones}　<span class="gold">G</span> ${G.gold}　⏱ ${fmtTime(G.playtime)}　水晶 ${G.crystals.length}/4`;
+        foot.innerHTML = `<span class="gem">◆</span>星晶石 ${G.stones}　<span class="gold">G</span> ${G.gold}　⏱ ${fmtTime(G.playtime)}　水晶 ${G.crystals.length}/4${G.flags.cleared ? `　紋章 ${(G.emblems || []).length}/3` : ''}${G.meal ? `<br>🍳 ${U.esc(RECIPES[G.meal.id].n)} (のこり${G.meal.left}回)` : ''}`;
       };
       const items = [
         { label: '<span class="mi">👥</span>パーティ', f: () => this.party() },
         { label: '<span class="mi">🃏</span>デッキ', f: () => this.deckEdit() },
         { label: '<span class="mi">🧪</span>どうぐ', f: () => this.items() },
         { label: '<span class="mi gl">✦</span>ガチャ', f: () => Gacha.open(), cls: 'gacha' },
+        { label: '<span class="mi">🍳</span>りょうり', f: () => Life.cook() },
+        { label: '<span class="mi">📖</span>ずかん', f: () => Life.book() },
         { label: '<span class="mi">🗺</span>ちず', f: () => this.map() },
         { label: '<span class="mi">📜</span>きろく', f: () => this.records() },
         { label: '<span class="mi">⚙</span>せってい', f: () => this.settings() },
@@ -285,6 +287,8 @@ const Menu = {
       onSelect: async (id, ctx) => {
         const it = ITEMS[id];
         const pc = partyChars();
+        if (it.type === 'none') { Sound.play('buzz'); UI.toast('料理の材料です (メニューの「りょうり」で使う)'); return; }
+        if (it.type === 'buff') { if ((await UI.ask(`${it.n} を食べますか?\n${it.desc}${G.meal ? '\n(いまの料理の効果は上書きされます)' : ''}`, ['食べる', 'やめる'])) === 0 && Life.eat(id)) ctx.refresh(true); return; }
         if (it.type === 'mp' || it.type === 'cure') { Sound.play('buzz'); UI.toast('戦闘中に使うアイテムです'); return; }
         const r = await UI.ask(`${it.n} をだれに使う?`, pc.map(c => { const s = charStats(c); return `${CHARS[c.id].n}  HP${Math.max(0, c.hp)}/${s.hp}`; }));
         if (r < 0) return;

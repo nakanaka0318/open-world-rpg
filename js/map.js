@@ -297,6 +297,124 @@ const DUNGEONS = [
     riddles: {},
     boss: { enemy: 'crygolem', crystal: null },
   },
+  // ===== 第2章: 空の大陸 =====
+  {
+    id: 'galetower', name: '嵐の塔', x: 40, y: 446, style: 'sky', roof: 'sky', dark: false, area: 'galetower', lv: 42, ch2: true,
+    bp: [
+      '#####################',
+      '#.........Z.........#',
+      '#...................#',
+      '#^.........!.....^..#',
+      '#########a###########',
+      '#...#.........S.#...#',
+      '#.$.#..O.....O..#.$.#',
+      '#...#...........#...#',
+      '#...#..1.....1..#...#',
+      '#...#.......X...#...#',
+      '##.###.........###.##',
+      '#.......!...........#',
+      '#..e............e...#',
+      '#...................#',
+      '##########R##########',
+      '#...................#',
+      '#..!.....e.......$..#',
+      '#...................#',
+      '##########E##########',
+    ],
+    chests: [{ stones: 300 }, { card: 'c_storm' }, { item: 'elixir', n: 1 }],
+    tablets: [
+      'この先、嵐の王の間。\n空の門番は、三つの紋章のひとつを守っている。',
+      '重き岩を、ふたつの紋様へ。\n誤りし時は、光る紋様を踏むべし。',
+      '壁に古い言葉が刻まれている。\n『風が雲を呼び、雲が雨を降らせ、\n　雨のあとに雷が落ちる』',
+    ],
+    riddles: { R: { type: 'seq', prompt: '扉に四つの紋章が刻まれている。\n嵐の生まれる順に触れよ。', options: ['雲', '風', '雨', '雷'], answer: ['風', '雲', '雨', '雷'] } },
+    boss: { enemy: 'galeking', emblem: 'gale' },
+  },
+  {
+    id: 'thunderruin', name: '雷の遺跡', x: 238, y: 448, style: 'sky', roof: 'skygold', dark: false, area: 'thunderruin', lv: 46, ch2: true,
+    bp: [
+      '#######################',
+      '#.........!Z!.........#',
+      '#.....................#',
+      '#..^......S......^....#',
+      '###########Q###########',
+      '#.......#.!...#.......#',
+      '#..$....#.....#....$..#',
+      '#.......#.....#.......#',
+      '####.######H######.####',
+      '#.....................#',
+      '#..e.......O.......e..#',
+      '#.....................#',
+      '#..!......X...........#',
+      '#.....................#',
+      '###########E###########',
+    ],
+    chests: [{ stones: 300 }, { card: 'c_meteor' }],
+    tablets: [
+      '雷の王はここに眠る。\n空の紋章のひとつを抱いて。',
+      '扉の数字は、雷の言葉で記されている。',
+      '奥の扉の暗号:\n「雷は 三度 光り、七度 鳴り、一度 落ちる」',
+      '床の割れ目の向こうに部屋がある。\n下から岩を押し込めば、渡れそうだ。',
+    ],
+    riddles: { Q: { type: 'code', prompt: '扉に3桁の数字を入れる仕掛けがある。', digits: 3, answer: '371' } },
+    boss: { enemy: 'thunderdragon', emblem: 'thunder' },
+  },
+  {
+    id: 'starchapel', name: '星の聖堂', x: 92, y: 474, style: 'sky', roof: 'sky', dark: false, area: 'starchapel', lv: 50, ch2: true,
+    bp: [
+      '#######################',
+      '#..........Z..........#',
+      '#.....................#',
+      '#..^...........S...^..#',
+      '###########b###########',
+      '#.....#.........#.....#',
+      '#..$..#..O...O..#..$..#',
+      '#.....#....O....#.....#',
+      '#.....#..2.2.2..#.....#',
+      '#.....#.......X.#.....#',
+      '##.########.########.##',
+      '#.....................#',
+      '#..e......!......e....#',
+      '#.....................#',
+      '###########R###########',
+      '#.....................#',
+      '#..!...........$......#',
+      '#........e............#',
+      '###########E###########',
+    ],
+    chests: [{ stones: 400 }, { card: 'c_sanctuary' }, { item: 'elixir', n: 2 }],
+    tablets: [
+      '三つの岩を三つの紋様へ。\n星の並びがそろうとき、道は開かれる。',
+      '聖堂の碑:\n「夜にだけ姿を見せ、朝には消える。\n　数えきれないほど空にあるもの」',
+    ],
+    riddles: { R: { type: 'choice', prompt: '扉に問いが刻まれている。\n「夜にだけ姿を見せ、朝には消える。\n数えきれないほど空にあるもの」とは?', options: ['月', '星', '夢', '影'], answer: 1 } },
+    boss: { enemy: 'skycolossus', emblem: 'star' },
+  },
+  {
+    id: 'skypalace', name: '天空城', x: 190, y: 470, style: 'sky', roof: 'skygold', dark: false, area: 'skypalace', lv: 55, ch2: true,
+    bp: [
+      '#########################',
+      '#...........Z...........#',
+      '#.......................#',
+      '#..^.......!.!.......^..#',
+      '#.......................#',
+      '#..^.......S.........^..#',
+      '############R############',
+      '#.......................#',
+      '#..e.......!........e...#',
+      '#..^.................^..#',
+      '#.......................#',
+      '############E############',
+    ],
+    chests: [],
+    tablets: [
+      '玉座の間。\n魔王を操っていた者が、この奥で待っている。',
+      '「地上の王は、わたしの影にすぎなかった」\n…玉座に刻まれた言葉だ。',
+      '三つの紋章をそろえし者のみ、\nこの扉をくぐることを許される。',
+    ],
+    riddles: { R: { type: 'emblem' } },
+    boss: { enemy: 'skyking' },
+  },
 ];
 
 // ---------- 町 ----------
@@ -310,7 +428,7 @@ const TOWNS = [
       { bp: 'shrine', dx: 19, dy: 13, roof: 'blue', npcs: ['lumina_miko'] },
     ],
     decor: [['well', 16, 5], ['save', 11, 7, 'ルミナ村']],
-    npcs: [['lumina_kid', 7, 11], ['lumina_guard', 15, 19]],
+    npcs: [['lumina_kid', 7, 11], ['lumina_guard', 15, 19], ['sky_engineer', 22, 10]],
     signs: [[12, 1, '【ルミナ村】\n北:王都跡と魔王城の湖\n西:風の森 ／ 東:火山地帯\n南:砂漠 ／ 北の果て:雪原']],
   },
   {
@@ -340,6 +458,22 @@ const TOWNS = [
 ];
 
 // 森の隠者の小屋
+// 第2章の町 (空の大陸)
+TOWNS.push({
+  id: 'aeria', name: '天空都市エアリア', x: 139, y: 447, w: 26, h: 18, ground: 'skyg', gates: ['n', 's', 'e', 'w'], road: { row: 8, col: 12 }, ch2: true,
+  houses: [
+    { bp: 'elder', dx: 2, dy: 1, roof: 'sky', npcs: ['aeria_elder'] },
+    { bp: 'shop', dx: 16, dy: 1, roof: 'skygold', npcs: ['aeria_shop'] },
+    { bp: 'house', dx: 2, dy: 11, roof: 'sky', npcs: ['aeria_sage'] },
+    { bp: 'house2', dx: 17, dy: 11, roof: 'skygold', npcs: ['aeria_girl'] },
+  ],
+  decor: [['save', 11, 6, '天空都市エアリア']],
+  npcs: [['aeria_kid', 7, 9], ['aeria_guard', 15, 15]],
+  signs: [[11, 1, '【天空都市エアリア】\n西:嵐の塔 ／ 東:雷の遺跡\n南西:星の聖堂 ／ 南東:天空城']],
+});
+// 空の大陸の範囲 (この四角の中で、陸地以外はすべて雲海になる)
+const SKY = { x0: 10, y0: 420, x1: 292, y1: 506, cx: 152, cy: 463, rx: 128, ry: 36 };
+
 const EXTRA_HOUSES = [
   { id: 'hermit', name: '森の隠者の小屋', bp: 'house2', x: 114, y: 216, roof: 'green', npcs: ['hermit'], ground: 'grass', from: 'L.w' },
   { id: 'snowhut', name: '狩人の小屋', bp: 'house', x: 192, y: 92, roof: 'blue', npcs: ['snow_hunter'], ground: 'snow', from: 'F.e' },
@@ -385,8 +519,9 @@ function buildWorld() {
   const inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
   const rnd = U.rng(20261109);
   const SEED = 777;
-  const BIOME_GROUND = [T.OCEAN, T.GRASS, T.GRASS, T.SAND, T.SNOW, T.ASH, T.DARKGRASS, T.CRYG, T.GRASS];
-  const BIOME_STYLE = ['grass', 'grass', 'grass', 'sandg', 'snowg', 'ashg', 'dgrass', 'cryg', 'grass'];
+  const BIOME_GROUND = [T.OCEAN, T.GRASS, T.GRASS, T.SAND, T.SNOW, T.ASH, T.DARKGRASS, T.CRYG, T.GRASS, T.SKYG];
+  const BIOME_STYLE = ['grass', 'grass', 'grass', 'sandg', 'snowg', 'ashg', 'dgrass', 'cryg', 'grass', 'skyg'];
+  const inSky = (x, y) => x >= SKY.x0 && y >= SKY.y0 && x <= SKY.x1 && y <= SKY.y1;
   const SI = s => STYLE_LIST.indexOf(s);
 
   // 1. 大陸の形
@@ -413,6 +548,11 @@ function buildWorld() {
       else if (x + j > 307) b = 5;
       biome[idx(x, y)] = b;
     }
+    // 空の大陸 (第2章)
+    if (inSky(x, y)) {
+      const sx = (x - SKY.cx) / SKY.rx, sy = (y - SKY.cy) / SKY.ry;
+      if (Math.sqrt(sx * sx + sy * sy) + (U.fbm(x, y, 0.05, SEED + 91) - 0.5) * 0.45 < 1) biome[idx(x, y)] = 9;
+    }
   }
   // 2. 地形
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -435,17 +575,21 @@ function buildWorld() {
       if (n2 > 0.73) t = T.CRYMTN; else if (n1 > 0.63) t = T.CRYSPIRE; else if (r < 0.04) t = T.CRYSPIRE;
     } else if (b === 8) {
       if (n1 > 0.62) t = T.PALM; else if (r < 0.05) t = T.FLOWERS; else if (r < 0.09) t = T.PALM;
+    } else if (b === 9) {
+      if (n2 > 0.74) t = T.SKYROCK; else if (n1 > 0.64) t = T.SKYTREE; else if (r < 0.04) t = T.FLOWERS; else if (r < 0.06) t = T.SKYTREE;
     }
     tiles[i] = t;
   }
   // 海岸線を砂浜に
   for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
     const i = idx(x, y);
-    if (!biome[i] || biome[i] === 4 || biome[i] === 5 || biome[i] === 7) continue;
+    if (!biome[i] || biome[i] === 4 || biome[i] === 5 || biome[i] === 7 || biome[i] === 9) continue;
     let coast = false;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!biome[idx(x + dx, y + dy)]) coast = true;
     if (coast) { tiles[i] = T.SAND; style[i] = SI('sandg'); }
   }
+  // 空の大陸のまわりは雲海
+  for (let y = SKY.y0; y <= SKY.y1; y++) for (let x = SKY.x0; x <= SKY.x1; x++) if (!biome[idx(x, y)]) tiles[idx(x, y)] = T.CLOUD;
   // 3. 中央の湖と島
   const LX = 220, LY = 178;
   for (let y = 120; y < 240; y++) for (let x = 150; x < 292; x++) {
@@ -493,11 +637,11 @@ function buildWorld() {
   let chestId = 0;
 
   function clearArea(x0, y0, w, h, ground, gstyle, margin) {
-    const bb = { [T.GRASS]: 1, [T.SAND]: 3, [T.SNOW]: 4, [T.ASH]: 5 }[ground] || 1;
+    const bb = { [T.GRASS]: 1, [T.SAND]: 3, [T.SNOW]: 4, [T.ASH]: 5, [T.SKYG]: 9 }[ground] || 1;
     for (let y = y0 - margin - 2; y < y0 + h + margin + 2; y++) for (let x = x0 - margin - 2; x < x0 + w + margin + 2; x++) {
       if (!inb(x, y)) continue;
       const i = idx(x, y);
-      if (!biome[i]) { biome[i] = bb; tiles[i] = T.SAND; style[i] = SI('sandg'); }
+      if (!biome[i]) { biome[i] = bb; tiles[i] = bb === 9 ? T.SKYG : T.SAND; style[i] = SI(bb === 9 ? 'skyg' : 'sandg'); }
     }
     for (let y = y0 - margin; y < y0 + h + margin; y++) for (let x = x0 - margin; x < x0 + w + margin; x++) {
       if (!inb(x, y)) continue;
@@ -542,8 +686,8 @@ function buildWorld() {
   // 4. 町
   const townInfo = {};
   for (const tw of TOWNS) {
-    const gT = { grass: T.GRASS, snow: T.SNOW, sandg: T.SAND }[tw.ground];
-    const gS = { grass: 'grass', snow: 'snowg', sandg: 'sandg' }[tw.ground];
+    const gT = { grass: T.GRASS, snow: T.SNOW, sandg: T.SAND, skyg: T.SKYG }[tw.ground];
+    const gS = { grass: 'grass', snow: 'snowg', sandg: 'sandg', skyg: 'skyg' }[tw.ground];
     clearArea(tw.x, tw.y, tw.w, tw.h, gT, gS, 2);
     const info = { gates: {} };
     // 柵
@@ -607,8 +751,8 @@ function buildWorld() {
   const dunInfo = {};
   for (const dg of DUNGEONS) {
     const bp = dg.bp, w = bp[0].length, h = bp.length;
-    const fl = { stone: T.STONEF, sand: T.SANDF, ice: T.ICEF, volc: T.VOLCF, castle: T.CASTF, cave: T.CAVEF }[dg.style];
-    const wl = { stone: T.STONEW, sand: T.SANDW, ice: T.ICEW, volc: T.VOLCW, castle: T.CASTW, cave: T.CAVEW }[dg.style];
+    const fl = { stone: T.STONEF, sand: T.SANDF, ice: T.ICEF, volc: T.VOLCF, castle: T.CASTF, cave: T.CAVEF, sky: T.SKYF }[dg.style];
+    const wl = { stone: T.STONEW, sand: T.SANDW, ice: T.ICEW, volc: T.VOLCW, castle: T.CASTW, cave: T.CAVEW, sky: T.SKYW }[dg.style];
     const isIsland = dg.id === 'castle';
     if (!isIsland) {
       const b = biome[idx(dg.x + (w >> 1), dg.y + (h >> 1))] || 1;
@@ -639,7 +783,7 @@ function buildWorld() {
         case '$': objs.chests.push(Object.assign({ id: 'c' + (chestId++), x: wx, y: wy }, dg.chests[ci++] || { stones: 50 })); break;
         case 'S': objs.saves.push({ id: dg.id + (objs.saves.some(q => q.id === dg.id) ? '_2' : ''), x: wx, y: wy, name: dg.name + (objs.saves.some(q => q.id === dg.id) ? ' 奥' : ''), group: 'dungeon' }); break;
         case '!': t = T.TABLET; objs.tablets.push({ x: wx, y: wy, text: dg.tablets[ti++] || '…' }); break;
-        case 'Z': objs.bosses.push({ id: dg.id, x: wx, y: wy, enemy: dg.boss.enemy, crystal: dg.boss.crystal, struct: dg.id, sub: !!dg.sub, reward: dg.reward }); break;
+        case 'Z': objs.bosses.push({ id: dg.id, x: wx, y: wy, enemy: dg.boss.enemy, crystal: dg.boss.crystal, emblem: dg.boss.emblem, struct: dg.id, sub: !!dg.sub, reward: dg.reward }); break;
         case 'R': case 'Q': t = T.RDOOR; objs.rdoors.push({ id: dg.id + '_' + ch, x: wx, y: wy, riddle: dg.riddles[ch], struct: dg.id }); break;
         case 'V': t = T.LAVA; break;
         case 'W': t = T.WATER; break;
@@ -650,7 +794,7 @@ function buildWorld() {
     }
   }
   // ダンジョンの周りを森や山で囲んで、四角い輪郭をなじませる
-  const RING = { oldruin: [T.TREE, T.TREE, T.TREE], crylab: [T.CRYSPIRE, T.CRYSPIRE, T.CRYMTN], seacave: [T.PALM, T.MOUNTAIN, T.MOUNTAIN], shrine: [T.TREE, T.TREE, T.MOUNTAIN], icecave: [T.SNOWMTN, T.SNOWMTN, T.PINE], volccave: [T.VMOUNTAIN, T.VMOUNTAIN, T.DEADTREE], ruins: [T.CACTUS, T.SAND, T.SAND] };
+  const RING = { oldruin: [T.TREE, T.TREE, T.TREE], crylab: [T.CRYSPIRE, T.CRYSPIRE, T.CRYMTN], seacave: [T.PALM, T.MOUNTAIN, T.MOUNTAIN], shrine: [T.TREE, T.TREE, T.MOUNTAIN], icecave: [T.SNOWMTN, T.SNOWMTN, T.PINE], volccave: [T.VMOUNTAIN, T.VMOUNTAIN, T.DEADTREE], ruins: [T.CACTUS, T.SAND, T.SAND], galetower: [T.SKYTREE, T.SKYROCK, T.SKYTREE], thunderruin: [T.SKYROCK, T.SKYROCK, T.SKYTREE], starchapel: [T.SKYTREE, T.SKYTREE, T.SKYROCK], skypalace: [T.SKYROCK, T.SKYTREE, T.SKYROCK] };
   for (const dg of DUNGEONS) {
     const set = RING[dg.id];
     if (!set) continue;
@@ -685,6 +829,7 @@ function buildWorld() {
   const COST = new Float32Array(TILE_DEFS.length).fill(1);
   COST[T.OCEAN] = 60; COST[T.WATER] = 14; COST[T.LAVA] = 60; COST[T.TREE] = 2.5; COST[T.PINE] = 2.5; COST[T.CACTUS] = 2; COST[T.DEADTREE] = 2;
   COST[T.MOUNTAIN] = 7; COST[T.SNOWMTN] = 7; COST[T.VMOUNTAIN] = 7; COST[T.PATH] = 0.4; COST[T.BRIDGE] = 0.4; COST[T.FLOWERS] = 1;
+  COST[T.CLOUD] = 1e9; COST[T.SKYTREE] = 2.5; COST[T.SKYROCK] = 7;
   function road(a, b) {
     const N = W * H;
     const g = new Float32Array(N).fill(1e12), came = new Int32Array(N).fill(-1), closed = new Uint8Array(N);
@@ -730,6 +875,9 @@ function buildWorld() {
   // 島どうしを橋でつなぐ
   const landNear = (cx, cy) => { for (let r = 0; r < 12; r++) for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) { if (!inb(x, y)) continue; const i = idx(x, y); if (biome[i] && !reserved[i] && !TILE_DEFS[tiles[i]].solid) return { x, y }; } return null; };
   for (let k = 1; k < ISLANDS.length; k++) { const a = landNear(ISLANDS[k][0], ISLANDS[k][1]), b = landNear(ISLANDS[0][0], ISLANDS[0][1] - 20); if (a && b) ROADS.push([a, b]); }
+  // 空の大陸の道
+  const A = townInfo.aeria.gates;
+  ROADS.push([A.w, dunInfo.galetower.entrance], [A.e, dunInfo.thunderruin.entrance], [A.s, dunInfo.starchapel.entrance], [A.s, dunInfo.skypalace.entrance]);
   for (const [a, b] of ROADS) road(a, b);
   for (const k in dunInfo) { const d = dunInfo[k].door; }
 
@@ -754,7 +902,7 @@ function buildWorld() {
   // 到達可能マップ
   const reach = new Uint8Array(W * H);
   {
-    const st = L.s; const q = [idx(st.x, st.y)]; reach[q[0]] = 1;
+    const st = L.s, st2 = townInfo.aeria.gates.s; const q = [idx(st.x, st.y), idx(st2.x, st2.y)]; reach[q[0]] = 1; reach[q[1]] = 1;
     while (q.length) {
       const i = q.pop(), x = i % W, y = (i / W) | 0;
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -789,6 +937,7 @@ function buildWorld() {
     [1, { stones: 100 }], [2, { card: 'c_bless' }], [3, { stones: 150 }], [4, { stones: 150 }], [5, { card: 'c_spike' }], [1, { gold: 400 }], [2, { stones: 100 }], [3, { item: 'hipotion', n: 3 }], [4, { gold: 700 }], [5, { stones: 200 }],
     [7, { stones: 300 }], [7, { card: 'c_miracle' }], [7, { stones: 250 }], [7, { item: 'elixir', n: 1 }], [7, { card: 'c_aegis' }], [7, { stones: 300 }],
     [8, { stones: 200 }], [8, { card: 'c_heavy' }], [8, { item: 'feather', n: 2 }], [8, { stones: 200 }], [8, { gold: 1000 }], [8, { card: 'c_medit' }],
+    [9, { stones: 400 }], [9, { card: 'c_combo' }], [9, { item: 'elixir', n: 2 }], [9, { stones: 400 }], [9, { gold: 3000 }], [9, { card: 'c_vampire' }], [9, { stones: 500 }],
   ];
   const placed = [];
   for (const [b, c] of OW_CHESTS) {
@@ -839,9 +988,9 @@ function buildWorld() {
   }
 
   // 8. 敵シンボルの出現地点
-  const AREA_OF = [null, 'meadow', 'forest', 'desert', 'snow', 'volcano', null, 'crystal', 'island'];
-  for (let k = 0; k < 850; k++) {
-    const b = [1, 2, 3, 4, 5, 7, 8][Math.floor(rnd() * 7)];
+  const AREA_OF = [null, 'meadow', 'forest', 'desert', 'snow', 'volcano', null, 'crystal', 'island', 'sky'];
+  for (let k = 0; k < 950; k++) {
+    const b = k >= 850 ? 9 : [1, 2, 3, 4, 5, 7, 8][Math.floor(rnd() * 7)];
     const p = findSpot(b, (x, y) => {
       for (const t of TOWNS) if (Math.abs(x - (t.x + t.w / 2)) < t.w / 2 + 7 && Math.abs(y - (t.y + t.h / 2)) < t.h / 2 + 7) return false;
       return objs.spawns.every(s => Math.abs(s.x - x) + Math.abs(s.y - y) > 8);
@@ -852,10 +1001,22 @@ function buildWorld() {
   Object.assign(WORLD, { W, H, tiles, region, style, biome, regions, structs, objs, seal, townInfo, dunInfo, reach });
   WORLD.start = { x: TOWNS[0].x + TOWNS[0].road.col, y: TOWNS[0].y + TOWNS[0].road.row + 2 };
   WORLD.lumina = townInfo.lumina;
+  WORLD.skyStart = { x: townInfo.aeria.gates.s.x, y: townInfo.aeria.gates.s.y };
+  {
+    const g = L.e; let best = null, bd = 1e9;
+    for (let y = g.y - 8; y <= g.y + 8; y++) for (let x = g.x + 3; x <= g.x + 14; x++) {
+      const i = idx(x, y);
+      if (TILE_DEFS[tiles[i]].solid || reserved[i] || region[i] || tiles[i] === T.PATH || !reach[i]) continue;
+      if (objs.saves.some(o => Math.abs(o.x - x) + Math.abs(o.y - y) < 2) || objs.spawns.some(o => o.x === x && o.y === y)) continue;
+      const d = Math.abs(x - g.x - 6) + Math.abs(y - g.y - 3);
+      if (d < bd) { bd = d; best = { x, y }; }
+    }
+    WORLD.airDock = best;
+  }
   return WORLD;
 }
 
 function biomeArea(x, y) {
   const b = WORLD.biome[y * MW + x];
-  return [null, 'meadow', 'forest', 'desert', 'snow', 'volcano', 'meadow', 'crystal', 'island'][b] || 'meadow';
+  return [null, 'meadow', 'forest', 'desert', 'snow', 'volcano', 'meadow', 'crystal', 'island', 'sky'][b] || 'meadow';
 }

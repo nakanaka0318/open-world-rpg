@@ -48,6 +48,10 @@ const Field = {
     this.curRegion = this.regionAt(this.p.x, this.p.y);
     Home.furn = []; Home.girls = []; Home.carrying = null;
     Home.refresh();
+    // 飛空艇 (第2章)
+    this.airship = null;
+    this.flying = !!(G.flying && G.flags.airship);
+    if (this.flying) this.curRegion = 0; else this.placeAirship();
     this.reveal();
     this.updateLoc(true);
   },
@@ -59,6 +63,50 @@ const Field = {
       const x = e.x + dx, y = e.y + dy;
       if (!TILE_DEFS[this.tile(x, y)].solid && !this.objAt(x, y)) { this.portal = { type: 'portal', x, y }; this.place(this.portal); return; }
     }
+  },
+  // ---------- 飛空艇 ----------
+  placeAirship() {
+    if (!G.flags.airship || this.flying) return;
+    if (this.airship) this.unplace(this.airship);
+    const pos = G.airship || WORLD.airDock;
+    if (!pos) return;
+    this.airship = { type: 'airship', x: pos.x, y: pos.y };
+    G.airship = { x: pos.x, y: pos.y };
+    this.place(this.airship);
+  },
+  async board() {
+    const c = await UI.ask('飛空艇「アステル号」に乗りますか?', ['乗る', 'やめる']);
+    if (c !== 0) return;
+    const a = this.airship;
+    this.unplace(a); this.airship = null;
+    const p = this.p;
+    p.x = p.fx = a.x; p.y = p.fy = a.y; p.t = 1; p.moving = false;
+    this.flying = true; G.flying = true; this.curRegion = 0;
+    Sound.play('magic');
+    UI.toast('飛空艇で空へ!<br><small>雲や海の上も飛べる。Aボタンで着陸</small>', 2200);
+    this.updateLoc(true);
+  },
+  // 着陸できるか (降りる地面と、となりに降りる場所が必要)
+  landSpot() {
+    const p = this.p, t = this.tile(p.x, p.y);
+    if (TILE_DEFS[t].solid || TILE_DEFS[t].door || this.regionAt(p.x, p.y) || this.objAt(p.x, p.y) || t === T.BRIDGE) return null;
+    for (const [dx, dy, d] of [[0, 1, 'd'], [-1, 0, 'l'], [1, 0, 'r'], [0, -1, 'u']]) {
+      const x = p.x + dx, y = p.y + dy, tt = this.tile(x, y);
+      if (!TILE_DEFS[tt].solid && !this.regionAt(x, y) && !this.objAt(x, y)) return { x, y, d };
+    }
+    return null;
+  },
+  async land() {
+    const s = this.landSpot();
+    if (!s) { Sound.play('buzz'); UI.toast('ここには着陸できない<br><small>開けた地面の上で着陸しよう</small>', 1600); return; }
+    const p = this.p;
+    this.flying = false; G.flying = false;
+    G.airship = { x: p.x, y: p.y };
+    this.placeAirship();
+    Sound.play('step');
+    this.teleport(s.x, s.y, s.d);
+    UI.toast('着陸した', 1000);
+    Game.autoSave(true);
   },
   pickLead(area) { const a = AREAS[area]; const g = a.groups[Math.floor(Math.random() * a.groups.length)]; return g[0]; },
   setFloor(x, y, structId) {
@@ -86,6 +134,7 @@ const Field = {
   },
 
   locInfo() {
+    if (this.flying) return { name: '飛空艇 アステル号', bgm: 'field', kind: 'field' };
     const r = this.curRegion;
     if (r) {
       const R = WORLD.regions[r];
@@ -116,7 +165,7 @@ const Field = {
     const canAct = !UI.active() && !this.busy;
     // プレイヤー移動
     if (p.moving) {
-      const speed = Input.held.b ? 12 : 7;
+      const speed = this.flying ? (Input.held.b ? 20 : 13) : Input.held.b ? 12 : 7;
       p.t += dt * speed;
       if (p.t >= 1) { p.t = 1; p.moving = false; this.arrive(); }
     }
@@ -127,7 +176,7 @@ const Field = {
     // NPC・敵
     if (canAct) {
       for (const n of this.npcs) this.updateNPC(n, dt);
-      for (const e of this.enemies) this.updateEnemy(e, dt);
+      if (!this.flying) for (const e of this.enemies) this.updateEnemy(e, dt);
     }
     this.updateCam();
   },
@@ -135,6 +184,11 @@ const Field = {
     const p = this.p, [dx, dy, dc] = DIRS[d];
     p.dir = dc;
     const nx = p.x + dx, ny = p.y + dy;
+    if (this.flying) {
+      if (nx < 3 || ny < 3 || nx > MW - 4 || ny > MH - 4) return;
+      p.fx = p.x; p.fy = p.y; p.x = nx; p.y = ny; p.t = 0; p.moving = true; p.steps++;
+      return;
+    }
     const o = this.objAt(nx, ny);
     if (o) {
       if (o.type === 'boulder') { if (!this.push(o, dx, dy)) return; }
@@ -202,6 +256,7 @@ const Field = {
   },
   arrive() {
     const p = this.p;
+    if (this.flying) { this.reveal(); G.pos = { x: p.x, y: p.y, dir: p.dir }; this.updateLoc(); return; }
     if (p.steps % 2 === 0) Sound.play('step');
     this.reveal();
     const sh = this.shards && this.shards.get(this.key(p.x, p.y));
@@ -353,6 +408,7 @@ const Field = {
     let o = this.objAt(fx, fy);
     let t = this.tile(fx, fy);
     if (!o && TILE_DEFS[t].counter) { const o2 = this.objAt(fx + dx, fy + dy); if (o2 && o2.type === 'npc') o = o2; }
+    if (this.flying) { this.busy = true; try { await this.land(); } finally { this.busy = false; } return; }
     this.busy = true;
     try {
       if (Home.carrying && Home.inside(fx, fy) && !(o && o.type === 'npc')) { await Home.place(fx, fy); return; }
@@ -379,6 +435,8 @@ const Field = {
       await Story.saveCrystal(o);
     } else if (o.type === 'boss') {
       this.busy = false; await this.bossTalk(o); this.busy = true;
+    } else if (o.type === 'airship') {
+      await this.board();
     } else if (o.type === 'furn') {
       await Home.furnTalk(o);
     } else if (o.type === 'boulder') {
@@ -507,6 +565,15 @@ const Field = {
     const sx = Math.round(wx * TS - cam.x), sy = Math.round(wy * TS - cam.y);
     if (o === this.p) {
       if (this.invuln > 0 && Math.floor(this.time * 12) % 2) return;
+      if (this.flying) {
+        const b = Math.round(Math.sin(this.time * 3) * 1.5);
+        ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(sx - 2, sy + 13, 20, 3);
+        ctx.save();
+        if (o.dir === 'l') { ctx.translate(sx + 8, 0); ctx.scale(-1, 1); ctx.drawImage(SPR.obj.airship, -16, sy - 14 + b); }
+        else ctx.drawImage(SPR.obj.airship, sx - 8, sy - 14 + b);
+        ctx.restore();
+        return;
+      }
       const lead = G.roster[G.party[0]] || G.roster.aria;
       const look = charLook(lead.id);
       const fr = o.moving ? (o.steps % 2 ? 1 : 2) : 0;
@@ -519,6 +586,7 @@ const Field = {
       case 'chest': ctx.drawImage(G.chests[o.id] ? SPR.obj.chestOpen : SPR.obj.chest, sx, sy); break;
       case 'boulder': ctx.drawImage(SPR.obj.boulder, sx, sy); break;
       case 'furn': ctx.drawImage(furnCanvas(o.f), sx, sy - 1); break;
+      case 'airship': ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(sx - 4, sy + 12, 24, 3); ctx.drawImage(SPR.obj.airship, sx - 8, sy - 4); break;
       case 'portal': {
         const t = this.time;
         for (let i = 0; i < 14; i++) {

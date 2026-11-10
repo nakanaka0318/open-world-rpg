@@ -5,9 +5,71 @@ const SHOPS = {
   lumina: ['potion', 'antidote', 'ether'],
   frostia: ['potion', 'hipotion', 'ether', 'antidote', 'feather'],
   sandora: ['potion', 'hipotion', 'ether', 'antidote', 'feather'],
+  aeria: ['hipotion', 'ether', 'elixir', 'antidote', 'feather'],
+};
+// 第2章の紋章 (空の大陸の3つのダンジョンのボスが持っている)
+const EMBLEM_INFO = {
+  gale: { n: '嵐の紋章', c: '#8ad8f0', where: '嵐の塔 (エアリアの西)' },
+  thunder: { n: '雷の紋章', c: '#f5c542', where: '雷の遺跡 (エアリアの東)' },
+  star: { n: '星の紋章', c: '#f4f0ff', where: '星の聖堂 (エアリアの南西)' },
 };
 
 const NPCS = {
+  // ---- 第2章 ----
+  sky_engineer: {
+    name: '飛空艇技師ソラネ', look: NL('#5a8ad8', '#c87a3a', 'pony', 'band', '#f5c542', '#2a5a8a'),
+    async talk() {
+      const o = { name: this.name, look: this.look };
+      if (!G.flags.cleared) { await UI.say(['ん?空を見てたの。', '雲のずっと上に、大陸が浮かんでるって知ってる?\nいつか、わたしの船で行ってみたいんだ。'], o); return; }
+      if (!G.flags.airship) {
+        await UI.say([
+          '魔王を倒したんだってね!すごいよ!',
+          'でも…変なんだ。魔王が消えた夜から、\n空の大陸のほうで、ずっと雷が鳴りやまないの。',
+          '古い本にはこうある。\n「地上の王は、天蓋の王の影にすぎない」…',
+          '魔王を操っていた本当の黒幕が、\n空にいるのかもしれない。',
+          'わたしの飛空艇「アステル号」、ついに完成したんだ!\nあなたたちに使ってほしい。',
+        ], o);
+        G.flags.airship = 1;
+        Sound.play('star5');
+        Field.placeAirship();
+        await UI.say(['飛空艇「アステル号」を手に入れた!', '村の東の門の外に止めてあるよ。\n調べると乗れる。飛んでいる間はAボタンで着陸。', '空の大陸は、南西の海の上。\n雲の海に囲まれているから、すぐわかるはず!', '(推奨レベル40以上。気をつけてね!)'], o);
+        Game.autoSave(true);
+        return;
+      }
+      await UI.say(G.flags.cleared2 ? '天蓋の王を倒したんだね…!空も地上も、これで本当に平和だ!' : '空の大陸は南西の海の上だよ。\nアステル号の調子はどう?', o);
+    },
+  },
+  aeria_elder: {
+    name: '天空の長老', look: 'elder',
+    async talk() {
+      const o = { name: this.name };
+      const n = (G.emblems || []).length;
+      if (!G.flags.metSkyElder) {
+        G.flags.metSkyElder = 1;
+        await UI.say([
+          '地上から…人が来たのか。何百年ぶりじゃろう。',
+          'わしらは、天蓋の王ヴァルディスに支配されておる。\n地上の魔王ノクスは、奴の操り人形にすぎなかったのじゃ。',
+          '奴の城へ入るには「三つの紋章」が要る。\n嵐の塔、雷の遺跡、星の聖堂…\nそれぞれの守り手が紋章を持っておる。',
+          'どれも恐ろしく強い。\nレベル40は越えていなければ、命はないぞ。',
+        ], o);
+        if (!G.flags.skyGift) { G.flags.skyGift = 1; G.stones += 500; addItem('elixir', 2); Sound.play('chest'); Game.hud(); await UI.say('長老から 星晶石×500 と エリクサー×2 を受け取った!'); }
+        return;
+      }
+      await UI.say(G.flags.cleared2 ? '空に光が戻った…ありがとう、地上の英雄たちよ。' : n >= 3 ? '三つの紋章がそろった!\n南東の天空城へ向かうのじゃ!' : `紋章は ${n}/3。
+残り: ${Object.keys(EMBLEM_INFO).filter(k => !(G.emblems || []).includes(k)).map(k => EMBLEM_INFO[k].where).join(' / ')}`, o);
+    },
+  },
+  aeria_shop: { name: '雲の商人ルフナ', look: NL('#f4f8ff', '#7ac8f0', 'twin', 'ribbon', '#f5c542'), async talk() { await Story.shop('aeria', this); } },
+  aeria_sage: {
+    name: '星読みのセレネ', look: NL('#c8b8f8', '#3a3a7a', 'long', 'star', '#f5c542', '#8a6ad8'),
+    async talk() { await UI.say(['雷の遺跡の扉は、数字で開くそうよ。\n遺跡の石碑に、雷の言葉が書いてあるはず。', '星の聖堂の問いは…夜空を見上げればわかるわ。'], { name: this.name, look: this.look }); },
+  },
+  aeria_girl: {
+    name: '風読みの少女ミル', look: NL('#7fd67a', '#f4f8ff', 'twin', 'flower', '#f7a1c8'),
+    async talk() { await UI.say(['嵐の塔の扉はね、嵐の生まれる順番で開くんだって!', '風が雲を呼んで、雲が雨を降らせて…\nそのあとは、ゴロゴロ!'], { name: this.name, look: this.look }); },
+  },
+  aeria_kid: { name: 'こどものピピ', look: NL('#f5c542', '#7ac8f0', 'bob', 'band', '#ffffff'), async talk() { await UI.say('地上ってどんなところ?\n海っていうおっきな水たまりがあるんでしょ!', { name: this.name, look: this.look }); } },
+  aeria_guard: { name: '天空騎士団のリエル', look: NL('#e8e0d0', '#e8ecf8', 'pony', 'tiara', '#e8c860', '#3a7ad8'), async talk() { await UI.say(['この大陸の魔物は、地上よりずっと強い。', '雲の海は歩いては渡れない。\n乗ってきた船を、なくさないようにな。'], { name: this.name, look: this.look }); } },
   lumina_elder: {
     name: '村長', look: 'elder',
     async talk() {
@@ -157,7 +219,14 @@ const Story = {
     await UI.say('★ ログインボーナス ★\n星晶石×100 を受け取った!');
   },
   objective() {
-    if (G.flags.cleared) return '魔王ノクスを倒した!世界中の宝箱や仲間集めを楽しもう。';
+    if (G.flags.cleared2) return '天蓋の王を倒した!星界の塔や仲間集めを楽しもう。';
+    if (G.flags.cleared) {
+      if (!G.flags.airship) return 'ルミナ村の飛空艇技師ソラネに話しかけよう。(第2章 推奨Lv40以上)';
+      if (!G.flags.metSkyElder) return '飛空艇で南西の空の大陸へ。天空都市エアリアの長老を訪ねよう。';
+      const n = (G.emblems || []).length;
+      if (n < 3) return `三つの紋章を集めよう (${n}/3): ` + Object.keys(EMBLEM_INFO).filter(k => !(G.emblems || []).includes(k)).map(k => EMBLEM_INFO[k].where).join(' / ');
+      return '三つの紋章がそろった!天空城で天蓋の王ヴァルディスを倒そう。';
+    }
     const n = G.crystals.length;
     if (!G.flags.metElder) return 'ルミナ村の村長の家を訪ねよう。';
     if (n === 0) return '封印の水晶を集めよう。おすすめは西の森にある「風の神殿」。';
@@ -237,6 +306,17 @@ const Story = {
     if (r.type === 'choice') { const c = await UI.ask(r.prompt, r.options); if (c < 0) return; ok = c === r.answer; }
     else if (r.type === 'code') { const v = await UI.code(r.prompt, r.digits); if (v === null) return; ok = v === r.answer; }
     else if (r.type === 'seq') { const v = await UI.seq(r.prompt, r.options, r.answer.length); if (!v) return; ok = v.join() === r.answer.join(); }
+    else if (r.type === 'emblem') {
+      const n = (G.emblems || []).length;
+      if (n < 3) { await UI.say(`光の扉がある。三つのくぼみがあいている…
+三つの紋章が必要だ。(現在 ${n}/3)`); return; }
+      await UI.say('三つの紋章が光り、扉に吸い込まれていく――');
+      G.rdoors[d.id] = 1; Field.setFloor(d.x, d.y, d.struct);
+      Sound.play('star5'); setTimeout(() => Sound.play('gate'), 450);
+      await UI.say('天空城の扉が開いた!');
+      Game.autoSave();
+      return;
+    }
     if (ok) {
       G.rdoors[d.id] = 1;
       Field.setFloor(d.x, d.y, d.struct);
@@ -288,9 +368,35 @@ const Story = {
       const st = WORLD.dunInfo[o.struct];
       const c = await UI.ask('ダンジョンの入口へ戻りますか?', ['戻る', 'このまま']);
       if (c === 0 && st) await UI.fade('#fff', 250, 100, 250, () => Field.teleport(st.entrance.x, st.entrance.y + 1, 'd'));
+    } else if (o.emblem) {
+      G.emblems = G.emblems || [];
+      if (!G.emblems.includes(o.emblem)) G.emblems.push(o.emblem);
+      G.stones += 600;
+      Sound.play('star5');
+      Game.hud();
+      const ei = EMBLEM_INFO[o.emblem];
+      await UI.say([`${ei.n} を手に入れた!\n(討伐ボーナス: 星晶石×600)`, `空の紋章 ${G.emblems.length}/3`]);
+      if (G.emblems.length === 3) await UI.say('三つの紋章がそろった!\n天空城の扉が開けられる!');
+      Game.autoSave();
+      const st = WORLD.dunInfo[o.struct];
+      const c = await UI.ask('ダンジョンの入口へ戻りますか?', ['戻る', 'このまま']);
+      if (c === 0 && st) await UI.fade('#fff', 250, 100, 250, () => Field.teleport(st.entrance.x, st.entrance.y + 1, 'd'));
+    } else if (o.enemy === LAST_BOSS2) {
+      await this.ending2();
     } else {
       await this.ending();
     }
+  },
+  async ending2() {
+    G.flags.cleared2 = 1;
+    G.stones += 2000;
+    Sound.jingle('fanfare', 'title');
+    await UI.say(['天蓋の王ヴァルディスは、雲の彼方へ消えていった――', '空の大陸に青空が戻り、\n地上にも、やさしい風が吹きはじめる。', '空と大地をつないだ少女たちの物語は、\nこれからも続いていく。']);
+    const el = U.el('div', 'layer credits');
+    el.innerHTML = `<div class="cr-in"><h1>星晶のクロニクル</h1><p>〜 第2章 天空の章 完 〜</p><p>Thank you for playing!</p><p class="sm">クリア特典: 星晶石×2000</p><div class="crp">${Object.keys(G.roster).map(k => `<img src="${portraitURL(charLook(k))}">`).join('')}</div></div>`;
+    await new Promise(r => { const l = { el, handle: k => { if (k === 'a') { UI.pop(l); r(); } } }; el.onclick = () => { UI.pop(l); r(); }; UI.push(l); });
+    Game.autoSave(true);
+    Field.updateLoc(true);
   },
   async ending() {
     G.flags.cleared = 1;
@@ -302,6 +408,7 @@ const Story = {
     await new Promise(r => { const l = { el, handle: k => { if (k === 'a') { UI.pop(l); r(); } } }; el.onclick = () => { UI.pop(l); r(); }; UI.push(l); });
     Field.placePortal();
     await UI.say('魔王城の前に、星の光を放つ門が現れた…!\n(星界の塔: 魔王撃破後のやり込みダンジョン)');
+    await UI.say('…ルミナ村の飛空艇技師ソラネが、\n何か話したそうにしているらしい。\n(第2章「天空の章」 推奨Lv40以上)');
     Field.updateLoc(true);
   },
 };

@@ -34,7 +34,7 @@ function newGame() {
     lastSave: null,
     explored: new Uint8Array(MW * MH),
     gacha: { beginnerDone: false, total: 0, history: [] },
-    login: '', playtime: 0, seal: false, seen: {}, skins: {}, home: { owned: {}, placed: [] }, gifts: {},
+    login: '', playtime: 0, seal: false, seen: {}, skins: {}, home: { owned: {}, placed: [] }, gifts: {}, emblems: [], airship: null,
   };
   G.roster.aria = mkChar('aria', 1);
   const s = charStats(G.roster.aria); G.roster.aria.hp = s.hp; G.roster.aria.mp = s.mp;

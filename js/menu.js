@@ -305,6 +305,7 @@ const Menu = {
 
   // ---------- 転移 ----------
   teleport(fromId) {
+    if (typeof Field !== 'undefined' && Field.flying) { Sound.play('buzz'); UI.toast('飛空艇に乗っている間は転移できない<br><small>Aボタンで着陸しよう</small>', 1800); return Promise.resolve(); }
     const GN = { town: '町', gate: 'ダンジョン入口', dungeon: 'ダンジョン内', field: '野外', hut: '小屋' };
     const order = Object.keys(GN);
     let chosen = null;

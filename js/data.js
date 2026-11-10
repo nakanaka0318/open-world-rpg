@@ -420,6 +420,19 @@ const ENEMIES = {
   serpent: { n: '海竜リヴァイア', spr: 'dragon', pal: { B: '#2ab0a0', A: '#1a7a8a', S: '#c8f8e8' }, elem: 'water', boss: true, hp: 1500, chp: 520, atk: 64, def: 40, mag: 60, spd: 18, exp: 1300, gold: 800, act: [['attack', 2], ['e_icebreath', 2], ['e_bite', 1], ['e_heal', 1]] },
   crygolem: { n: '結晶の巨像', spr: 'golem', pal: { B: '#9a8ad8', A: '#ffffff' }, elem: 'light', boss: true, hp: 3000, chp: 1000, atk: 96, def: 60, mag: 70, spd: 12, exp: 4000, gold: 2000, act: [['attack', 2], ['e_smash', 2], ['e_rock', 1], ['e_charge', 1]] },
   demon: { n: '魔王ノクス', spr: 'demon', pal: { S: '#a8b8d8', K: '#3a1a5a', A: '#e8e0d0', G: '#f5c542', E: '#ff3b3b' }, elem: 'dark', boss: true, hp: 3800, chp: 800, atk: 88, def: 54, mag: 90, spd: 22, exp: 5000, gold: 3000, act: [['attack', 2], ['e_dark', 2], ['e_darkwave', 2], ['e_drain', 1], ['e_charge', 1]] },
+  // ---- 第2章: 空の大陸 (推奨Lv40〜55) ----
+  harpy: { n: 'ハーピー', spr: 'bat', pal: { B: '#e8a8c8', E: '#ffd94a' }, elem: 'wind', hp: 430, atk: 104, def: 50, mag: 70, spd: 30, exp: 330, gold: 150, act: [['attack', 2], ['e_wind', 2]], drop: [['hipotion', 0.15]] },
+  cloudslime: { n: 'クラウドスライム', spr: 'slime', pal: { B: '#f4f8ff' }, elem: 'water', hp: 520, atk: 96, def: 66, mag: 80, spd: 16, exp: 320, gold: 160, act: [['attack', 2], ['e_icebreath', 1], ['e_heal', 1]], drop: [['ether', 0.15]] },
+  thunderbird: { n: 'サンダーバード', spr: 'bat', pal: { B: '#f5c542', E: '#3a7ad8' }, elem: 'wind', hp: 470, atk: 112, def: 52, mag: 96, spd: 34, exp: 360, gold: 170, act: [['e_wind', 2], ['e_charge', 1], ['attack', 1]] },
+  skyknight: { n: '天空騎士', spr: 'skel', pal: { B: '#e8ecf8', W: '#ffffff', A: '#e8c860', E: '#3a7ad8' }, elem: 'light', hp: 620, atk: 118, def: 72, mag: 50, spd: 22, exp: 400, gold: 200, act: [['attack', 3], ['e_charge', 1], ['e_smash', 1]] },
+  stormwisp: { n: 'ストームウィスプ', spr: 'wisp', pal: { B: '#8ad8f0' }, elem: 'wind', hp: 400, atk: 90, def: 48, mag: 120, spd: 30, exp: 340, gold: 160, act: [['e_wind', 2], ['e_leaf', 1]] },
+  angelimp: { n: 'エンジェルインプ', spr: 'imp', pal: { B: '#f0f0ff', A: '#f5c542' }, elem: 'light', hp: 450, atk: 108, def: 56, mag: 110, spd: 28, exp: 360, gold: 180, act: [['attack', 2], ['e_dark', 1], ['e_heal', 1]] },
+  skywyvern: { n: 'スカイワイバーン', spr: 'dragon', pal: { B: '#7ac8e8', A: '#3a8ac8', S: '#f4f8ff' }, elem: 'wind', hp: 780, atk: 126, def: 70, mag: 100, spd: 26, exp: 520, gold: 260, act: [['attack', 2], ['e_bite', 1], ['e_icebreath', 1]] },
+  skygolem: { n: 'スカイゴーレム', spr: 'golem', pal: { B: '#d8dcf0', A: '#e8c860' }, elem: 'earth', hp: 900, atk: 130, def: 90, mag: 60, spd: 12, exp: 560, gold: 280, act: [['attack', 2], ['e_smash', 2], ['e_rock', 1]] },
+  galeking: { n: '嵐の王テンペスト', spr: 'treant', pal: { G: '#8ad8f0', B: '#5a8ab8', E: '#ffffff' }, elem: 'wind', boss: true, hp: 6000, chp: 1300, atk: 112, def: 70, mag: 108, spd: 30, exp: 8000, gold: 4000, act: [['attack', 2], ['e_wind', 2], ['e_leaf', 2], ['e_charge', 1]] },
+  thunderdragon: { n: '雷竜ヴォルテクス', spr: 'dragon', pal: { B: '#e8c830', A: '#3a5ad8', S: '#fff8c0' }, elem: 'wind', boss: true, hp: 7000, chp: 1450, atk: 118, def: 76, mag: 118, spd: 30, exp: 10000, gold: 5000, act: [['attack', 2], ['e_wind', 2], ['e_firebreath', 2], ['e_charge', 1]] },
+  skycolossus: { n: '星の巨像アストラ', spr: 'golem', pal: { B: '#f4f0ff', A: '#7ac8f0' }, elem: 'light', boss: true, hp: 8000, chp: 1400, atk: 124, def: 84, mag: 110, spd: 18, exp: 12000, gold: 6000, act: [['attack', 2], ['e_smash', 2], ['e_rock', 1], ['e_heal', 1], ['e_charge', 1]] },
+  skyking: { n: '天蓋の王ヴァルディス', spr: 'demon', pal: { S: '#f4f0ff', K: '#e8c860', A: '#ffffff', G: '#7ac8f0', E: '#ffd94a' }, elem: 'light', boss: true, hp: 12000, chp: 1200, atk: 106, def: 90, mag: 112, spd: 32, exp: 20000, gold: 10000, act: [['attack', 2], ['e_dark', 2], ['e_darkwave', 2], ['e_drain', 1], ['e_charge', 1], ['e_heal', 1]] },
 };
 
 // エリア別出現 (lv目安)
@@ -439,6 +452,11 @@ const AREAS = {
   subsea: { n: '潮騒の洞窟', bg: 'ice', groups: [['crab', 'seaslime'], ['seaslime', 'seaslime', 'parrot']] },
   subcrys: { n: '結晶の迷宮', bg: 'crystal', groups: [['crywolf', 'cryslime'], ['cryghost', 'cryghost']] },
   castle: { n: '魔王城', bg: 'castle', groups: [['imp', 'imp'], ['dknight'], ['darkghost', 'imp'], ['dknight', 'darkghost']] },
+  sky: { n: '空の大陸', bg: 'sky', groups: [['harpy'], ['cloudslime', 'harpy'], ['thunderbird'], ['skywyvern'], ['harpy', 'thunderbird'], ['cloudslime', 'cloudslime']] },
+  galetower: { n: '嵐の塔', bg: 'skyd', groups: [['stormwisp', 'harpy'], ['thunderbird', 'stormwisp'], ['skywyvern']] },
+  thunderruin: { n: '雷の遺跡', bg: 'skyd', groups: [['thunderbird', 'thunderbird'], ['skyknight', 'stormwisp'], ['skygolem']] },
+  starchapel: { n: '星の聖堂', bg: 'skyd', groups: [['angelimp', 'skyknight'], ['angelimp', 'angelimp', 'stormwisp'], ['skygolem', 'angelimp']] },
+  skypalace: { n: '天空城', bg: 'skyd', groups: [['skyknight', 'skyknight'], ['skywyvern', 'angelimp'], ['skygolem', 'skyknight']] },
 };
 
 // ---------- ガチャ ----------
@@ -531,7 +549,7 @@ function getBanners(state) {
 }
 
 // エリアの目安レベル。パーティの平均レベルがこれより FLEE_GAP 以上高いと、敵が逃げるようになる
-const AREA_LV = { meadow: 2, forest: 6, desert: 10, snow: 13, volcano: 16, island: 13, crystal: 24, shrine: 6, ruins: 10, icecave: 13, volccave: 16, castle: 22, subruin: 9, subsea: 15, subcrys: 25 };
+const AREA_LV = { meadow: 2, forest: 6, desert: 10, snow: 13, volcano: 16, island: 13, crystal: 24, sky: 40, galetower: 42, thunderruin: 46, starchapel: 50, skypalace: 55, shrine: 6, ruins: 10, icecave: 13, volccave: 16, castle: 22, subruin: 9, subsea: 15, subcrys: 25 };
 const FLEE_GAP = 8;
 
 // ---------- 難易度 ----------
@@ -539,10 +557,11 @@ const FLEE_GAP = 8;
 const DIFFICULTY = { mob: 1.2, boss: 1.5, sub: 1.8, last: 2.0 };
 const SUB_BOSSES = ['ancient', 'serpent', 'crygolem'];
 const LAST_BOSS = 'demon';
+const LAST_BOSS2 = 'skyking'; // 第2章のラスボス
 function enemyMul(id) {
   const d = ENEMIES[id];
   if (!d.boss) return DIFFICULTY.mob;
-  if (id === LAST_BOSS) return DIFFICULTY.last;
+  if (id === LAST_BOSS || id === LAST_BOSS2) return DIFFICULTY.last;
   if (SUB_BOSSES.includes(id)) return DIFFICULTY.sub;
   return DIFFICULTY.boss;
 }

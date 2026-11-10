@@ -13,7 +13,8 @@ const pass = new Set([T.SEAL, T.GATE, T.RDOOR, T.HOLE]);
 const objBlock = new Set();
 for (const k of ['chests', 'saves', 'bosses', 'npcs']) for (const o of objs[k]) objBlock.add(o.y * W + o.x);
 const seen = new Uint8Array(W * H);
-const q = [Wd.start.y * W + Wd.start.x]; seen[q[0]] = 1;
+// 地上(スタート地点)と、空の大陸(飛空艇で降りる町の門)の両方から歩ける範囲
+const q = [Wd.start.y * W + Wd.start.x, Wd.skyStart.y * W + Wd.skyStart.x]; seen[q[0]] = 1; seen[q[1]] = 1;
 while (q.length) {
   const i = q.pop(), x = i % W, y = (i / W) | 0;
   for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -29,6 +30,7 @@ const adj = (o) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => seen[(o
 for (const k of ['chests', 'saves', 'bosses', 'npcs', 'tablets', 'signs', 'altars', 'rdoors']) for (const o of objs[k]) if (!adj(o)) fail('unreachable ' + k + ' ' + (o.id || '') + ' ' + o.x + ',' + o.y);
 for (const o of objs.hidden) if (!seen[o.y * W + o.x]) fail('hidden unreachable ' + o.id);
 console.log('chests', objs.chests.length, 'spawns', objs.spawns.length, 'npcs', objs.npcs.length, 'hidden', objs.hidden.map(h => h.id + '@' + h.x + ',' + h.y).join(' '));
+console.log('airDock', Wd.airDock, 'skyStart', Wd.skyStart);
 console.log('seal', Wd.seal, 'start', Wd.start, 'hint3', Wd.hint3, 'hint2', Wd.hint2);
 console.log(Wd.hint1);
 
@@ -41,6 +43,9 @@ const SUBS = {
   castle: [{ start: [8, 13], goal: (r) => [...r].some(p => p % 100 <= 8) }],
   crylab: [{ start: [9, 10], goal: 'g1' }],
   seacave: [{ start: [9, 9], goal: (r) => [...r].some(p => p % 100 <= 2) }],
+  galetower: [{ start: [10, 11], goal: 'g1' }],
+  thunderruin: [{ start: [11, 13], goal: (r) => r.has(11 * 100 + 6) }],
+  starchapel: [{ start: [11, 11], goal: 'g2' }],
 };
 for (const dg of DUNGEONS) {
   const bp = dg.bp, w = bp[0].length, h = bp.length;

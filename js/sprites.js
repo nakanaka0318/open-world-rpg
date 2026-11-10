@@ -511,7 +511,9 @@ const ICEF = c => { genSpeck(c, '#bfe6f5', ['#a3d8ee', '#e8f8ff'], 0.2, 81); c.f
 const SANDF = c => genBricks(c, '#d9b26a', '#b8914f', '#e8c785', 8, 8);
 const CASTF = c => genBricks(c, '#4a3c63', '#3a2f50', '#5d4e7a', 8, 8);
 const VOLCF = c => genSpeck(c, '#4a3532', ['#3a2826', '#5e4440', '#6a3a2a'], 0.28, 91);
-const FLOORS = { stone: STONEF, cave: CAVEF, ice: ICEF, sand: SANDF, castle: CASTF, volc: VOLCF, wood: WOODF, grass: GRASS, sandg: SAND, snowg: SNOW, ashg: ASH, dgrass: DARKGRASS, cryg: CRYG };
+const SKYG = c => genSpeck(c, '#a8dc8a', ['#94cc78', '#c4ecaa', '#ffffff'], 0.2, 151);
+const SKYF = c => { genBricks(c, '#eef0f8', '#c8cce0', '#ffffff', 8, 8); c.fillStyle = '#e8c860'; c.fillRect(0, 0, 1, 1); c.fillRect(8, 8, 1, 1); };
+const FLOORS = { stone: STONEF, cave: CAVEF, ice: ICEF, sand: SANDF, castle: CASTF, volc: VOLCF, wood: WOODF, grass: GRASS, sandg: SAND, snowg: SNOW, ashg: ASH, dgrass: DARKGRASS, cryg: CRYG, skyg: SKYG, sky: SKYF };
 const STYLE_LIST = Object.keys(FLOORS);
 
 function over(under, pat, pal) { return c => { under(c); paint(c, pat, pal); }; }
@@ -627,6 +629,21 @@ defTile('SEAL', { solid: 1, anim: 3, map: '#b050ff' }, (c, f) => {
   }
 });
 defTile('CAVEIN', { map: '#000000', door: 1 }, null); // ダンジョン入口
+// ---- 第2章: 空の大陸 ----
+// 雲海 (歩いては渡れない。飛空艇なら飛べる)
+defTile('CLOUD', { solid: 1, anim: 3, map: '#dfeafc' }, (c, f) => {
+  c.fillStyle = '#9cc4f0'; c.fillRect(0, 0, 16, 16);
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+    const v = Math.sin((x + f * 2) * 0.55 + Math.sin(y * 0.7) * 1.4) + Math.cos(y * 0.6 - f * 0.8 + x * 0.25);
+    if (v > 0.6) { c.fillStyle = v > 1.3 ? '#ffffff' : '#e8f2ff'; c.fillRect(x, y, 1, 1); }
+    else if (v > 0.1) { c.fillStyle = '#c4dcf8'; c.fillRect(x, y, 1, 1); }
+  }
+});
+defTile('SKYG', { map: '#a8dc8a' }, SKYG);
+defTile('SKYTREE', { solid: 1, map: '#f0b8d8' }, over(SKYG, P.tree, { o: '#5a2a4a', d: '#d878b0', G: '#f4a8d0', L: '#ffe0f0', T: '#a07050', t: '#6e4a34' }));
+defTile('SKYROCK', { solid: 1, map: '#c8d0e8' }, over(SKYG, P.mountain, { o: '#3a4060', R: '#d8deee', r: '#9aa4c4', L: '#ffffff' }));
+defTile('SKYF', { map: '#eef0f8', floor: 1 }, SKYF);
+defTile('SKYW', { solid: 1, map: '#b8bcd8' }, c => { genBricks(c, '#d0d4e8', '#9a9ec0', '#f4f6ff', 8, 4, '#b8bcd8'); c.fillStyle = '#e8c860'; c.fillRect(0, 15, 16, 1); });
 
 // 構造物ごとの床に依存するタイル (床 x 種類)
 const STYLE_TILES = {};
@@ -1425,6 +1442,28 @@ function buildSprites() {
   SPR.roofs.mountain = mtn('MOUNTAIN');
   SPR.roofs.volc = mtn('VMOUNTAIN');
   SPR.roofs.cryroof = mtn('CRYSPIRE');
+  SPR.roofs.sky = R('#f4f6ff', '#9aa4c8', '#ffffff');
+  SPR.roofs.skygold = R('#e8c860', '#a8842a', '#fff0a0');
+  // 飛空艇 (32x24)
+  SPR.obj.airship = patCanvas([
+    '...........oooooooooo...........',
+    '........oooRRRRRRRRRRooo........',
+    '......ooRRRRWRRRRRRRRRRRoo......',
+    '.....oRRRRWWRRRRRRRRRRRRRRo.....',
+    '....oRRRRRRRRRRRRRRRRRRRRRRo..oo',
+    '....orrrrrrrrrrrrrrrrrrrrrrro.oGo',
+    '.....orrrrrrrrrrrrrrrrrrrrro..oGo',
+    '......ooooooooooooooooooooo...oo.',
+    '.........o....o.....o....o......',
+    '.........o....o.....o....o......',
+    '...oo....o....o.....o....o......',
+    '..oGGo.oooooooooooooooooooooo...',
+    '..oGGooTTTTTTTTTTTTTTTTTTTTTTo..',
+    '...ooooTtWWtTTtWWtTTtWWtTTTTTo..',
+    '.......oTTTTTTTTTTTTTTTTTTTToo..',
+    '........otttttttttttttttttto....',
+    '.........oooooooooooooooooo.....',
+  ].map(r => r.slice(0, 32).padEnd(32, '.')), { o: OUT, R: '#d8303a', r: '#a01e28', W: '#ffd0d0', T: '#a8683a', t: '#6e4024', G: '#f5c542' }, 32, 17);
   SPR.roofs.pyramid = (() => {
     const c = mkCanvas(16, 16); const x = c.getContext('2d');
     genBricks(x, '#e0bc72', '#a8844a', '#f2d898', 16, 4, '#c8a060');

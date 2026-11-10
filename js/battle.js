@@ -15,6 +15,8 @@ const BG_DEF = {
   castle: { sky: ['#0a0614', '#2a1a40'], ground: ['#3a2f50', '#221a33'], hill: '#2c2440', cave: true },
   beach: { sky: ['#3ab0f0', '#b8f0ff'], ground: ['#f0dca0', '#d8bc78'], hill: '#2a8ad8' },
   crystal: { sky: ['#4a3a8a', '#c8b8f0'], ground: ['#b4a6d6', '#8a7ab8'], hill: '#8ad0f0' },
+  sky: { sky: ['#4a9ae8', '#e8f6ff'], ground: ['#b8e4a0', '#90c478'], hill: '#f4f8ff' },
+  skyd: { sky: ['#8ab8e8', '#f4f6ff'], ground: ['#eef0f8', '#c8cce0'], hill: '#e8c860' },
 };
 const ST_N = { str: '筋力', dex: '敏捷', vuln: '脆弱', weak: '脱力', poison: '毒', regen: '再生', thorns: 'トゲ', devote: '献身', serve: '奉仕' };
 const ST_GOOD = { str: 1, dex: 1, regen: 1, thorns: 1, devote: 1, serve: 1 };

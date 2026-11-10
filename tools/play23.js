@@ -16,6 +16,7 @@ const { chromium, devices } = require('playwright');
   await p.evaluate(() => { while (UI.stack.length) UI.pop(UI.stack[UI.stack.length - 1]); const s = Home.st(); Field.teleport(s.x + 10, s.y + 2, 'u'); });
   await p.keyboard.press('KeyZ'); await p.waitForTimeout(400);
   console.log('menu', await p.evaluate(() => document.querySelector('.choice') && document.querySelector('.choice').innerText.replace(/\n/g, '|')));
+  await p.keyboard.press('ArrowDown'); await p.waitForTimeout(150);
   await p.keyboard.press('KeyZ'); await p.waitForTimeout(500); // 家具を置く
   await p.keyboard.press('KeyZ'); await p.waitForTimeout(500); // 1つめ
   console.log('carry', await p.evaluate(() => Home.carrying));

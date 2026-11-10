@@ -107,7 +107,7 @@ const Bond = {
   hearts(id) {
     const b = bondOf(id);
     const pct = b.lv >= BOND_MAX ? 100 : Math.floor(100 * b.exp / bondNeed(b.lv));
-    return `<span class="bond"><b>♥ 絆Lv${b.lv}</b><i><u style="width:${pct}%"></u></i>${b.lv >= BOND_MAX ? '<small>MAX</small>' : ''}</span>`;
+    return `<span class="bond"><b>♥ 絆Lv${b.lv}</b><i><u style="width:${pct}%"></u></i>${b.lv >= BOND_MAX ? (typeof isAdult === 'function' && isAdult(id) ? '<small>指輪で恋人に</small>' : '<small>MAX</small>') : ''}</span>`;
   },
   html(id) {
     const b = bondOf(id);
@@ -118,7 +118,7 @@ const Bond = {
 // ===== 恋愛 (絆Lv11「恋人」) =====
 // 大人のキャラ (ADULT_AGE にいるキャラ) だけ。絆Lv10でエピソードを全部見たあと、
 // 「約束の指輪」を渡すと告白イベントになり、絆Lv11 (恋人) になる。
-// 恋人になると: ステータス+20%、奥義の威力1.5倍、大人向けの衣装4着、マイホームでデートに誘える。
+// 恋人になると: ステータス+20%、奥義の威力1.5倍、大人向けの衣装3着、マイホームでデートに誘える。
 const LOVE_LV = 11;
 const RING = { n: '約束の指輪', price: 3000 };
 const ROMANCE = {
@@ -161,7 +161,7 @@ Object.assign(Bond, {
     await UI.say(R.conf, opt);
     c.bond.lv = LOVE_LV; c.bond.exp = 0;
     for (const k of skinsOf(id)) if (SKINS[k].lover) G.skins[k] = 1;
-    await UI.say(`♥ ${CHARS[id].n} と恋人になった!\nステータス+20%、奥義の威力1.5倍。\n衣装「バニースーツ」「ビキニ」「夜会のドレス」「リバースバニー」を手に入れた!`);
+    await UI.say(`♥ ${CHARS[id].n} と恋人になった!\nステータス+20%、奥義の威力1.5倍。\n衣装「バニースーツ」「ビキニ」「夜会のドレス」を手に入れた!`);
     Game.autoSave(true);
   },
   async date(id) {

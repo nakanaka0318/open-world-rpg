@@ -473,7 +473,6 @@ Object.assign(SKIN_THEMES, {
   bunny: { n: 'バニースーツ', rar: 5, gacha: false, lover: true, look: () => ({ outfit: 'bunny', cloth: '#1e1a2a', accType: 'bunny' }) },
   bikini: { n: 'ビキニ', rar: 5, gacha: false, lover: true, look: c => ({ outfit: 'bikini', cloth: U.shade(ELEM[c.elem].c, 0.1) }) },
   slitdress: { n: '夜会のドレス', rar: 5, gacha: false, lover: true, look: () => ({ outfit: 'slitdress', cloth: '#8a1a3a' }) },
-  rbunny: { n: 'リバースバニー', rar: 5, gacha: false, lover: true, look: () => ({ outfit: 'rbunny', cloth: '#1e1a2a', accType: 'bunny' }) },
 });
 for (const id in CHARS) CHARS[id].look.cid = id; // 全身絵でキャラごとの普段着・体型を選ぶため
 const SKINS = {};

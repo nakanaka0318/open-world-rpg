@@ -99,15 +99,28 @@ const Home = {
   // ---------- 本棚のメニュー ----------
   async menu() {
     for (;;) {
-      const c = await UI.ask(`マイホーム  所持金 ${G.gold}G`, ['家具を置く', '家具を買う', 'プレゼントを買う', '置いた家具を全部しまう', 'やめる']);
-      if (c === 0) { if (await this.choosePlace()) return; }
-      else if (c === 1) await this.shop('furn');
-      else if (c === 2) await this.shop('gift');
-      else if (c === 3) {
+      const c = await UI.ask(`マイホーム  所持金 ${G.gold}G`, ['仲間と話す', '家具を置く', '家具を買う', 'プレゼントを買う', '置いた家具を全部しまう', 'やめる']);
+      if (c === 0) { await this.callGirl(); continue; }
+      if (c === 1) { if (await this.choosePlace()) return; }
+      else if (c === 2) await this.shop('furn');
+      else if (c === 3) await this.shop('gift');
+      else if (c === 4) {
         if (!this.data().placed.length) { await UI.say('置いてある家具はない。'); continue; }
         if ((await UI.ask('家具を全部しまいますか?', ['しまう', 'やめる'])) === 0) { this.data().placed = []; this.refresh(); Sound.play('ok'); Game.autoSave(); }
       } else return;
     }
+  },
+  // パーティにいる子も含めて、仲間を選んで話す (絆のエピソードや指輪はここからでもOK)
+  async callGirl() {
+    let chosen = null;
+    await Menu.tabList({
+      title: '話す仲間を選ぶ',
+      tabs: [{ n: 'すべて' }, { n: 'エピソードあり', f: k => Bond.pendingEp(k) >= 0 }, { n: 'パーティ', f: k => G.party.includes(k) }],
+      items: () => Object.keys(G.roster),
+      label: k => `<img class="ico" src="${portraitURL(charLook(k))}"> ${U.esc(CHARS[k].n)} ${Bond.hearts(k)}${Bond.pendingEp(k) >= 0 ? ' <span class="tag lead">エピソード</span>' : ''}${typeof canConfess === 'function' && canConfess(k) ? ' <span class="tag lead">指輪OK</span>' : ''}`,
+      onSelect: async (k, ctx) => { chosen = k; ctx.close(); },
+    });
+    if (chosen) await this.talk(chosen);
   },
   spare(f) { const H = this.data(); return (H.owned[f] || 0) - H.placed.filter(p => p.f === f).length; },
   async choosePlace() {
